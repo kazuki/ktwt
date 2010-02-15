@@ -1,0 +1,24 @@
+﻿<Window x:Class="TwitterStreaming.LoginWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Login" WindowStartupLocation="CenterOwner" ResizeMode="NoResize" SizeToContent="WidthAndHeight">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Label Grid.Column="0" Grid.Row="0">Name:</Label>
+        <Label Grid.Column="0" Grid.Row="1">Password:</Label>
+        <CheckBox Grid.Column="0" Grid.Row="2" VerticalAlignment="Center" x:Name="chkTrack">UseTrack:</CheckBox>
+        <TextBox Grid.Column="1" Grid.Row="0" Width="200" x:Name="txtUsername" VerticalAlignment="Center" />
+        <PasswordBox Grid.Column="1" Grid.Row="1" Width="200" x:Name="txtPassword" VerticalAlignment="Center" />
+        <TextBox Grid.Column="1" Grid.Row="2" Width="200" x:Name="txtTrackWords" VerticalAlignment="Center" />
+        <Button Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="3" Click="Button_Click">Login</Button>
+    </Grid>
+</Window>
