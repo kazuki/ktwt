@@ -35,7 +35,7 @@ namespace TwitterStreaming
 	{
 		OAuthClient _oauthClient;
 		TwitterClient _client;
-		Thread _thrd;
+		Thread _streamingThrd, _restThrd;
 		Dictionary<string, ImageSource> _imgCache = new Dictionary<string, ImageSource> ();
 		HashSet<ulong> _postIdSet = new HashSet<ulong> ();
 		string _friends;
@@ -107,9 +107,13 @@ namespace TwitterStreaming
 			}
 
 			Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {ScreenName = "System", Name = "System", Text = "Connecting..."});
-			_thrd = new Thread (StreamingThread);
-			_thrd.IsBackground = true;
-			_thrd.Start ();
+			_streamingThrd = new Thread (StreamingThread);
+			_streamingThrd.IsBackground = true;
+			_streamingThrd.Start ();
+
+			_restThrd = new Thread (RestGetThread);
+			_restThrd.IsBackground = true;
+			_restThrd.Start ();
 		}
 
 		string ReadLineWithTimeout (Stream strm, ref byte[] buffer, ref int filled, TimeSpan timeout)
@@ -162,6 +166,7 @@ namespace TwitterStreaming
 			TimeSpan timeout = TimeSpan.FromSeconds (32);
 			byte[] buffer = null;
 			int filled = 0;
+			Status[] statuses = new Status[1];
 			while (true) {
 				using (IStreamingState state = _client.StartStreaming (new Uri (url), "POST", postData)) {
 					Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {ScreenName="System", Name="System", Text="Initialized Twitter Streaming API"});
@@ -174,8 +179,8 @@ namespace TwitterStreaming
 							JsonObject jsonRootObj = (JsonObject)jsonReader.Read ();
 							if (jsonRootObj.Value.ContainsKey ("delete") || jsonRootObj.Value.ContainsKey ("limit"))
 								continue;
-							Status status = new Status (jsonRootObj);
-							Dispatcher.Invoke (new AddStatusDelegate (AddStatus), status);
+							statuses[0] = new Status (jsonRootObj);
+							Dispatcher.Invoke (new AddStatusesDelegate (AddStatuses), (object)statuses);
 						} catch {
 							break;
 						}
@@ -195,17 +200,74 @@ namespace TwitterStreaming
 			}
 		}
 
+		void RestGetThread ()
+		{
+			ulong since_id = 0;
+			string base_url = "";
+			List<Status> list = new List<Status> ();
+			
+			if (_trackMode) {
+				base_url = "https://search.twitter.com/search.json?rpp=100&q=" + Uri.EscapeUriString (_trackValues.Replace (",", " OR "));
+			} else {
+				base_url = "https://api.twitter.com/1/statuses/home_timeline.json?count=100";
+			}
+
+			while (true) {
+				list.Clear ();
+				
+				string url = base_url;
+				if (since_id > 0) url += "&since_id=" + since_id.ToString ();
+
+				try {
+					if (_trackMode) {
+						JsonArray array = (JsonArray)(((JsonObject)new JsonValueReader (_oauthClient.DownloadString (new Uri (url), "GET", null)).Read ()).Value["results"]);
+						for (int i = 0; i < array.Length; i++) {
+							JsonObject o = (JsonObject)array[i];
+							Status status = new Status {
+								ID = (ulong)(o.Value["id"] as JsonNumber).Value,
+								ScreenName = "#" + (o.Value["from_user"] as JsonString).Value,
+								Name = (o.Value["from_user"] as JsonString).Value,
+								Text = (o.Value["text"] as JsonString).Value,
+								ProfileImageUrl = (o.Value["profile_image_url"] as JsonString).Value
+							};
+							since_id = Math.Max (since_id, status.ID);
+							list.Add (status);
+						}
+					} else {
+						JsonArray array = (JsonArray)new JsonValueReader (_oauthClient.DownloadString (new Uri (url), "GET", null)).Read ();
+						for (int i = 0; i < array.Length; i ++) {
+							Status status = new Status ((JsonObject)array[i]);
+							since_id = Math.Max (since_id, status.ID);
+							list.Add (status);
+						}
+					}
+				} catch {}
+
+				list.Reverse ();
+				Dispatcher.Invoke (new AddStatusesDelegate (AddStatuses), (object)list.ToArray ());
+				Thread.Sleep (15 * 1000);
+			}
+		}
+
 		delegate void AddStatusDelegate (Status status);
 		void AddStatus (Status status)
 		{
-			if (!_postIdSet.Add (status.ID))
-				return;
-			if (status.ProfileImageUrl != null) {
-				lock (_imgCache) {
-					status.TrySetProfileImage (_imgCache);
+			AddStatuses (new Status[] {status});
+		}
+
+		delegate void AddStatusesDelegate (Status[] statuses);
+		void AddStatuses (Status[] statuses)
+		{
+			foreach (Status status in statuses) {
+				if (status.ID != 0 && !_postIdSet.Add (status.ID))
+					continue;
+				if (status.ProfileImageUrl != null) {
+					lock (_imgCache) {
+						status.TrySetProfileImage (_imgCache);
+					}
 				}
+				(timeline.ItemsSource as TwitterTimeLine).Insert (0, status);
 			}
-			(timeline.ItemsSource as TwitterTimeLine).Insert (0, status);
 		}
 
 		private void TwitterStatusViewer_LinkClick (object sender, LinkClickEventArgs e)

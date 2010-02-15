@@ -33,7 +33,7 @@ namespace ktwt.Twitter
 		{
 			JsonObject user = (JsonObject)status.Value["user"];
 			Text = (status.Value["text"] as JsonString).Value;
-			ID = (ulong)(user.Value["id"] as JsonNumber).Value;
+			ID = (ulong)(status.Value["id"] as JsonNumber).Value;
 			Name = (user.Value["name"] as JsonString).Value;
 			ScreenName = (user.Value["screen_name"] as JsonString).Value;
 			ProfileImageUrl = (user.Value["profile_image_url"] as JsonString).Value;
