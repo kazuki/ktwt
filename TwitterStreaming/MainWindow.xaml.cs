@@ -18,13 +18,13 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using ktwt.Json;
 using ktwt.OAuth;
 using ktwt.Twitter;
@@ -105,7 +105,7 @@ namespace TwitterStreaming
 				return;
 			}
 
-			Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new TwitterStatus {ScreenName = "System", Name = "System", Text = "Connecting..."});
+			Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {ScreenName = "System", Name = "System", Text = "Connecting..."});
 			_thrd = new Thread (StreamingThread);
 			_thrd.IsBackground = true;
 			_thrd.Start ();
@@ -163,7 +163,7 @@ namespace TwitterStreaming
 			int filled = 0;
 			while (true) {
 				using (IStreamingState state = _client.StartStreaming (new Uri (url), "POST", postData)) {
-					Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new TwitterStatus {ScreenName="System", Name="System", Text="Initialized Twitter Streaming API"});
+					Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {ScreenName="System", Name="System", Text="Initialized Twitter Streaming API"});
 					while (true) {
 						try {
 							line = ReadLineWithTimeout (state.Stream, ref buffer, ref filled, timeout);
@@ -173,7 +173,7 @@ namespace TwitterStreaming
 							JsonObject jsonRootObj = (JsonObject)jsonReader.Read ();
 							if (jsonRootObj.Value.ContainsKey ("delete") || jsonRootObj.Value.ContainsKey ("limit"))
 								continue;
-							TwitterStatus status = new TwitterStatus (jsonRootObj);
+							Status status = new Status (jsonRootObj);
 							Dispatcher.Invoke (new AddStatusDelegate (AddStatus), status);
 						} catch {
 							break;
@@ -181,21 +181,21 @@ namespace TwitterStreaming
 					}
 				}
 
-				Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new TwitterStatus {ScreenName = "System", Name = "System", Text = "Disconnected"});
+				Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {ScreenName = "System", Name = "System", Text = "Disconnected"});
 				if (failed == 0) {
-					Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new TwitterStatus {ScreenName = "System", Name = "System", Text = "Reconnecting..."});
+					Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {ScreenName = "System", Name = "System", Text = "Reconnecting..."});
 				} else {
 					wait = wait + wait;
 					if (wait > maxWait)
 						wait = maxWait;
-					Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new TwitterStatus {ScreenName = "System", Name = "System", Text = "Waiting..." + ((int)wait.TotalSeconds).ToString() + "秒"});
+					Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {ScreenName = "System", Name = "System", Text = "Waiting..." + ((int)wait.TotalSeconds).ToString() + "秒"});
 					Thread.Sleep (wait);
 				}
 			}
 		}
 
-		delegate void AddStatusDelegate (TwitterStatus status);
-		void AddStatus (TwitterStatus status)
+		delegate void AddStatusDelegate (Status status);
+		void AddStatus (Status status)
 		{
 			if (status.ProfileImageUrl != null) {
 				lock (_imgCache) {
@@ -204,45 +204,29 @@ namespace TwitterStreaming
 			}
 			(timeline.ItemsSource as TwitterTimeLine).Insert (0, status);
 		}
-	}
 
-	public class TwitterTimeLine : ObservableCollection<TwitterStatus>
-	{
-	}
-
-	public class TwitterStatus
-	{
-		public TwitterStatus ()
+		private void TwitterStatusViewer_LinkClick (object sender, LinkClickEventArgs e)
 		{
-		}
-
-		public TwitterStatus (JsonObject status)
-		{
-			JsonObject user = (JsonObject)status.Value["user"];
-			Text = (status.Value["text"] as JsonString).Value;
-			ID = (ulong)(user.Value["id"] as JsonNumber).Value;
-			Name = (user.Value["name"] as JsonString).Value;
-			ScreenName = (user.Value["screen_name"] as JsonString).Value;
-			ProfileImageUrl = (user.Value["profile_image_url"] as JsonString).Value;
-		}
-
-		public ulong ID { get; set; }
-		public string ScreenName { get; set; }
-		public string Name { get; set; }
-		public string Text { get; set; }
-		public string ProfileImageUrl { get; set; }
-		public ImageSource ProfileImage { get; set; }
-
-		public void TrySetProfileImage (Dictionary<string, ImageSource> imgCache)
-		{
-			ImageSource source;
-			imgCache.TryGetValue (ProfileImageUrl, out source);
-			if (source == null) {
-				source = new BitmapImage (new Uri (ProfileImageUrl));
-				imgCache.Add (ProfileImageUrl, source);
-				ProfileImage = source;
+			string url;
+			switch (e.Url[0]) {
+				case '@':
+					url = "https://twitter.com/" + e.Url.Substring (1);
+					break;
+				case '#':
+					url = "https://search.twitter.com/search?q=" + Uri.EscapeUriString (e.Url.Substring (1));
+					break;
+				default:
+					url = e.Url;
+					break;
 			}
-			ProfileImage = source;
+
+			try {
+				Process.Start (url);
+			} catch {}
 		}
+	}
+
+	class TwitterTimeLine : ObservableCollection<Status>
+	{
 	}
 }

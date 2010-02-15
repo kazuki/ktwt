@@ -72,6 +72,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="TwitterStatusViewer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -96,6 +100,7 @@
     <Compile Include="Json\LitJSON\JsonReader.cs" />
     <Compile Include="Json\LitJSON\Lexer.cs" />
     <Compile Include="Json\LitJSON\ParserToken.cs" />
+    <Compile Include="LinkClickEventArgs.cs" />
     <Compile Include="LoginWindow.xaml.cs">
       <DependentUpon>LoginWindow.xaml</DependentUpon>
     </Compile>
@@ -115,7 +120,11 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Compile Include="ISimpleWebClient.cs" />
+    <Compile Include="TwitterStatusViewer.xaml.cs">
+      <DependentUpon>TwitterStatusViewer.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Twitter\IStreamingState.cs" />
+    <Compile Include="Twitter\Status.cs" />
     <Compile Include="Twitter\TwitterClient.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
