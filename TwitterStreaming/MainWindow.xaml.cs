@@ -171,7 +171,7 @@ namespace TwitterStreaming
 							if (line.Length == 0) continue;
 							JsonValueReader jsonReader = new JsonValueReader (line);
 							JsonObject jsonRootObj = (JsonObject)jsonReader.Read ();
-							if (jsonRootObj.Value.ContainsKey ("delete"))
+							if (jsonRootObj.Value.ContainsKey ("delete") || jsonRootObj.Value.ContainsKey ("limit"))
 								continue;
 							TwitterStatus status = new TwitterStatus (jsonRootObj);
 							Dispatcher.Invoke (new AddStatusDelegate (AddStatus), status);
