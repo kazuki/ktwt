@@ -115,19 +115,7 @@ namespace TwitterStreaming
 		{
 			if (buffer == null) buffer = new byte[8192];
 			while (true) {
-				if (buffer.Length == filled)
-					Array.Resize<byte> (ref buffer, buffer.Length * 2);
-				IAsyncResult ar = strm.BeginRead (buffer, filled, buffer.Length - filled, null, null);
-				if (!ar.AsyncWaitHandle.WaitOne (timeout))
-					throw new TimeoutException ();
-				int read_size = strm.EndRead (ar);
-				if (read_size <= 0)
-					throw new IOException ();
-
-				// find \r or \n
-				int new_data_pos = filled;
-				filled += read_size;
-				for (int i = new_data_pos; i < filled; i++) {
+				for (int i = 0; i < filled; i++) {
 					if (buffer[i] == '\r' || buffer[i] == '\n') {
 						string ret = Encoding.UTF8.GetString (buffer, 0, i);
 						if (i + 1 < filled) {
@@ -139,6 +127,16 @@ namespace TwitterStreaming
 						return ret.Trim ('\n', '\r', '\0');
 					}
 				}
+
+				IAsyncResult ar = strm.BeginRead (buffer, filled, buffer.Length - filled, null, null);
+				if (!ar.AsyncWaitHandle.WaitOne (timeout))
+					throw new TimeoutException ();
+				int read_size = strm.EndRead (ar);
+				if (read_size <= 0)
+					throw new IOException ();
+				filled += read_size;
+				if (buffer.Length == filled)
+					Array.Resize<byte> (ref buffer, buffer.Length * 2);
 			}
 		}
 
