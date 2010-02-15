@@ -37,6 +37,7 @@ namespace TwitterStreaming
 		TwitterClient _client;
 		Thread _thrd;
 		Dictionary<string, ImageSource> _imgCache = new Dictionary<string, ImageSource> ();
+		HashSet<ulong> _postIdSet = new HashSet<ulong> ();
 		string _friends;
 		bool _firehoseMode = false;
 		bool _trackMode = false;
@@ -197,6 +198,8 @@ namespace TwitterStreaming
 		delegate void AddStatusDelegate (Status status);
 		void AddStatus (Status status)
 		{
+			if (!_postIdSet.Add (status.ID))
+				return;
 			if (status.ProfileImageUrl != null) {
 				lock (_imgCache) {
 					status.TrySetProfileImage (_imgCache);
