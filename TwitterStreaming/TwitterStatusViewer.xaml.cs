@@ -42,7 +42,7 @@ namespace TwitterStreaming
 		public static readonly DependencyProperty StatusProperty =
 			DependencyProperty.Register ("Status", typeof (Status), typeof (TwitterStatusViewer), new PropertyMetadata (new Status (), StatusPropertyChanged));
 
-		static Regex _urlRegex = new Regex (@"(?<url>https?://[\w!#$%&'()=\-~^@`;\+:\*,\./\\]+)|(?<username>@[\w]+)|(?<hashtag>#[\w]+)", RegexOptions.Compiled);
+		static Regex _urlRegex = new Regex (@"(?<url>https?://[a-zA-Z0-9!#$%&'()=\-~^@`;\+:\*,\./\\?_]+)|(?<username>@[a-zA-Z0-9_]+)|(?<hashtag>#[\w]+)", RegexOptions.Compiled);
 		static void StatusPropertyChanged (DependencyObject d, DependencyPropertyChangedEventArgs e) {
 			TwitterStatusViewer self = (TwitterStatusViewer)d;
 			Status s = (Status)e.NewValue;

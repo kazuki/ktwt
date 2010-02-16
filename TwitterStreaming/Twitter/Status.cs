@@ -32,7 +32,7 @@ namespace ktwt.Twitter
 		public Status (JsonObject status)
 		{
 			JsonObject user = (JsonObject)status.Value["user"];
-			Text = (status.Value["text"] as JsonString).Value;
+			Text = (status.Value["text"] as JsonString).Value.Replace ("&lt;", "<").Replace ("&gt;", ">").Replace ("&quot;", "\"").Replace ("&amp;", "&");
 			ID = (ulong)(status.Value["id"] as JsonNumber).Value;
 			Name = (user.Value["name"] as JsonString).Value;
 			ScreenName = (user.Value["screen_name"] as JsonString).Value;
