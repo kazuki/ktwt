@@ -40,10 +40,13 @@ namespace TwitterStreaming
 		Thread _streamingThrd, _restThrd;
 		Dictionary<string, ImageSource> _imgCache = new Dictionary<string, ImageSource> ();
 		HashSet<ulong> _postIdSet = new HashSet<ulong> ();
+		HashSet<ulong> _followingUserSet = new HashSet<ulong> ();
 		string _friends;
 		bool _firehoseMode = false;
 		bool _trackMode = false;
 		string _trackValues = "";
+		bool _followingUserOnly = false;
+		TimeSpan _restInterval = TimeSpan.FromSeconds (30);
 
 		public MainWindow ()
 		{
@@ -99,6 +102,8 @@ namespace TwitterStreaming
 				} else {
 					sb.Remove (sb.Length - 1, 1);
 				}
+				for (int i = 0; i < friends.Length; i++)
+					_followingUserSet.Add ((ulong)(friends[i] as JsonNumber).Value);
 				if (friends.Length > 400)
 					MessageBox.Show ("お友達が多すぎるので、400人分しか表示されません");
 				_friends = sb.ToString ();
@@ -184,6 +189,8 @@ namespace TwitterStreaming
 								if (jsonRootObj.Value.ContainsKey ("delete") || jsonRootObj.Value.ContainsKey ("limit"))
 									continue;
 								statuses[0] = new Status (jsonRootObj);
+								if (_followingUserOnly && !_followingUserSet.Contains (statuses[0].UserID))
+									continue;
 								Dispatcher.Invoke (new AddStatusesDelegate (AddStatuses), (object)statuses);
 							} catch {
 								break;
@@ -251,7 +258,7 @@ namespace TwitterStreaming
 
 				list.Reverse ();
 				Dispatcher.Invoke (new AddStatusesDelegate (AddStatuses), (object)list.ToArray ());
-				Thread.Sleep (15 * 1000);
+				Thread.Sleep (_restInterval);
 			}
 		}
 
@@ -341,6 +348,18 @@ namespace TwitterStreaming
 			int diff = 140 - postTextBox.Text.Length;
 			postLengthText.Text = diff.ToString ();
 			postLengthText.Foreground = (diff < 0 ? Brushes.Red : Brushes.White);
+		}
+
+		private void CheckBox_Checked (object sender, RoutedEventArgs e)
+		{
+			bool? v = (sender as CheckBox).IsChecked;
+			if (v.HasValue)
+				_followingUserOnly = v.Value;
+		}
+
+		private void ComboBox_SelectionChanged (object sender, SelectionChangedEventArgs e)
+		{
+			_restInterval = TimeSpan.FromSeconds (((sender as ComboBox).SelectedIndex + 1) * 15);
 		}
 	}
 

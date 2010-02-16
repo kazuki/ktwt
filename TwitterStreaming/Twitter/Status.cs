@@ -34,12 +34,14 @@ namespace ktwt.Twitter
 			JsonObject user = (JsonObject)status.Value["user"];
 			Text = (status.Value["text"] as JsonString).Value.Replace ("&lt;", "<").Replace ("&gt;", ">").Replace ("&quot;", "\"").Replace ("&amp;", "&");
 			ID = (ulong)(status.Value["id"] as JsonNumber).Value;
+			UserID = (ulong)(user.Value["id"] as JsonNumber).Value;
 			Name = (user.Value["name"] as JsonString).Value;
 			ScreenName = (user.Value["screen_name"] as JsonString).Value;
 			ProfileImageUrl = (user.Value["profile_image_url"] as JsonString).Value;
 		}
 
 		public ulong ID { get; set; }
+		public ulong UserID { get; set; }
 		public string ScreenName { get; set; }
 		public string Name { get; set; }
 		public string Text { get; set; }
