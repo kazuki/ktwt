@@ -42,13 +42,25 @@ namespace ktwt.Twitter
 		int _apiLimitMax = -1, _apiLimitRemaining = -1;
 		DateTime _apiLimitResetTime = DateTime.MaxValue;
 
+		public event EventHandler ApiLimitChanged;
+
 		public TwitterClient (ISimpleWebClient baseClient)
 		{
 			_client = baseClient;
 		}
 
 		#region API Info
+		public int ApiLimitMax {
+			get { return _apiLimitMax; }
+		}
 
+		public int ApiLimitRemaining {
+			get { return _apiLimitRemaining; }
+		}
+
+		public DateTime ApiLimitResetTime {
+			get { return _apiLimitResetTime; }
+		}
 		#endregion
 
 		#region Streaming API
@@ -124,7 +136,7 @@ namespace ktwt.Twitter
 		#endregion
 
 		#region Misc
-		string DownloadString (Uri uri, string method, byte[] postData)
+		public string DownloadString (Uri uri, string method, byte[] postData)
 		{
 			WebHeaderCollection headers;
 			return DownloadString (uri, method, postData, out headers);
@@ -141,6 +153,12 @@ namespace ktwt.Twitter
 			if (value != null && long.TryParse (value, out temp)) _apiLimitRemaining = (int)temp;
 			value = headers[X_RateLimit_Reset];
 			if (value != null && long.TryParse (value, out temp)) _apiLimitResetTime = UnixTimeStart + TimeSpan.FromSeconds (temp);
+
+			if (ApiLimitChanged != null) {
+				try {
+					ApiLimitChanged.BeginInvoke (this, EventArgs.Empty, null, null);
+				} catch {}
+			}
 
 			return text;
 		}

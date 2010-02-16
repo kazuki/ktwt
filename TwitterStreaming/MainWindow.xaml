@@ -37,6 +37,8 @@
                         <ComboBoxItem>60秒</ComboBoxItem>
                     </ComboBox.Items>
                 </ComboBox>
+                <TextBlock Foreground="White" Margin="10 0 0 0">API Limit:</TextBlock>
+                <TextBlock Foreground="White" x:Name="apiLimitLabel">Unknown</TextBlock>
             </StackPanel>
         </Grid>
         <ListBox

@@ -35,7 +35,6 @@ namespace TwitterStreaming
 {
 	public partial class MainWindow : Window
 	{
-		OAuthClient _oauthClient;
 		TwitterClient _client;
 		Thread _streamingThrd, _restThrd;
 		Dictionary<string, ImageSource> _imgCache = new Dictionary<string, ImageSource> ();
@@ -50,8 +49,13 @@ namespace TwitterStreaming
 
 		public MainWindow ()
 		{
-			_oauthClient = new OAuthClient (ConsumerKeyStore.Key, ConsumerKeyStore.Secret, TwitterClient.RequestTokenURL, TwitterClient.AccessTokenURL, TwitterClient.AuthorizeURL);
-			_client = new TwitterClient (_oauthClient);
+			OAuthClient oauthClient = new OAuthClient (ConsumerKeyStore.Key, ConsumerKeyStore.Secret, TwitterClient.RequestTokenURL, TwitterClient.AccessTokenURL, TwitterClient.AuthorizeURL);
+			_client = new TwitterClient (oauthClient);
+			_client.ApiLimitChanged += delegate (object sender, EventArgs e) {
+				Dispatcher.Invoke (new EventHandler (delegate (object sender2, EventArgs e2) {
+					apiLimitLabel.Text = _client.ApiLimitRemaining.ToString () + "/" + _client.ApiLimitMax.ToString () + "  ResetTime:" + _client.ApiLimitResetTime.ToLocalTime ().ToString ("HH時mm分");
+				}), sender, e);
+			};
 
 			InitializeComponent ();
 
@@ -70,9 +74,9 @@ namespace TwitterStreaming
 				_trackMode = login.UseTrackMode;
 				_trackValues = login.TrackWords;
 				try {
-					_oauthClient.PasswordAuth (credentials.UserName, credentials.Password);
-					friends_text = _oauthClient.DownloadString (new Uri ("https://twitter.com/friends/ids.json"), "GET", null);
-					userid = _oauthClient.DownloadString (new Uri ("https://twitter.com/users/show/" + credentials.UserName + ".json"), "GET", null);
+					oauthClient.PasswordAuth (credentials.UserName, credentials.Password);
+					friends_text = _client.DownloadString (new Uri ("https://twitter.com/friends/ids.json"), "GET", null);
+					userid = _client.DownloadString (new Uri ("https://twitter.com/users/show/" + credentials.UserName + ".json"), "GET", null);
 					break;
 				} catch {}
 			}
@@ -233,7 +237,7 @@ namespace TwitterStreaming
 
 				try {
 					if (_trackMode) {
-						JsonArray array = (JsonArray)(((JsonObject)new JsonValueReader (_oauthClient.DownloadString (new Uri (url), "GET", null)).Read ()).Value["results"]);
+						JsonArray array = (JsonArray)(((JsonObject)new JsonValueReader (_client.DownloadString (new Uri (url), "GET", null)).Read ()).Value["results"]);
 						for (int i = 0; i < array.Length; i++) {
 							JsonObject o = (JsonObject)array[i];
 							Status status = new Status {
@@ -247,7 +251,7 @@ namespace TwitterStreaming
 							list.Add (status);
 						}
 					} else {
-						JsonArray array = (JsonArray)new JsonValueReader (_oauthClient.DownloadString (new Uri (url), "GET", null)).Read ();
+						JsonArray array = (JsonArray)new JsonValueReader (_client.DownloadString (new Uri (url), "GET", null)).Read ();
 						for (int i = 0; i < array.Length; i ++) {
 							Status status = new Status ((JsonObject)array[i]);
 							since_id = Math.Max (since_id, status.ID);
@@ -324,7 +328,7 @@ namespace TwitterStreaming
 			string txt = (string)o;
 			Status status = null;
 			try {
-				string ret = _oauthClient.DownloadString (new Uri ("http://twitter.com/statuses/update.json?status=" + OAuthClient.UrlEncode (txt)), "POST", null);
+				string ret = _client.DownloadString (new Uri ("http://twitter.com/statuses/update.json?status=" + OAuthClient.UrlEncode (txt)), "POST", null);
 				status = new Status ((JsonObject)new JsonValueReader (ret).Read ());
 			} catch {}
 			Dispatcher.Invoke (new EndPostProcessDelegate (EndPostProcess), status);
