@@ -154,7 +154,7 @@ namespace ktwt.OAuth
 		/// </summary>
 		/// <param name="value">The value to Url encode</param>
 		/// <returns>Returns a Url encoded string</returns>
-		protected string UrlEncode (string value)
+		public static string UrlEncode (string value)
 		{
 			byte[] raw = Encoding.UTF8.GetBytes (value);
 			StringBuilder result = new StringBuilder (raw.Length * 3);

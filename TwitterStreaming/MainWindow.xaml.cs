@@ -24,6 +24,8 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using ktwt.Json;
 using ktwt.OAuth;
@@ -292,6 +294,51 @@ namespace TwitterStreaming
 			try {
 				Process.Start (url);
 			} catch {}
+		}
+
+		private void postTextBox_KeyDown (object sender, KeyEventArgs e)
+		{
+			if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control && e.Key == Key.Return)
+				postButton_Click (null, null);
+		}
+
+		private void postButton_Click (object sender, RoutedEventArgs e)
+		{
+			string txt = postTextBox.Text.Trim ();
+			if (txt.Length == 0) return;
+			postTextBox.IsEnabled = false;
+			postButton.IsEnabled = false;
+			ThreadPool.QueueUserWorkItem (PostProcess, txt);
+		}
+
+		void PostProcess (object o)
+		{
+			string txt = (string)o;
+			Status status = null;
+			try {
+				string ret = _oauthClient.DownloadString (new Uri ("http://twitter.com/statuses/update.json?status=" + OAuthClient.UrlEncode (txt)), "POST", null);
+				status = new Status ((JsonObject)new JsonValueReader (ret).Read ());
+			} catch {}
+			Dispatcher.Invoke (new EndPostProcessDelegate (EndPostProcess), status);
+		}
+
+		delegate void EndPostProcessDelegate (Status status);
+		void EndPostProcess (Status status)
+		{
+			postTextBox.IsEnabled = true;
+			postButton.IsEnabled = true;
+			if (status != null) {
+				postTextBox.Text = "";
+				postTextBox.Focus ();
+				AddStatus (status);
+			}
+		}
+
+		private void postTextBox_TextChanged (object sender, TextChangedEventArgs e)
+		{
+			int diff = 140 - postTextBox.Text.Length;
+			postLengthText.Text = diff.ToString ();
+			postLengthText.Foreground = (diff < 0 ? Brushes.Red : Brushes.White);
 		}
 	}
 

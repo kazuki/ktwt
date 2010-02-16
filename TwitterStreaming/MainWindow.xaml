@@ -6,19 +6,40 @@
     <Window.Resources>
         <svc:TwitterTimeLine x:Key="status"/>
     </Window.Resources>
-    <ListBox
-            Background="#222"
-            Grid.Column="0"
-            x:Name="timeline"
-            SelectionMode="Extended"
-            ItemsSource="{Binding Source={StaticResource status}}" 
-            IsSynchronizedWithCurrentItem="True"
-            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-            HorizontalContentAlignment="Stretch">
-        <ListBox.ItemTemplate>
-            <DataTemplate>
-                <svc:TwitterStatusViewer Status="{Binding}" LinkClick="TwitterStatusViewer_LinkClick" />
-            </DataTemplate>
-        </ListBox.ItemTemplate>
-    </ListBox>
+    <Grid Background="#222">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <TextBox Grid.Column="0" Grid.RowSpan="2" x:Name="postTextBox" KeyDown="postTextBox_KeyDown"
+                     VerticalContentAlignment="Center" TextChanged="postTextBox_TextChanged"
+                 Background="#444" Foreground="White" BorderBrush="#888" BorderThickness="1" />
+            <Button Grid.Column="1" Grid.Row="0" Padding="8 0 8 0" x:Name="postButton" Click="postButton_Click">Post</Button>
+            <TextBlock Foreground="White" Grid.Column="1" Grid.Row="1" x:Name="postLengthText" HorizontalAlignment="Center" />
+        </Grid>
+        <ListBox
+                Background="#222"
+                Grid.Row="1"
+                x:Name="timeline"
+                SelectionMode="Extended"
+                ItemsSource="{Binding Source={StaticResource status}}" 
+                IsSynchronizedWithCurrentItem="True"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                HorizontalContentAlignment="Stretch">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <svc:TwitterStatusViewer Status="{Binding}" LinkClick="TwitterStatusViewer_LinkClick" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
 </Window>
