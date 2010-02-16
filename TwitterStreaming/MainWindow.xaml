@@ -52,7 +52,7 @@
                 HorizontalContentAlignment="Stretch">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <svc:TwitterStatusViewer Status="{Binding}" LinkClick="TwitterStatusViewer_LinkClick" />
+                    <svc:TwitterStatusViewer Status="{Binding}" LinkClick="TwitterStatusViewer_LinkClick" MouseDoubleClick="TwitterStatusViewer_MouseDoubleClick" />
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>

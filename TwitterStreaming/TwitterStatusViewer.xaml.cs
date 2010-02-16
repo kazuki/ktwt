@@ -48,7 +48,17 @@ namespace TwitterStreaming
 			Status s = (Status)e.NewValue;
 
 			self.userImage.Source = s.ProfileImage;
-			self.nameTextBlock.Text = s.ScreenName + " [" + s.Name + "]";
+			self.nameTextBlock.Inlines.Clear ();
+			self.nameTextBlock.Inlines.Add (s.ScreenName + " [" + s.Name + "]");
+			if (!string.IsNullOrEmpty (s.InReplyToScreenName)) {
+				Hyperlink replyName = new Hyperlink ();
+				replyName.Foreground = self.nameTextBlock.Foreground;
+				replyName.Inlines.Add ("@" + s.InReplyToScreenName);
+				replyName.Tag = "/" + s.InReplyToScreenName + (s.InReplyToStatusId == 0 ? string.Empty : "/status/" + s.InReplyToStatusId.ToString ());
+				replyName.Click += new RoutedEventHandler (self.Hyperlink_Click);
+				self.nameTextBlock.Inlines.Add (" in reply to ");
+				self.nameTextBlock.Inlines.Add (replyName);
+			}
 
 			InlineCollection inlines = self.postTextBlock.Inlines;
 			Match m = _urlRegex.Match (s.Text);

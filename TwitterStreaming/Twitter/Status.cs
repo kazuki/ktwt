@@ -38,6 +38,13 @@ namespace ktwt.Twitter
 			Name = (user.Value["name"] as JsonString).Value;
 			ScreenName = (user.Value["screen_name"] as JsonString).Value;
 			ProfileImageUrl = (user.Value["profile_image_url"] as JsonString).Value;
+
+			if (status.Value.ContainsKey ("in_reply_to_status_id") && status.Value["in_reply_to_status_id"].ValueType == JsonValueType.Number)
+				InReplyToStatusId = (ulong)(status.Value["in_reply_to_status_id"] as JsonNumber).Value;
+			if (status.Value.ContainsKey ("in_reply_to_user_id") && status.Value["in_reply_to_user_id"].ValueType == JsonValueType.Number)
+				InReplyToUserId = (ulong)(status.Value["in_reply_to_user_id"] as JsonNumber).Value;
+			if (status.Value.ContainsKey ("in_reply_to_screen_name") && status.Value["in_reply_to_screen_name"].ValueType == JsonValueType.String)
+				InReplyToScreenName = (status.Value["in_reply_to_screen_name"] as JsonString).Value;
 		}
 
 		public ulong ID { get; set; }
@@ -47,6 +54,10 @@ namespace ktwt.Twitter
 		public string Text { get; set; }
 		public string ProfileImageUrl { get; set; }
 		public ImageSource ProfileImage { get; set; }
+
+		public ulong InReplyToStatusId { get; set; }
+		public ulong InReplyToUserId { get; set; }
+		public string InReplyToScreenName { get; set; }
 
 		public void TrySetProfileImage (Dictionary<string, ImageSource> imgCache)
 		{

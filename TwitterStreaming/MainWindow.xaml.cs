@@ -46,6 +46,8 @@ namespace TwitterStreaming
 		string _trackValues = "";
 		bool _followingUserOnly = false;
 		TimeSpan _restInterval = TimeSpan.FromSeconds (30);
+		Status _replayInfo = null;
+		string _replayName = null;
 
 		public MainWindow ()
 		{
@@ -297,6 +299,9 @@ namespace TwitterStreaming
 				case '#':
 					url = "https://search.twitter.com/search?q=" + Uri.EscapeUriString (e.Url.Substring (1));
 					break;
+				case '/':
+					url = "https://twitter.com" + e.Url;
+					break;
 				default:
 					url = e.Url;
 					break;
@@ -320,6 +325,8 @@ namespace TwitterStreaming
 			postTextBox.IsReadOnly = true;
 			postTextBox.Foreground = Brushes.DimGray;
 			postButton.IsEnabled = false;
+			if (_replayInfo != null && !txt.Contains (_replayName))
+				ResetReplySetting (false);
 			ThreadPool.QueueUserWorkItem (PostProcess, txt);
 		}
 
@@ -328,7 +335,8 @@ namespace TwitterStreaming
 			string txt = (string)o;
 			Status status = null;
 			try {
-				string ret = _client.DownloadString (new Uri ("http://twitter.com/statuses/update.json?status=" + OAuthClient.UrlEncode (txt)), "POST", null);
+				string reply_att = (_replayInfo == null ? string.Empty : "&in_reply_to_status_id=" + _replayInfo.ID.ToString ());
+				string ret = _client.DownloadString (new Uri ("http://twitter.com/statuses/update.json?status=" + OAuthClient.UrlEncode (txt) + reply_att), "POST", null);
 				status = new Status ((JsonObject)new JsonValueReader (ret).Read ());
 			} catch {}
 			Dispatcher.Invoke (new EndPostProcessDelegate (EndPostProcess), status);
@@ -341,6 +349,7 @@ namespace TwitterStreaming
 			postTextBox.Foreground = Brushes.White;
 			postButton.IsEnabled = true;
 			if (status != null) {
+				ResetReplySetting (false);
 				postTextBox.Text = "";
 				postTextBox.Focus ();
 				AddStatus (status);
@@ -352,6 +361,12 @@ namespace TwitterStreaming
 			int diff = 140 - postTextBox.Text.Length;
 			postLengthText.Text = diff.ToString ();
 			postLengthText.Foreground = (diff < 0 ? Brushes.Red : Brushes.White);
+			if (_replayInfo != null) {
+				if (postTextBox.Text.Contains (_replayName))
+					SetReplySetting ();
+				else
+					ResetReplySetting (true);
+			}
 		}
 
 		private void CheckBox_Checked (object sender, RoutedEventArgs e)
@@ -364,6 +379,32 @@ namespace TwitterStreaming
 		private void ComboBox_SelectionChanged (object sender, SelectionChangedEventArgs e)
 		{
 			_restInterval = TimeSpan.FromSeconds (((sender as ComboBox).SelectedIndex + 1) * 15);
+		}
+
+		private void TwitterStatusViewer_MouseDoubleClick (object sender, MouseButtonEventArgs e)
+		{
+			Status selected = (sender as TwitterStatusViewer).Status;
+			if (selected.ID == 0 || selected.ScreenName == null)
+				return;
+
+			_replayInfo = selected;
+			_replayName = "@" + selected.ScreenName;
+			postTextBox.Text = _replayName + " " + postTextBox.Text;
+			SetReplySetting ();
+		}
+
+		void SetReplySetting ()
+		{
+			postButton.Content = "Reply";
+		}
+
+		void ResetReplySetting (bool btnTextOnly)
+		{
+			if (!btnTextOnly) {
+				_replayInfo = null;
+				_replayName = null;
+			}
+			postButton.Content = "Post";
 		}
 	}
 
