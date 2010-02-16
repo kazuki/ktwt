@@ -73,7 +73,7 @@ namespace TwitterStreaming
 					break;
 				} catch {}
 			}
-			_trackValues = System.Web.HttpUtility.UrlEncode (_trackValues, Encoding.UTF8);
+			_trackValues = OAuthBase.UrlEncode (_trackValues);
 
 			JsonValueReader reader;
 			

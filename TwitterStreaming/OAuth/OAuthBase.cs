@@ -300,7 +300,7 @@ namespace ktwt.OAuth
 
 			switch (signatureType) {
 				case SignatureTypes.PLAINTEXT:
-					return HttpUtility.UrlEncode (string.Format ("{0}&{1}", consumerSecret, tokenSecret));
+					return UrlEncode (string.Format ("{0}&{1}", consumerSecret, tokenSecret));
 				case SignatureTypes.HMACSHA1:
 					string signatureBase = GenerateSignatureBase (url, consumerKey, token, tokenSecret, httpMethod, timeStamp, nonce, HMACSHA1SignatureType, out normalizedUrl, out normalizedRequestParameters);
 
