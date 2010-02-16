@@ -306,7 +306,8 @@ namespace TwitterStreaming
 		{
 			string txt = postTextBox.Text.Trim ();
 			if (txt.Length == 0) return;
-			postTextBox.IsEnabled = false;
+			postTextBox.IsReadOnly = true;
+			postTextBox.Foreground = Brushes.DimGray;
 			postButton.IsEnabled = false;
 			ThreadPool.QueueUserWorkItem (PostProcess, txt);
 		}
@@ -325,7 +326,8 @@ namespace TwitterStreaming
 		delegate void EndPostProcessDelegate (Status status);
 		void EndPostProcess (Status status)
 		{
-			postTextBox.IsEnabled = true;
+			postTextBox.IsReadOnly = false;
+			postTextBox.Foreground = Brushes.White;
 			postButton.IsEnabled = true;
 			if (status != null) {
 				postTextBox.Text = "";
