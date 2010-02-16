@@ -168,24 +168,27 @@ namespace TwitterStreaming
 			int filled = 0;
 			Status[] statuses = new Status[1];
 			while (true) {
-				using (IStreamingState state = _client.StartStreaming (new Uri (url), "POST", postData)) {
-					Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {ScreenName="System", Name="System", Text="Initialized Twitter Streaming API"});
-					while (true) {
-						try {
-							line = ReadLineWithTimeout (state.Stream, ref buffer, ref filled, timeout);
-							if (line == null) break;
-							if (line.Length == 0) continue;
-							JsonValueReader jsonReader = new JsonValueReader (line);
-							JsonObject jsonRootObj = (JsonObject)jsonReader.Read ();
-							if (jsonRootObj.Value.ContainsKey ("delete") || jsonRootObj.Value.ContainsKey ("limit"))
-								continue;
-							statuses[0] = new Status (jsonRootObj);
-							Dispatcher.Invoke (new AddStatusesDelegate (AddStatuses), (object)statuses);
-						} catch {
-							break;
+				try {
+					using (IStreamingState state = _client.StartStreaming (new Uri (url), "POST", postData)) {
+						failed = 0;
+						Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {ScreenName="System", Name="System", Text="Initialized Twitter Streaming API"});
+						while (true) {
+							try {
+								line = ReadLineWithTimeout (state.Stream, ref buffer, ref filled, timeout);
+								if (line == null) break;
+								if (line.Length == 0) continue;
+								JsonValueReader jsonReader = new JsonValueReader (line);
+								JsonObject jsonRootObj = (JsonObject)jsonReader.Read ();
+								if (jsonRootObj.Value.ContainsKey ("delete") || jsonRootObj.Value.ContainsKey ("limit"))
+									continue;
+								statuses[0] = new Status (jsonRootObj);
+								Dispatcher.Invoke (new AddStatusesDelegate (AddStatuses), (object)statuses);
+							} catch {
+								break;
+							}
 						}
 					}
-				}
+				} catch {}
 
 				Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {ScreenName = "System", Name = "System", Text = "Disconnected"});
 				if (failed == 0) {
@@ -197,6 +200,7 @@ namespace TwitterStreaming
 					Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {ScreenName = "System", Name = "System", Text = "Waiting..." + ((int)wait.TotalSeconds).ToString() + "秒"});
 					Thread.Sleep (wait);
 				}
+				failed ++;
 			}
 		}
 
