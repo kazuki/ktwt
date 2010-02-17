@@ -15,10 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using ktwt.Json;
 
 namespace ktwt.Twitter
@@ -29,46 +25,31 @@ namespace ktwt.Twitter
 		{
 		}
 
-		public Status (JsonObject status)
-		{
-			JsonObject user = (JsonObject)status.Value["user"];
-			Text = (status.Value["text"] as JsonString).Value.Replace ("&lt;", "<").Replace ("&gt;", ">").Replace ("&quot;", "\"").Replace ("&amp;", "&");
-			ID = (ulong)(status.Value["id"] as JsonNumber).Value;
-			UserID = (ulong)(user.Value["id"] as JsonNumber).Value;
-			Name = (user.Value["name"] as JsonString).Value;
-			ScreenName = (user.Value["screen_name"] as JsonString).Value;
-			ProfileImageUrl = (user.Value["profile_image_url"] as JsonString).Value;
-
-			if (status.Value.ContainsKey ("in_reply_to_status_id") && status.Value["in_reply_to_status_id"].ValueType == JsonValueType.Number)
-				InReplyToStatusId = (ulong)(status.Value["in_reply_to_status_id"] as JsonNumber).Value;
-			if (status.Value.ContainsKey ("in_reply_to_user_id") && status.Value["in_reply_to_user_id"].ValueType == JsonValueType.Number)
-				InReplyToUserId = (ulong)(status.Value["in_reply_to_user_id"] as JsonNumber).Value;
-			if (status.Value.ContainsKey ("in_reply_to_screen_name") && status.Value["in_reply_to_screen_name"].ValueType == JsonValueType.String)
-				InReplyToScreenName = (status.Value["in_reply_to_screen_name"] as JsonString).Value;
-		}
-
+		[JsonObjectMapping ("id", JsonValueType.Number)]
 		public ulong ID { get; set; }
-		public ulong UserID { get; set; }
-		public string ScreenName { get; set; }
-		public string Name { get; set; }
-		public string Text { get; set; }
-		public string ProfileImageUrl { get; set; }
-		public ImageSource ProfileImage { get; set; }
 
+		[JsonObjectMapping ("text", JsonValueType.String)]
+		public string Text { get; set; }
+
+		[JsonObjectMapping ("source", JsonValueType.String)]
+		public string Source { get; set; }
+
+		[JsonObjectMapping ("truncated", JsonValueType.Boolean)]
+		public bool IsTruncated { get; set; }
+
+		[JsonObjectMapping ("in_reply_to_status_id", JsonValueType.Number)]
 		public ulong InReplyToStatusId { get; set; }
+
+		[JsonObjectMapping ("in_reply_to_user_id", JsonValueType.Number)]
 		public ulong InReplyToUserId { get; set; }
+
+		[JsonObjectMapping ("in_reply_to_screen_name", JsonValueType.String)]
 		public string InReplyToScreenName { get; set; }
 
-		public void TrySetProfileImage (Dictionary<string, ImageSource> imgCache)
-		{
-			ImageSource source;
-			imgCache.TryGetValue (ProfileImageUrl, out source);
-			if (source == null) {
-				source = new BitmapImage (new Uri (ProfileImageUrl));
-				imgCache.Add (ProfileImageUrl, source);
-				ProfileImage = source;
-			}
-			ProfileImage = source;
-		}
+		[JsonObjectMapping ("favorited", JsonValueType.Boolean)]
+		public bool IsFavorited { get; set; }
+
+		[JsonObjectMapping ("user", JsonValueType.Object)]
+		public User User { get; set; }
 	}
 }

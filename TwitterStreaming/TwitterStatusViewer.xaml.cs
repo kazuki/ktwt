@@ -21,6 +21,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using ktwt.Twitter;
 
 namespace TwitterStreaming
@@ -47,9 +48,8 @@ namespace TwitterStreaming
 			TwitterStatusViewer self = (TwitterStatusViewer)d;
 			Status s = (Status)e.NewValue;
 
-			self.userImage.Source = s.ProfileImage;
-			self.nameTextBlock.Inlines.Clear ();
-			self.nameTextBlock.Inlines.Add (s.ScreenName + " [" + s.Name + "]");
+			if (s.User.ProfileImageUrl != null) self.userImage.Source = new BitmapImage (new Uri (s.User.ProfileImageUrl));
+			self.nameTextBlock.Inlines.Add (s.User.ScreenName + " [" + s.User.Name + "]");
 			if (!string.IsNullOrEmpty (s.InReplyToScreenName)) {
 				Hyperlink replyName = new Hyperlink ();
 				replyName.Foreground = self.nameTextBlock.Foreground;

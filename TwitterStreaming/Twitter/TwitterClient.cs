@@ -19,14 +19,27 @@ using System;
 using System.IO;
 using System.Net;
 using System.Text;
+using ktwt.Json;
+using ktwt.OAuth;
 
 namespace ktwt.Twitter
 {
 	public class TwitterClient
 	{
+		public const int MaxStatusLength = 140;
+		public const int OAuthApiLimitMax = 350;
+		public const int BasicApiLimitMax = 150;
+
 		public static Uri RequestTokenURL = new Uri ("https://twitter.com/oauth/request_token");
 		public static Uri AccessTokenURL = new Uri ("https://twitter.com/oauth/access_token");
 		public static Uri AuthorizeURL = new Uri ("https://twitter.com/oauth/authorize");
+
+		const string StatusesHomeTimelineURL = "https://api.twitter.com/1/statuses/home_timeline.json";
+		const string StatusesMentionsURL = "https://twitter.com/statuses/mentions.json";
+		const string StatusesUpdateURL = "https://twitter.com/statuses/update.json";
+		const string SearchURL = "https://search.twitter.com/search.json";
+		static readonly Uri FriendIDsURL = new Uri ("https://twitter.com/friends/ids.json");
+		const string UsersShowURL = "https://twitter.com/users/show.json";
 
 		const string X_RateLimit_Limit = "X-RateLimit-Limit";
 		const string X_RateLimit_Remaining = "X-RateLimit-Remaining";
@@ -60,6 +73,116 @@ namespace ktwt.Twitter
 
 		public DateTime ApiLimitResetTime {
 			get { return _apiLimitResetTime; }
+		}
+		#endregion
+
+		#region Timeline Methods
+		public Status[] GetHomeTimeline (ulong? since_id, ulong? max_id, int? count, int? page)
+		{
+			return GetStatus (StatusesHomeTimelineURL, since_id, max_id, count, page);
+		}
+
+		public Status[] GetMentions (ulong? since_id, ulong? max_id, int? count, int? page)
+		{
+			return GetStatus (StatusesMentionsURL, since_id, max_id, count, page);
+		}
+
+		public Status[] GetStatus (string baseUrl, ulong? since_id, ulong? max_id, int? count, int? page)
+		{
+			string query = "";
+			if (since_id.HasValue) query += "&since_id=" + since_id.Value.ToString ();
+			if (max_id.HasValue) query += "&max_id=" + max_id.Value.ToString ();
+			if (count.HasValue) query += "&count=" + count.Value.ToString ();
+			if (page.HasValue) query += "&page=" + page.Value.ToString ();
+			if (query.Length > 0) query = "?" + query.Substring (1);
+			return GetStatus (new Uri (baseUrl + query));
+		}
+
+		Status[] GetStatus (Uri url)
+		{
+			string json = DownloadString (url, HTTP_GET, null);
+			JsonArray array = (JsonArray)new JsonValueReader (json).Read ();
+			Status[] statuses = new Status[array.Length];
+			for (int i = 0; i < array.Length; i++)
+				statuses[i] = JsonDeserializer.Deserialize<Status> ((JsonObject)array[i]);
+			return statuses;
+		}
+		#endregion
+
+		#region Status Methods
+		public Status Update (string status, ulong? in_reply_to_status_id, string geo_lat, string geo_long)
+		{
+			if (status == null || status.Length == 0 || status.Length > MaxStatusLength)
+				throw new ArgumentException ();
+			string query = "?status=" + OAuthBase.UrlEncode (status);
+			if (in_reply_to_status_id.HasValue) query += "&in_reply_to_status_id=" + in_reply_to_status_id.Value.ToString ();
+			if (geo_lat != null && geo_lat.Length > 0) query += "&lat=" + geo_lat;
+			if (geo_long != null && geo_long.Length > 0) query += "&long=" + geo_long;
+			string json = DownloadString (new Uri (StatusesUpdateURL + query), HTTP_POST, null);
+			return JsonDeserializer.Deserialize<Status> ((JsonObject)new JsonValueReader (json).Read ());
+		}
+		#endregion
+
+		#region User Methods
+		public User GetUserInfo (ulong? user_id, string screen_name)
+		{
+			if (user_id.HasValue && (screen_name != null && screen_name.Length > 0))
+				throw new ArgumentException ();
+
+			string query = null;
+			if (user_id.HasValue) query = "?user_id=" + user_id.Value.ToString ();
+			else if (screen_name != null && screen_name.Length > 0) query = "?screen_name=" + OAuthBase.UrlEncode (screen_name);
+			else throw new ArgumentException ();
+
+			string json = DownloadString (new Uri (UsersShowURL + query), HTTP_GET, null);
+			return JsonDeserializer.Deserialize<User> ((JsonObject)new JsonValueReader (json).Read ());
+		}
+		#endregion
+
+		#region Search API Methods
+		public Status[] Search (string keywords, string lang, string locale, int? rpp, int? page, ulong? since_id, string geocode, bool? show_user)
+		{
+			if (keywords == null || keywords.Length == 0)
+				throw new ArgumentException ();
+
+			string query = "?q=" + OAuthBase.UrlEncode (keywords);
+			if (lang != null && lang.Length > 0) query += "&lang=" + lang;
+			if (locale != null && locale.Length > 0) query += "&locale=" + locale;
+			if (rpp.HasValue) query += "&rpp=" + rpp.Value.ToString ();
+			if (page.HasValue) query += "&page=" + page.Value.ToString ();
+			if (since_id.HasValue) query += "&since_id=" + since_id.Value.ToString ();
+			if (geocode != null && geocode.Length > 0) query += "&geocode=" + geocode;
+			if (show_user.HasValue && show_user.Value) query += "&show_user=" + show_user.Value.ToString ();
+
+			string json = DownloadString (new Uri (SearchURL + query), HTTP_GET, null);
+			JsonObject rootObj = (JsonObject)new JsonValueReader (json).Read ();
+			JsonArray array = (JsonArray)rootObj.Value["results"];
+			Status[] statuses = new Status[array.Length];
+			for (int i = 0; i < array.Length; i++) {
+				JsonObject o = (JsonObject)array[i];
+				statuses[i] = new Status {
+					ID = (ulong)(o.Value["id"] as JsonNumber).Value,
+					Text = (o.Value["text"] as JsonString).Value,
+					User = new User {
+						ScreenName = (o.Value["from_user"] as JsonString).Value,
+						Name = (o.Value["from_user"] as JsonString).Value,
+						ProfileImageUrl = (o.Value["profile_image_url"] as JsonString).Value
+					}
+				};
+			}
+			return statuses;
+		}
+		#endregion
+
+		#region Social Graph Methods
+		public ulong[] GetFriendIDs ()
+		{
+			string json = DownloadString (FriendIDsURL, HTTP_GET, null);
+			JsonArray array = (JsonArray)new JsonValueReader (json).Read ();
+			ulong[] friends = new ulong[array.Length];
+			for (int i = 0; i < array.Length; i ++)
+				friends[i] = (ulong)(array[i] as JsonNumber).Value;
+			return friends;
 		}
 		#endregion
 
@@ -136,7 +259,23 @@ namespace ktwt.Twitter
 		#endregion
 
 		#region Misc
-		public string DownloadString (Uri uri, string method, byte[] postData)
+		public static ulong GetMaxStatusID (ulong? current, Status[] status)
+		{
+			if (!current.HasValue)
+				current = 0;
+			return GetMaxStatusID (current.Value, status);
+		}
+
+		public static ulong GetMaxStatusID (ulong current, Status[] status)
+		{
+			for (int i = 0; i < status.Length; i ++)
+				current = Math.Max (current, status[i].ID);
+			return current;
+		}
+		#endregion
+
+		#region Internal Use
+		string DownloadString (Uri uri, string method, byte[] postData)
 		{
 			WebHeaderCollection headers;
 			return DownloadString (uri, method, postData, out headers);
@@ -148,11 +287,13 @@ namespace ktwt.Twitter
 
 			long temp;
 			string value = headers[X_RateLimit_Limit];
-			if (value != null && long.TryParse (value, out temp)) _apiLimitMax = (int)temp;
-			value = headers[X_RateLimit_Remaining];
-			if (value != null && long.TryParse (value, out temp)) _apiLimitRemaining = (int)temp;
-			value = headers[X_RateLimit_Reset];
-			if (value != null && long.TryParse (value, out temp)) _apiLimitResetTime = UnixTimeStart + TimeSpan.FromSeconds (temp);
+			if (value != null && long.TryParse (value, out temp) && temp != BasicApiLimitMax) {
+				_apiLimitMax = (int)temp;
+				value = headers[X_RateLimit_Remaining];
+				if (value != null && long.TryParse (value, out temp)) _apiLimitRemaining = (int)temp;
+				value = headers[X_RateLimit_Reset];
+				if (value != null && long.TryParse (value, out temp)) _apiLimitResetTime = UnixTimeStart + TimeSpan.FromSeconds (temp);
+			}
 
 			if (ApiLimitChanged != null) {
 				try {

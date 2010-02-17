@@ -77,9 +77,11 @@
     <Compile Include="ConsumerKeyStore.cs" />
     <Compile Include="Json\JsonArray.cs" />
     <Compile Include="Json\JsonBoolean.cs" />
+    <Compile Include="Json\JsonDeserializer.cs" />
     <Compile Include="Json\JsonNull.cs" />
     <Compile Include="Json\JsonNumber.cs" />
     <Compile Include="Json\JsonObject.cs" />
+    <Compile Include="Json\JsonObjectMappingAttribute.cs" />
     <Compile Include="Json\JsonString.cs" />
     <Compile Include="Json\JsonValue.cs" />
     <Compile Include="Json\JsonValueReader.cs" />
@@ -114,6 +116,7 @@
     <Compile Include="Twitter\IStreamingState.cs" />
     <Compile Include="Twitter\Status.cs" />
     <Compile Include="Twitter\TwitterClient.cs" />
+    <Compile Include="Twitter\User.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

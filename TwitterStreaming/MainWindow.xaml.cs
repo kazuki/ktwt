@@ -37,7 +37,6 @@ namespace TwitterStreaming
 	{
 		TwitterClient _client;
 		Thread _streamingThrd, _restThrd;
-		Dictionary<string, ImageSource> _imgCache = new Dictionary<string, ImageSource> ();
 		HashSet<ulong> _postIdSet = new HashSet<ulong> ();
 		HashSet<ulong> _followingUserSet = new HashSet<ulong> ();
 		string _friends;
@@ -63,7 +62,8 @@ namespace TwitterStreaming
 
 			InitializeComponent ();
 
-			string friends_text, userid;
+			ulong[] friends;
+			User selfInfo;
 			NetworkCredential credentials = null;
 			while (true) {
 				LoginWindow login = new LoginWindow ();
@@ -79,58 +79,35 @@ namespace TwitterStreaming
 				_trackValues = login.TrackWords;
 				try {
 					oauthClient.PasswordAuth (credentials.UserName, credentials.Password);
-					friends_text = _client.DownloadString (new Uri ("https://twitter.com/friends/ids.json"), "GET", null);
-					userid = _client.DownloadString (new Uri ("https://twitter.com/users/show/" + credentials.UserName + ".json"), "GET", null);
+					friends = _client.GetFriendIDs ();
+					selfInfo = _client.GetUserInfo (null, credentials.UserName);
 					break;
 				} catch {}
 			}
 			_trackValues = OAuthBase.UrlEncode (_trackValues);
 
-			JsonValueReader reader;
-			
-			try {
-				reader = new JsonValueReader (userid);
-				JsonObject obj = (JsonObject)reader.Read ();
-				_userId = (ulong)(obj.Value["id"] as JsonNumber).Value;
-				_screenName = (obj.Value["screen_name"] as JsonString).Value;
-				_replyScreenName = "@" + _screenName;
-				userid = _userId.ToString ();
-			} catch {
-				MessageBox.Show ("User-IDのパースに失敗");
-				Close ();
-				return;
-			}
+			_userId = selfInfo.ID;
+			_screenName = selfInfo.ScreenName;
+			_replyScreenName = "@" + _screenName;
 
-			try {
-				reader = new JsonValueReader (friends_text);
-				JsonArray friends = (JsonArray)reader.Read ();
-				StringBuilder sb = new StringBuilder ();
-				for (int i = 0; i < Math.Min (400, friends.Length); i ++) {
-					sb.Append (((int)((friends[i] as JsonNumber).Value)).ToString ());
-					sb.Append (',');
-				}
-				if (friends.Length < 400) {
-					sb.Append (userid);
-				} else {
-					sb.Remove (sb.Length - 1, 1);
-				}
-				for (int i = 0; i < friends.Length; i++)
-					_followingUserSet.Add ((ulong)(friends[i] as JsonNumber).Value);
-				if (friends.Length > 400)
-					MessageBox.Show ("お友達が多すぎるので、400人分しか表示されません");
-				_friends = sb.ToString ();
-			} catch {
-				MessageBox.Show ("友達一覧のパースに失敗");
-				Close ();
-				return;
+			StringBuilder sb = new StringBuilder ();
+			for (int i = 0; i < Math.Min (399, friends.Length); i ++) {
+				sb.Append (friends[i]);
+				sb.Append (',');
 			}
+			sb.Append (_userId);
+			for (int i = 0; i < friends.Length; i++)
+				_followingUserSet.Add (friends[i]);
+			if (friends.Length > 400)
+				MessageBox.Show ("お友達が多すぎるので、400人分しか表示されません");
+			_friends = sb.ToString ();
 
 			if (_trackMode) {
 				timelineContainer.Children.Remove (mentions);
 				timelineContainer.ColumnDefinitions.RemoveAt (1);
 			}
 
-			Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {ScreenName = "System", Name = "System", Text = "Connecting..."});
+			AddStatus (new Status {Text = "Connecting...", User = new User {ScreenName = "System", Name = "System"}});
 			_streamingThrd = new Thread (StreamingThread);
 			_streamingThrd.IsBackground = true;
 			_streamingThrd.Start ();
@@ -144,6 +121,11 @@ namespace TwitterStreaming
 				mentionThrd.IsBackground = true;
 				mentionThrd.Start ();
 			}
+		}
+
+		class SystemInfo
+		{
+			public string Message { get; set; }
 		}
 
 		string ReadLineWithTimeout (Stream strm, ref byte[] buffer, ref int filled, TimeSpan timeout)
@@ -201,7 +183,7 @@ namespace TwitterStreaming
 				try {
 					using (IStreamingState state = _client.StartStreaming (new Uri (url), "POST", postData)) {
 						failed = 0;
-						Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {ScreenName="System", Name="System", Text="Initialized Twitter Streaming API"});
+						Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {Text = "Initialized Twitter Streaming API", User = new User {ScreenName = "System", Name = "System"}});
 						while (true) {
 							try {
 								line = ReadLineWithTimeout (state.Stream, ref buffer, ref filled, timeout);
@@ -211,8 +193,8 @@ namespace TwitterStreaming
 								JsonObject jsonRootObj = (JsonObject)jsonReader.Read ();
 								if (jsonRootObj.Value.ContainsKey ("delete") || jsonRootObj.Value.ContainsKey ("limit"))
 									continue;
-								statuses[0] = new Status (jsonRootObj);
-								if (_followingUserOnly && !_followingUserSet.Contains (statuses[0].UserID))
+								statuses[0] = JsonDeserializer.Deserialize<Status> (jsonRootObj);
+								if (_followingUserOnly && !_followingUserSet.Contains (statuses[0].User.ID))
 									continue;
 								Dispatcher.Invoke (new AddStatusesDelegate (AddStatuses), (object)statuses);
 							} catch {
@@ -222,14 +204,14 @@ namespace TwitterStreaming
 					}
 				} catch {}
 
-				Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {ScreenName = "System", Name = "System", Text = "Disconnected"});
+				Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {Text = "Disconnected", User = new User {ScreenName = "System", Name = "System"}});
 				if (failed == 0) {
-					Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {ScreenName = "System", Name = "System", Text = "Reconnecting..."});
+					Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {Text = "Reconnecting...", User = new User {ScreenName = "System", Name = "System"}});
 				} else {
 					wait = wait + wait;
 					if (wait > maxWait)
 						wait = maxWait;
-					Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {ScreenName = "System", Name = "System", Text = "Waiting..." + ((int)wait.TotalSeconds).ToString() + "秒"});
+					Dispatcher.Invoke (new AddStatusDelegate (AddStatus), new Status {Text = "Waiting..." + ((int)wait.TotalSeconds).ToString() + "秒", User = new User {ScreenName = "System", Name = "System"}});
 					Thread.Sleep (wait);
 				}
 				failed ++;
@@ -238,76 +220,35 @@ namespace TwitterStreaming
 
 		void RestGetThread ()
 		{
-			ulong since_id = 0;
-			string base_url = "";
-			List<Status> list = new List<Status> ();
-			
-			if (_trackMode) {
-				base_url = "https://search.twitter.com/search.json?rpp=100&q=" + Uri.EscapeUriString (_trackValues.Replace (",", " OR "));
-			} else {
-				base_url = "https://api.twitter.com/1/statuses/home_timeline.json?count=100";
-			}
+			ulong? since_id = null;
+			const int count = 100;
 
 			while (true) {
-				list.Clear ();
-				
-				string url = base_url;
-				if (since_id > 0) url += "&since_id=" + since_id.ToString ();
-
 				try {
+					Status[] statuses;
 					if (_trackMode) {
-						JsonArray array = (JsonArray)(((JsonObject)new JsonValueReader (_client.DownloadString (new Uri (url), "GET", null)).Read ()).Value["results"]);
-						for (int i = 0; i < array.Length; i++) {
-							JsonObject o = (JsonObject)array[i];
-							Status status = new Status {
-								ID = (ulong)(o.Value["id"] as JsonNumber).Value,
-								ScreenName = "#" + (o.Value["from_user"] as JsonString).Value,
-								Name = (o.Value["from_user"] as JsonString).Value,
-								Text = (o.Value["text"] as JsonString).Value,
-								ProfileImageUrl = (o.Value["profile_image_url"] as JsonString).Value
-							};
-							since_id = Math.Max (since_id, status.ID);
-							list.Add (status);
-						}
+						statuses = _client.Search (_trackValues, null, null, count, null, since_id, null, null);
 					} else {
-						JsonArray array = (JsonArray)new JsonValueReader (_client.DownloadString (new Uri (url), "GET", null)).Read ();
-						for (int i = 0; i < array.Length; i ++) {
-							Status status = new Status ((JsonObject)array[i]);
-							since_id = Math.Max (since_id, status.ID);
-							list.Add (status);
-						}
+						statuses = _client.GetHomeTimeline (since_id, null, count, null);
 					}
+					since_id = TwitterClient.GetMaxStatusID (since_id, statuses);
+					Dispatcher.Invoke (new AddStatusesDelegate (AddStatuses), (object)statuses);
 				} catch {}
-
-				list.Reverse ();
-				Dispatcher.Invoke (new AddStatusesDelegate (AddStatuses), (object)list.ToArray ());
 				Thread.Sleep (_restInterval);
 			}
 		}
 
 		void RestGetMentionsThread ()
 		{
-			ulong since_id = 0;
-			List<Status> list = new List<Status> ();
-			string base_url = "https://twitter.com/statuses/mentions.json?count=100";
+			ulong? since_id = null;
+			const int count = 100;
 
 			while (true) {
-				list.Clear ();
-				
-				string url = base_url;
-				if (since_id > 0) url += "&since_id=" + since_id.ToString ();
-
 				try {
-					JsonArray array = (JsonArray)new JsonValueReader (_client.DownloadString (new Uri (url), "GET", null)).Read ();
-					for (int i = 0; i < array.Length; i ++) {
-						Status status = new Status ((JsonObject)array[i]);
-						since_id = Math.Max (since_id, status.ID);
-						list.Add (status);
-					}
+					Status[] statuses = _client.GetMentions (since_id, null, count, null);
+					since_id = TwitterClient.GetMaxStatusID (since_id, statuses);
+					Dispatcher.Invoke (new AddStatusesDelegate (AddStatuses), (object)statuses);
 				} catch {}
-
-				list.Reverse ();
-				Dispatcher.Invoke (new AddStatusesDelegate (AddStatuses), (object)list.ToArray ());
 				Thread.Sleep (_restInterval + _restInterval);
 			}
 		}
@@ -324,11 +265,6 @@ namespace TwitterStreaming
 			foreach (Status status in statuses) {
 				if (status.ID != 0 && !_postIdSet.Add (status.ID))
 					continue;
-				if (status.ProfileImageUrl != null) {
-					lock (_imgCache) {
-						status.TrySetProfileImage (_imgCache);
-					}
-				}
 				(timeline.ItemsSource as TwitterTimeLine).Add (status);
 				if (!_trackMode && (status.InReplyToUserId == _userId || status.Text.Contains (_replyScreenName))) {
 					(mentions.ItemsSource as TwitterTimeLine).Add (status);
@@ -382,9 +318,7 @@ namespace TwitterStreaming
 			string txt = (string)o;
 			Status status = null;
 			try {
-				string reply_att = (_replayInfo == null ? string.Empty : "&in_reply_to_status_id=" + _replayInfo.ID.ToString ());
-				string ret = _client.DownloadString (new Uri ("http://twitter.com/statuses/update.json?status=" + OAuthClient.UrlEncode (txt) + reply_att), "POST", null);
-				status = new Status ((JsonObject)new JsonValueReader (ret).Read ());
+				status = _client.Update (txt, (_replayInfo == null ? (ulong?)null : _replayInfo.ID), null, null);
 			} catch {}
 			Dispatcher.Invoke (new EndPostProcessDelegate (EndPostProcess), status);
 		}
@@ -405,7 +339,7 @@ namespace TwitterStreaming
 
 		private void postTextBox_TextChanged (object sender, TextChangedEventArgs e)
 		{
-			int diff = 140 - postTextBox.Text.Length;
+			int diff = TwitterClient.MaxStatusLength - postTextBox.Text.Length;
 			postLengthText.Text = diff.ToString ();
 			postLengthText.Foreground = (diff < 0 ? Brushes.Red : Brushes.White);
 			if (_replayInfo != null) {
@@ -431,11 +365,11 @@ namespace TwitterStreaming
 		private void TwitterStatusViewer_MouseDoubleClick (object sender, MouseButtonEventArgs e)
 		{
 			Status selected = (sender as TwitterStatusViewer).Status;
-			if (selected.ID == 0 || selected.ScreenName == null)
+			if (selected.ID == 0 || selected.User.ScreenName == null)
 				return;
 
 			_replayInfo = selected;
-			_replayName = "@" + selected.ScreenName;
+			_replayName = "@" + selected.User.ScreenName;
 			postTextBox.Text = _replayName + " ";
 			SetReplySetting ();
 			Dispatcher.BeginInvoke (new NotArgumentDelegate (delegate () {
