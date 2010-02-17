@@ -329,9 +329,9 @@ namespace TwitterStreaming
 						status.TrySetProfileImage (_imgCache);
 					}
 				}
-				(timeline.ItemsSource as TwitterTimeLine).Insert (0, status);
+				(timeline.ItemsSource as TwitterTimeLine).Add (status);
 				if (!_trackMode && (status.InReplyToUserId == _userId || status.Text.Contains (_replyScreenName))) {
-					(mentions.ItemsSource as TwitterTimeLine).Insert (0, status);
+					(mentions.ItemsSource as TwitterTimeLine).Add (status);
 				}
 			}
 		}
@@ -462,5 +462,20 @@ namespace TwitterStreaming
 
 	class TwitterTimeLine : ObservableCollection<Status>
 	{
+		public new void Add (Status s)
+		{
+			for (int i = 0; i < Count; i ++) {
+				if (s.ID > this[i].ID) {
+					InsertItem (i, s);
+					return;
+				}
+			}
+			base.Add (s);
+		}
+
+		public new void Insert (int idx, Status s)
+		{
+			throw new NotSupportedException ();
+		}
 	}
 }
