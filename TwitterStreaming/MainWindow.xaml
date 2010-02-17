@@ -5,6 +5,7 @@
     Title="Twitter Streaming" Height="300" Width="300">
     <Window.Resources>
         <svc:TwitterTimeLine x:Key="status"/>
+        <svc:TwitterTimeLine x:Key="mentions"/>
     </Window.Resources>
     <Grid Background="#222">
         <Grid.RowDefinitions>
@@ -41,20 +42,27 @@
                 <TextBlock Foreground="White" x:Name="apiLimitLabel">Unknown</TextBlock>
             </StackPanel>
         </Grid>
-        <ListBox
-                Background="#222"
-                Grid.Row="1"
-                x:Name="timeline"
-                SelectionMode="Extended"
-                ItemsSource="{Binding Source={StaticResource status}}" 
-                IsSynchronizedWithCurrentItem="True"
-                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                HorizontalContentAlignment="Stretch">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <svc:TwitterStatusViewer Status="{Binding}" LinkClick="TwitterStatusViewer_LinkClick" MouseDoubleClick="TwitterStatusViewer_MouseDoubleClick" />
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+        <Grid Grid.Row="1" x:Name="timelineContainer">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <ListBox Background="#222" Grid.Column="0" x:Name="timeline" SelectionMode="Extended" HorizontalContentAlignment="Stretch"
+                ItemsSource="{Binding Source={StaticResource status}}" IsSynchronizedWithCurrentItem="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <svc:TwitterStatusViewer Status="{Binding}" LinkClick="TwitterStatusViewer_LinkClick" MouseDoubleClick="TwitterStatusViewer_MouseDoubleClick" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <ListBox Background="#222" Grid.Column="1" x:Name="mentions" SelectionMode="Extended" HorizontalContentAlignment="Stretch"
+                ItemsSource="{Binding Source={StaticResource mentions}}" IsSynchronizedWithCurrentItem="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <svc:TwitterStatusViewer Status="{Binding}" LinkClick="TwitterStatusViewer_LinkClick" MouseDoubleClick="TwitterStatusViewer_MouseDoubleClick" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
     </Grid>
 </Window>
