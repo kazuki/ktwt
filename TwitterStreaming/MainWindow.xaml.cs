@@ -389,9 +389,14 @@ namespace TwitterStreaming
 
 			_replayInfo = selected;
 			_replayName = "@" + selected.ScreenName;
-			postTextBox.Text = _replayName + " " + postTextBox.Text;
+			postTextBox.Text = _replayName + " ";
 			SetReplySetting ();
+			Dispatcher.BeginInvoke (new NotArgumentDelegate (delegate () {
+				postTextBox.SelectionStart = postTextBox.Text.Length;
+				postTextBox.Focus ();
+			}));
 		}
+		delegate void NotArgumentDelegate ();
 
 		void SetReplySetting ()
 		{
