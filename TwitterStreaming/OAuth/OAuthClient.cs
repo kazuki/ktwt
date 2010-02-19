@@ -25,9 +25,9 @@ namespace ktwt.OAuth
 {
 	public class OAuthClient : OAuthBase, ISimpleWebClient
 	{
-		string _consumerKey, _consumerSecret, _requestToken, _requestTokenSecret, _accessToken, _accessTokenSecret;
+		string _consumerKey, _consumerSecret, _requestToken, _requestTokenSecret;
 		Uri _requestTokenUri, _accessTokenUri, _authorizeUri;
-		ICredentials _credentials;
+		OAuthCredentialCache _credential;
 		const string UrlEncodedMime = "application/x-www-form-urlencoded";
 
 		public OAuthClient (string consumerKey, string consumerSecret, Uri requestTokenUri, Uri accessTokenUri, Uri authorizeUri)
@@ -69,7 +69,7 @@ namespace ktwt.OAuth
 		{
 			if (_requestTokenSecret == null)
 				throw new Exception ();
-			using (HttpWebResponse response = GetResponse (_accessTokenUri, HTTP_GET, _accessToken, _accessTokenSecret, pin, null, null)) {
+			using (HttpWebResponse response = GetResponse (_accessTokenUri, HTTP_GET, _requestToken, _requestTokenSecret, pin, null, null)) {
 				using (StreamReader reader = new StreamReader (response.GetResponseStream (), Encoding.ASCII)) {
 					contents = ParseSimple (reader.ReadToEnd ());
 				}
@@ -77,8 +77,7 @@ namespace ktwt.OAuth
 			}
 			if (!contents.ContainsKey (OAuthTokenKey) || !contents.ContainsKey (OAuthTokenSecretKey))
 				throw new Exception ();
-			_accessToken = contents[OAuthTokenKey];
-			_accessTokenSecret = contents[OAuthTokenSecretKey];
+			_credential = new OAuthCredentialCache (contents[OAuthTokenKey], contents[OAuthTokenSecretKey]);
 		}
 
 		public void PasswordAuth (string username, string password)
@@ -99,9 +98,7 @@ namespace ktwt.OAuth
 			}
 			if (!contents.ContainsKey (OAuthTokenKey) || !contents.ContainsKey (OAuthTokenSecretKey))
 				throw new Exception ();
-			_accessToken = contents[OAuthTokenKey];
-			_accessTokenSecret = contents[OAuthTokenSecretKey];
-			_credentials = new NetworkCredential (username, password);
+			_credential = new OAuthPasswordCache (username, password, contents[OAuthTokenKey], contents[OAuthTokenSecretKey]);
 		}
 
 		public string DownloadString (Uri uri, string method, byte[] postBody)
@@ -112,7 +109,7 @@ namespace ktwt.OAuth
 
 		public string DownloadString (Uri uri, string method, byte[] postBody, out WebHeaderCollection headers)
 		{
-			using (HttpWebResponse response = GetResponse (uri, method, _accessToken, _accessTokenSecret, null, null, postBody)) {
+			using (HttpWebResponse response = GetResponse (uri, method, _credential.AccessToken, _credential.AccessSecret, null, null, postBody)) {
 				headers = response.Headers;
 				using (StreamReader reader = new StreamReader (response.GetResponseStream (), Encoding.ASCII)) {
 					return reader.ReadToEnd ();
@@ -121,7 +118,13 @@ namespace ktwt.OAuth
 		}
 
 		public ICredentials Credentials {
-			get { return _credentials; }
+			get { return _credential; }
+			set {
+				OAuthCredentialCache cache = value as OAuthCredentialCache;
+				if (cache == null)
+					throw new ArgumentException ();
+				_credential = cache;
+			}
 		}
 
 		private HttpWebResponse GetResponse (Uri uri, string method, string token, string tokenSecret, string pin, string queryString, byte[] postBody)

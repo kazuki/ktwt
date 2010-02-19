@@ -96,6 +96,8 @@
     </Compile>
     <Compile Include="OAuth\OAuthBase.cs" />
     <Compile Include="OAuth\OAuthClient.cs" />
+    <Compile Include="OAuth\OAuthCredentialCache.cs" />
+    <Compile Include="OAuth\OAuthPasswordCache.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
