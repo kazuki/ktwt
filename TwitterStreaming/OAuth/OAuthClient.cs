@@ -80,6 +80,14 @@ namespace ktwt.OAuth
 			_credential = new OAuthCredentialCache (contents[OAuthTokenKey], contents[OAuthTokenSecretKey]);
 		}
 
+		public void UpdateAccessToken ()
+		{
+			OAuthPasswordCache cache = _credential as OAuthPasswordCache;
+			if (cache == null)
+				throw new Exception ();
+			PasswordAuth (cache.UserName, cache.Password);
+		}
+
 		public void PasswordAuth (string username, string password)
 		{
 			Dictionary<string, string> contents;

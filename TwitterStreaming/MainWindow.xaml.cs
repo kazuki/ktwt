@@ -73,7 +73,11 @@ namespace TwitterStreaming
 					login.UseTrackMode = _trackMode;
 					login.TrackWords = _trackValues;
 				}
-				login.ShowDialog ();
+				bool? ret = login.ShowDialog ();
+				if (!ret.HasValue || !ret.Value) {
+					Application.Current.Shutdown ();
+					return;
+				}
 				credentials = new NetworkCredential (login.UserName, login.Password);
 				_trackMode = login.UseTrackMode;
 				_trackValues = login.TrackWords;
@@ -121,11 +125,6 @@ namespace TwitterStreaming
 				mentionThrd.IsBackground = true;
 				mentionThrd.Start ();
 			}
-		}
-
-		class SystemInfo
-		{
-			public string Message { get; set; }
 		}
 
 		string ReadLineWithTimeout (Stream strm, ref byte[] buffer, ref int filled, TimeSpan timeout)
@@ -394,7 +393,7 @@ namespace TwitterStreaming
 		}
 	}
 
-	class TwitterTimeLine : ObservableCollection<Status>
+	public class TwitterTimeLine : ObservableCollection<Status>
 	{
 		public new void Add (Status s)
 		{

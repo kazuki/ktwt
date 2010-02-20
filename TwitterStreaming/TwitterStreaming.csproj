@@ -60,6 +60,18 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="MainWindow2.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="NewTimelineWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="PreferenceWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="TwitterStatusViewer.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -75,6 +87,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConsumerKeyStore.cs" />
+    <Compile Include="IUpdateChecker.cs" />
     <Compile Include="Json\JsonArray.cs" />
     <Compile Include="Json\JsonBoolean.cs" />
     <Compile Include="Json\JsonDeserializer.cs" />
@@ -94,10 +107,19 @@
     <Compile Include="LoginWindow.xaml.cs">
       <DependentUpon>LoginWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="MainWindow2.xaml.cs">
+      <DependentUpon>MainWindow2.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="NewTimelineWindow.xaml.cs">
+      <DependentUpon>NewTimelineWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="OAuth\OAuthBase.cs" />
     <Compile Include="OAuth\OAuthClient.cs" />
     <Compile Include="OAuth\OAuthCredentialCache.cs" />
     <Compile Include="OAuth\OAuthPasswordCache.cs" />
+    <Compile Include="PreferenceWindow.xaml.cs">
+      <DependentUpon>PreferenceWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -112,6 +134,9 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Compile Include="ISimpleWebClient.cs" />
+    <Compile Include="SearchStatuses.cs" />
+    <Compile Include="TwitterAccount.cs" />
+    <Compile Include="TwitterAccountManager.cs" />
     <Compile Include="TwitterStatusViewer.xaml.cs">
       <DependentUpon>TwitterStatusViewer.xaml</DependentUpon>
     </Compile>

@@ -1,0 +1,93 @@
+﻿<Window x:Class="TwitterStreaming.NewTimelineWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="タイムラインの追加" WindowStyle="ToolWindow" WindowStartupLocation="CenterOwner" SizeToContent="WidthAndHeight">
+    <StackPanel Orientation="Vertical"> 
+        <GroupBox>
+            <GroupBox.Header>
+                <RadioButton GroupName="DataType" IsChecked="True" x:Name="chk0" Checked="RadioButton_Checked">アカウントのタイムラインを追加</RadioButton>
+            </GroupBox.Header>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Grid.Row="0" Margin="10 0 5 0" VerticalAlignment="Center">アカウント:</TextBlock>
+                <ComboBox Grid.Column="1" Grid.Row="0" x:Name="tlAccount" ItemsSource="{Binding Path=Accounts}" SelectionChanged="ComboBox_SelectionChanged">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Path=Credential.UserName}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBlock Grid.Column="0" Grid.Row="1" Margin="10 0 5 0" VerticalAlignment="Center">タイプ:</TextBlock>
+                <ComboBox Grid.Column="1" Grid.Row="1" x:Name="tlType" SelectionChanged="ComboBox_SelectionChanged">
+                    <ComboBoxItem Selector.IsSelected="True">Home</ComboBoxItem>
+                    <ComboBoxItem>Mentions</ComboBoxItem>
+                    <ComboBoxItem>DirectMessages</ComboBoxItem>
+                </ComboBox>
+            </Grid>
+        </GroupBox>
+        <GroupBox>
+            <GroupBox.Header>
+                <RadioButton GroupName="DataType" x:Name="chk1" Checked="RadioButton_Checked">新規検索</RadioButton>
+            </GroupBox.Header>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Grid.Row="0" Margin="10 0 5 0" VerticalAlignment="Center">キーワード:</TextBlock>
+                <TextBox Grid.Column="1" Grid.Row="0" x:Name="searchText" TextChanged="TextBox_TextChanged" />
+                <TextBlock Grid.Column="0" Grid.Row="1" Margin="10 0 5 0" VerticalAlignment="Center">アカウント:</TextBlock>
+                <ComboBox Grid.Column="1" Grid.Row="1" x:Name="searchAccount" SelectionChanged="ComboBox_SelectionChanged" ItemsSource="{Binding Path=ItemsSource, ElementName=tlAccount}" ItemTemplate="{Binding Path=ItemTemplate, ElementName=tlAccount}" />
+            </Grid>
+        </GroupBox>
+        <GroupBox Visibility="Collapsed">
+            <GroupBox.Header>
+                <RadioButton GroupName="DataType" x:Name="chk2" Checked="RadioButton_Checked">既存の検索</RadioButton>
+            </GroupBox.Header>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Grid.Row="0" Margin="10 0 5 0" VerticalAlignment="Center">キーワード:</TextBlock>
+                <ComboBox Grid.Column="1" Grid.Row="0" SelectionChanged="ComboBox_SelectionChanged" />
+            </Grid>
+        </GroupBox>
+        <GroupBox Visibility="Collapsed">
+            <GroupBox.Header>
+                <RadioButton GroupName="DataType" x:Name="chk3" Checked="RadioButton_Checked">新しいタブコンテナ</RadioButton>
+            </GroupBox.Header>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Grid.Row="0" Margin="10 0 5 0" VerticalAlignment="Center">タイトル:</TextBlock>
+                <TextBox Grid.Column="1" Grid.Row="0" x:Name="tabTitle" TextChanged="TextBox_TextChanged" />
+            </Grid>
+        </GroupBox>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Padding="3" Margin="2" Click="AddButton_Click" x:Name="AddButton">追加</Button>
+            <Button Padding="3" Margin="2" Click="CancelButton_Click">キャンセル</Button>
+        </StackPanel>
+    </StackPanel>
+</Window>

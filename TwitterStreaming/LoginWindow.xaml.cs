@@ -35,8 +35,15 @@ namespace TwitterStreaming
 			txtUsername.Focus ();
 		}
 
-		private void Button_Click (object sender, RoutedEventArgs e)
+		private void LoginButton_Click (object sender, RoutedEventArgs e)
 		{
+			DialogResult = true;
+			Close ();
+		}
+
+		private void CancelButton_Click (object sender, RoutedEventArgs e)
+		{
+			DialogResult = false;
 			Close ();
 		}
 
