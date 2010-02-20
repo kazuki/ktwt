@@ -18,10 +18,15 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Net;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using ktwt.Twitter;
 
 namespace TwitterStreaming
 {
@@ -29,6 +34,10 @@ namespace TwitterStreaming
 	{
 		TwitterAccountManager _mgr;
 		ObservableCollection<object> _timelines = new ObservableCollection<object> ();
+		delegate void EmptyDelegate ();
+
+		Status _replyInfo;
+		string _replyName;
 
 		public MainWindow2 ()
 		{
@@ -77,6 +86,8 @@ namespace TwitterStreaming
 				return;
 			}
 			_mgr.UpdateAccounts (list.ToArray ());
+			postAccount.ItemsSource = _mgr.Accounts;
+			postAccount.SelectedIndex = 0;
 		}
 
 		private void MenuItem_AddNewTimeline_Click (object sender, RoutedEventArgs e)
@@ -132,6 +143,103 @@ namespace TwitterStreaming
 			int idx = _timelines.IndexOf ((sender as Button).DataContext);
 			if (idx >= 0 && idx < _timelines.Count - 1)
 				_timelines.Move (idx, idx + 1);
+		}
+
+		private void TwitterStatusViewer_LinkClick (object sender, LinkClickEventArgs e)
+		{
+			string url;
+			switch (e.Url[0]) {
+				case '@':
+					url = "https://twitter.com/" + e.Url.Substring (1);
+					break;
+				case '#':
+					url = "https://search.twitter.com/search?q=" + Uri.EscapeUriString (e.Url.Substring (1));
+					break;
+				case '/':
+					url = "https://twitter.com" + e.Url;
+					break;
+				default:
+					url = e.Url;
+					break;
+			}
+
+			try {
+				Process.Start (url);
+			} catch {}
+		}
+
+		private void TwitterStatusViewer_MouseDoubleClick (object sender, MouseButtonEventArgs e)
+		{
+		}
+
+		private void postTextBox_KeyDown (object sender, KeyEventArgs e)
+		{
+			if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control && e.Key == Key.Return)
+				postButton_Click (null, null);
+		}
+
+		private void postTextBox_TextChanged (object sender, TextChangedEventArgs e)
+		{
+			int diff = TwitterClient.MaxStatusLength - postTextBox.Text.Length;
+			postLengthText.Text = diff.ToString ();
+			postLengthText.Foreground = (diff < 0 ? Brushes.Red : Brushes.White);
+			if (_replyInfo != null) {
+				if (postTextBox.Text.Contains (_replyName))
+					SetReplySetting ();
+				else
+					ResetReplySetting (true);
+			}
+		}
+
+		private void postButton_Click (object sender, RoutedEventArgs e)
+		{
+			string txt = postTextBox.Text.Trim ();
+			if (txt.Length == 0) return;
+			postTextBox.IsReadOnly = true;
+			postTextBox.Foreground = Brushes.DimGray;
+			postButton.IsEnabled = false;
+			if (_replyInfo != null && !txt.StartsWith (_replyName))
+				ResetReplySetting (false);
+			ThreadPool.QueueUserWorkItem (PostProcess, new object[] {
+				txt,
+				postAccount.SelectedItem
+			});
+		}
+
+		void PostProcess (object o)
+		{
+			object[] items = (object[])o;
+			string txt = (string)items[0];
+			TwitterAccount account = (TwitterAccount)items[1];
+			Status status = null;
+			try {
+				status = account.TwitterClient.Update (txt, (_replyInfo == null ? (ulong?)null : _replyInfo.ID), null, null);
+			} catch {}
+			Dispatcher.Invoke (new EmptyDelegate (delegate () {
+				postTextBox.IsReadOnly = false;
+				postTextBox.Foreground = Brushes.White;
+				postButton.IsEnabled = true;
+				if (status != null) {
+					ResetReplySetting (false);
+					postTextBox.Text = "";
+					postTextBox.Focus ();
+					account.HomeTimeline.Add (status);
+				}
+			}));
+		}
+
+		void SetReplySetting ()
+		{
+			postButton.Content = "Reply";
+		}
+
+		void ResetReplySetting (bool btnTextOnly)
+		{
+			if (!btnTextOnly) {
+				_replyInfo = null;
+				_replyName = null;
+			}
+			postButton.Content = "Post";
 		}
 	}
 

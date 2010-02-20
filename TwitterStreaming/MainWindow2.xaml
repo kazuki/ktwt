@@ -26,7 +26,7 @@
                          ItemsSource="{Binding Path=Statuses}" IsSynchronizedWithCurrentItem="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <c:TwitterStatusViewer Status="{Binding}" />
+                            <c:TwitterStatusViewer Status="{Binding}" LinkClick="TwitterStatusViewer_LinkClick" MouseDoubleClick="TwitterStatusViewer_MouseDoubleClick" />
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
@@ -52,8 +52,9 @@
         
         <c:HogeTemplateSelector TimelineTemplate="{StaticResource timelineTemplate}" TabTemplate="{StaticResource tabTemplate}" x:Key="hogeTemplateSelector" />
     </Window.Resources>
-    <Grid>
+    <Grid Background="#222">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition />
         </Grid.RowDefinitions>
@@ -63,7 +64,32 @@
                 <!--<MenuItem Header="タブを追加" Click="MenuItem_AddNewTab_Click" />-->
             </MenuItem>
         </Menu>
-        <ItemsControl x:Name="itemsControl" Grid.Row="1" ItemsSource="{Binding Path=TimeLines}"
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3">
+                <ComboBox x:Name="postAccount">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Path=Credential.UserName}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+            <TextBox Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" x:Name="postTextBox" KeyDown="postTextBox_KeyDown"
+                     VerticalContentAlignment="Center" TextChanged="postTextBox_TextChanged"
+                 Background="#444" Foreground="White" BorderBrush="#888" BorderThickness="1" />
+            <Button Grid.Column="1" Grid.Row="1" Padding="8 0 8 0" x:Name="postButton" Click="postButton_Click">Post</Button>
+            <TextBlock Foreground="White" Grid.Column="1" Grid.Row="2" x:Name="postLengthText" HorizontalAlignment="Center" />
+        </Grid>
+        <ItemsControl x:Name="itemsControl" Grid.Row="2" ItemsSource="{Binding Path=TimeLines}"
                       ItemTemplateSelector="{StaticResource hogeTemplateSelector}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
