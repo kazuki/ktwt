@@ -85,7 +85,8 @@
             </StackPanel>
             <TextBox Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" x:Name="postTextBox" KeyDown="postTextBox_KeyDown"
                      VerticalContentAlignment="Center" TextChanged="postTextBox_TextChanged"
-                 Background="#444" Foreground="White" BorderBrush="#888" BorderThickness="1" />
+                     Background="#444" Foreground="White" BorderBrush="#888" BorderThickness="1"
+                     AcceptsReturn="True" TextWrapping="Wrap" />
             <Button Grid.Column="1" Grid.Row="1" Padding="8 0 8 0" x:Name="postButton" Click="postButton_Click">Post</Button>
             <TextBlock Foreground="White" Grid.Column="1" Grid.Row="2" x:Name="postLengthText" HorizontalAlignment="Center" />
         </Grid>
