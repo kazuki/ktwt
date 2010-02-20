@@ -395,8 +395,13 @@ namespace TwitterStreaming
 
 	public class TwitterTimeLine : ObservableCollection<Status>
 	{
+		HashSet<ulong> _ids = new HashSet<ulong> ();
+
 		public new void Add (Status s)
 		{
+			if (!_ids.Add (s.ID))
+				return;
+
 			for (int i = 0; i < Count; i ++) {
 				if (s.ID > this[i].ID) {
 					InsertItem (i, s);
@@ -407,6 +412,23 @@ namespace TwitterStreaming
 		}
 
 		public new void Insert (int idx, Status s)
+		{
+			throw new NotSupportedException ();
+		}
+
+		protected override void ClearItems ()
+		{
+			base.ClearItems ();
+			_ids.Clear ();
+		}
+
+		protected override void RemoveItem (int index)
+		{
+			_ids.Remove (this[index].ID);
+			base.RemoveItem (index);
+		}
+
+		protected override void SetItem (int index, Status item)
 		{
 			throw new NotSupportedException ();
 		}

@@ -170,6 +170,18 @@ namespace TwitterStreaming
 
 		private void TwitterStatusViewer_MouseDoubleClick (object sender, MouseButtonEventArgs e)
 		{
+			Status selected = (sender as TwitterStatusViewer).Status;
+			if (selected.ID == 0 || selected.User.ScreenName == null)
+				return;
+
+			_replyInfo = selected;
+			_replyName = "@" + selected.User.ScreenName;
+			postTextBox.Text = _replyName + " ";
+			SetReplySetting ();
+			Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
+				postTextBox.SelectionStart = postTextBox.Text.Length;
+				postTextBox.Focus ();
+			}));
 		}
 
 		private void postTextBox_KeyDown (object sender, KeyEventArgs e)
