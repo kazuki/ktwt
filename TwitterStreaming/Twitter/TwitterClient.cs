@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -37,9 +38,10 @@ namespace ktwt.Twitter
 		const string StatusesHomeTimelineURL = "https://api.twitter.com/1/statuses/home_timeline.json";
 		const string StatusesMentionsURL = "https://twitter.com/statuses/mentions.json";
 		const string StatusesUpdateURL = "https://twitter.com/statuses/update.json";
-		const string SearchURL = "https://search.twitter.com/search.json";
+		const string SearchURL = "http://search.twitter.com/search.json";
 		static readonly Uri FriendIDsURL = new Uri ("https://twitter.com/friends/ids.json");
 		const string UsersShowURL = "https://twitter.com/users/show.json";
+		const string UserFriendsURL = "https://api.twitter.com/1/statuses/friends.json";
 
 		const string X_RateLimit_Limit = "X-RateLimit-Limit";
 		const string X_RateLimit_Remaining = "X-RateLimit-Remaining";
@@ -49,11 +51,14 @@ namespace ktwt.Twitter
 		const string HTTP_GET = "GET";
 		const string HTTP_POST = "POST";
 		const string UrlEncodedMime = "application/x-www-form-urlencoded";
+		const string UserAgent = "ktwt";
 
 		ISimpleWebClient _client;
 
 		int _apiLimitMax = -1, _apiLimitRemaining = -1;
 		DateTime _apiLimitResetTime = DateTime.MaxValue;
+
+		User[] _friends = new User[0], _followers = new User[0];
 
 		public event EventHandler ApiLimitChanged;
 
@@ -137,6 +142,29 @@ namespace ktwt.Twitter
 			string json = DownloadString (new Uri (UsersShowURL + query), HTTP_GET, null);
 			return JsonDeserializer.Deserialize<User> ((JsonObject)new JsonValueReader (json).Read ());
 		}
+
+		public User[] GetFriends (ulong? user_id, string screen_name)
+		{
+			string query = string.Empty;
+			if (user_id.HasValue) query = "?user_id=" + user_id.Value.ToString ();
+			else if (screen_name != null && screen_name.Length > 0) query = "?screen_name=" + OAuthBase.UrlEncode (screen_name);
+
+			string json = DownloadString (new Uri (UserFriendsURL + query), HTTP_GET, null);
+			JsonArray array = (JsonArray)new JsonValueReader (json).Read ();
+			User[] friends = new User[array.Length];
+			for (int i = 0; i < friends.Length; i ++)
+				friends[i] = JsonDeserializer.Deserialize<User> ((JsonObject)array[i]);
+			return friends;
+		}
+
+		public void UpdateFriends ()
+		{
+			_friends = GetFriends (null, null);
+		}
+
+		public User[] Friends {
+			get { return _friends; }
+		}
 		#endregion
 
 		#region Search API Methods
@@ -154,7 +182,7 @@ namespace ktwt.Twitter
 			if (geocode != null && geocode.Length > 0) query += "&geocode=" + geocode;
 			if (show_user.HasValue && show_user.Value) query += "&show_user=" + show_user.Value.ToString ();
 
-			string json = DownloadString (new Uri (SearchURL + query), HTTP_GET, null);
+			string json = DownloadStringWithoutAuthentication (new Uri (SearchURL + query), HTTP_GET, null);
 			JsonObject rootObj = (JsonObject)new JsonValueReader (json).Read ();
 			JsonArray array = (JsonArray)rootObj.Value["results"];
 			Status[] statuses = new Status[array.Length];
@@ -302,6 +330,36 @@ namespace ktwt.Twitter
 			}
 
 			return text;
+		}
+
+		string DownloadStringWithoutAuthentication (Uri uri, string method, byte[] postData)
+		{
+			WebHeaderCollection headers;
+			return DownloadStringWithoutAuthentication (uri, method, postData, out headers);
+		}
+
+		string DownloadStringWithoutAuthentication (Uri uri, string method, byte[] postData, out WebHeaderCollection headers)
+		{
+			HttpWebRequest req = (HttpWebRequest)HttpWebRequest.Create (uri);
+			if (method == HTTP_POST) {
+				req.Method = method.ToString ();
+				if (postData != null && postData.Length > 0) {
+					req.ContentType = UrlEncodedMime;
+					req.ContentLength = postData.Length;
+					using (Stream strm = req.GetRequestStream ()) {
+						strm.Write (postData, 0, postData.Length);
+					}
+				}
+			}
+			req.AllowAutoRedirect = false;
+			req.UserAgent = UserAgent;
+
+			using (HttpWebResponse response = (HttpWebResponse)req.GetResponse ()) {
+				headers = response.Headers;
+				using (StreamReader reader = new StreamReader (response.GetResponseStream (), Encoding.ASCII)) {
+					return reader.ReadToEnd ();
+				}
+			}
 		}
 		#endregion
 	}
