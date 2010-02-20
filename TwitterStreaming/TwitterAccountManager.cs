@@ -47,8 +47,26 @@ namespace TwitterStreaming
 			get { return _accounts; }
 		}
 
-		public List<SearchStatuses> Searches {
-			get { return _searches; }
+		public void AddSearchInfo (SearchStatuses search)
+		{
+			lock (_searches) {
+				_searches.Add (search);
+			}
+		}
+
+		public void CloseTimeLine (TwitterTimeLine timeline)
+		{
+			IDisposable disposeObj = null;
+			lock (_searches) {
+				for (int i = 0; i < _searches.Count; i ++)
+					if (_searches[i].Statuses == timeline) {
+						disposeObj = _searches[i];
+						_searches.RemoveAt (i);
+						break;
+					}
+			}
+			if (disposeObj != null)
+				disposeObj.Dispose ();
 		}
 
 		void RestThread ()

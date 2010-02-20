@@ -94,7 +94,7 @@ namespace TwitterStreaming
 				info = new TimelineInfo (username + "'s " + (tl == account.HomeTimeline ? "home" : tl == account.Mentions ? "mentions" : "dm"), tl);
 			} else if (win.IsCheckedNewSearch && win.SearchKeyword.Length > 0) {
 				SearchStatuses search = new SearchStatuses (account, win.SearchKeyword, win.IsUseStreamingForSearch);
-				_mgr.Searches.Add (search);
+				_mgr.AddSearchInfo (search);
 				info = new TimelineInfo ("Search \"" + search.Keyword + "\"", search.Statuses);
 			} else if (win.IsCheckedNewTab && win.NewTabTitle.Length > 0) {
 				info = new TabInfo (win.NewTabTitle);
@@ -105,6 +105,33 @@ namespace TwitterStreaming
 
 		public ObservableCollection<object> TimeLines {
 			get { return _timelines; }
+		}
+
+		private void TimeLineCloseButton_Click (object sender, RoutedEventArgs e)
+		{
+			TimelineInfo info = (sender as Button).DataContext as TimelineInfo;
+			if (MessageBox.Show (info.Title + " を閉じてもよろしいですか?", string.Empty, MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
+				_timelines.Remove (info);
+				_mgr.CloseTimeLine (info.Statuses);
+			}
+		}
+
+		private void TimeLineMoveLeftButton_Click (object sender, RoutedEventArgs e)
+		{
+			if (_timelines.Count <= 1)
+				return;
+			int idx = _timelines.IndexOf ((sender as Button).DataContext);
+			if (idx > 0)
+				_timelines.Move (idx, idx - 1);
+		}
+
+		private void TimeLineMoveRightButton_Click (object sender, RoutedEventArgs e)
+		{
+			if (_timelines.Count <= 1)
+				return;
+			int idx = _timelines.IndexOf ((sender as Button).DataContext);
+			if (idx >= 0 && idx < _timelines.Count - 1)
+				_timelines.Move (idx, idx + 1);
 		}
 	}
 
