@@ -58,7 +58,10 @@ namespace TwitterStreaming
 				account.Credential = new NetworkCredential (lastUserName, lastPassword);
 				try {
 					account.UpdateOAuthAccessToken ();
+					account.TwitterClient.UpdateFriends ();
 					list.Add (account);
+					if (win.useFollowStreaming.IsChecked.HasValue && win.useFollowStreaming.IsChecked.Value)
+						account.StreamingClient = new StreamingClient (account, account.TwitterClient.Friends);
 					userNames.Add (lastUserName);
 					lastUserName = null;
 					lastPassword = null;
@@ -90,7 +93,7 @@ namespace TwitterStreaming
 				TwitterTimeLine tl = win.SelectedAccountTimeline;
 				info = new TimelineInfo (username + "'s " + (tl == account.HomeTimeline ? "home" : tl == account.Mentions ? "mentions" : "dm"), tl);
 			} else if (win.IsCheckedNewSearch && win.SearchKeyword.Length > 0) {
-				SearchStatuses search = new SearchStatuses (account, win.SearchKeyword);
+				SearchStatuses search = new SearchStatuses (account, win.SearchKeyword, win.IsUseStreamingForSearch);
 				_mgr.Searches.Add (search);
 				info = new TimelineInfo ("Search \"" + search.Keyword + "\"", search.Statuses);
 			} else if (win.IsCheckedNewTab && win.NewTabTitle.Length > 0) {

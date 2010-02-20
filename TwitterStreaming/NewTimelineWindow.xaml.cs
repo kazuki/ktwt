@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -47,6 +48,10 @@ namespace TwitterStreaming
 
 		public bool IsCheckedNewTab {
 			get { return chk3.IsChecked.HasValue && chk3.IsChecked.Value; }
+		}
+
+		public bool IsUseStreamingForSearch {
+			get { return searchStreaming.IsChecked.HasValue && searchStreaming.IsChecked.Value; }
 		}
 
 		TwitterAccount GetSelectedAccount (ComboBox box)
@@ -130,7 +135,7 @@ namespace TwitterStreaming
 					isValid = (SelectedAccountTimeline != null);
 				} else if (IsCheckedNewSearch) {
 					isValid = (SelectedAccount != null);
-					isValid = (SearchKeyword.Length > 0);
+					isValid &= (SearchKeyword.Length > 0);
 				} else if (IsCheckedNewTab) {
 					isValid = (NewTabTitle.Length > 0);
 				} else {
@@ -140,6 +145,20 @@ namespace TwitterStreaming
 				isValid = false;
 			}
 			AddButton.IsEnabled = isValid;
+		}
+
+		private void searchStreaming_Checked (object sender, RoutedEventArgs e)
+		{
+			if (IsUseStreamingForSearch) {
+				List<TwitterAccount> list = new List<TwitterAccount> ();
+				for (int i = 0; i < _mgr.Accounts.Length; i ++)
+					if (_mgr.Accounts[i].StreamingClient == null)
+						list.Add (_mgr.Accounts[i]);
+				searchAccount.ItemsSource = list.ToArray ();
+			} else {
+				searchAccount.ItemsSource = _mgr.Accounts;
+			}
+			Validate ();
 		}
 	}
 }

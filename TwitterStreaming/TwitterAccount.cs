@@ -32,6 +32,7 @@ namespace TwitterStreaming
 		TwitterTimeLine _home = new TwitterTimeLine ();
 		TwitterTimeLine _mentions = new TwitterTimeLine ();
 		TwitterTimeLine _dms = new TwitterTimeLine ();
+		StreamingClient _streamingClient = null;
 		Dispatcher _dispatcher;
 
 		ulong? _home_since_id = null, _mentions_since_id = null, _dms_since_id = null;
@@ -59,6 +60,7 @@ namespace TwitterStreaming
 				_oauthClient.UpdateAccessToken ();
 			}
 			_credential = (OAuthPasswordCache)_oauthClient.Credentials;
+			ScreenName = ((OAuthPasswordCache)_credential).UserName;
 		}
 
 		public void UpdateTimeLines ()
@@ -107,6 +109,31 @@ namespace TwitterStreaming
 		public RestUsage RestHome { get; private set; }
 		public RestUsage RestMentions { get; private set; }
 		public RestUsage RestDirectMessages { get; private set; }
+		public string ScreenName { get; private set; }
+		public StreamingClient StreamingClient {
+			get { return _streamingClient; }
+			set {
+				if (_streamingClient == value)
+					return;
+				if (_streamingClient != null)
+					_streamingClient.Dispose ();
+				_streamingClient = value;
+				if (_streamingClient == null)
+					return;
+				if (_streamingClient.IsFollowMode)
+					value.StatusArrived += new EventHandler<StatusArrivedEventArgs> (Streaming_StatusArrived);
+			}
+		}
+
+		void Streaming_StatusArrived (object sender, StatusArrivedEventArgs e)
+		{
+			StreamingClient c = sender as StreamingClient;
+			_dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
+				_home.Add (e.Status);
+				if (ScreenName.Equals (e.Status.InReplyToScreenName) || e.Status.Text.Contains ("@" + ScreenName))
+					_mentions.Add (e.Status);
+			}));
+		}
 
 		public TwitterTimeLine HomeTimeline {
 			get { return _home; }

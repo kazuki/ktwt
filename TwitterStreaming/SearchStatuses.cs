@@ -20,22 +20,37 @@ using ktwt.Twitter;
 
 namespace TwitterStreaming
 {
-	public class SearchStatuses : IUpdateChecker
+	public class SearchStatuses : IUpdateChecker, IDisposable
 	{
 		TwitterTimeLine _timeline = new TwitterTimeLine ();
+		StreamingClient _streaming = null;
 		ulong? _since_id = null;
 		delegate void EmptyDelegate ();
 
-		public SearchStatuses (TwitterAccount account, string keyword) : base ()
+		public SearchStatuses (TwitterAccount account, string keyword, bool useStreaming) : base ()
 		{
 			Account = account;
 			Keyword = keyword;
+
+			if (useStreaming) {
+				_streaming = new StreamingClient (account, keyword);
+				account.StreamingClient = _streaming;
+				_streaming.StatusArrived += new EventHandler<StatusArrivedEventArgs> (Streaming_StatusArrived);
+			}
 
 			// default
 			IsEnabled = true;
 			Interval = TimeSpan.FromSeconds (180);
 			LastExecTime = DateTime.MinValue;
 			Count = 100;
+		}
+
+		void Streaming_StatusArrived (object sender, StatusArrivedEventArgs e)
+		{
+			StreamingClient c = sender as StreamingClient;
+			Account.Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
+				_timeline.Add (e.Status);
+			}));
 		}
 
 		public TwitterAccount Account { get; private set; }
@@ -65,7 +80,18 @@ namespace TwitterStreaming
 						for (int i = 0; i < statuses.Length; i++)
 							_timeline.Add (statuses[i]);
 					}));
-				} catch { }
+				} catch {}
+			}
+		}
+
+		public void Dispose ()
+		{
+			StreamingClient streaming = _streaming;
+			if (streaming != null) {
+				if (Account.StreamingClient == streaming)
+					Account.StreamingClient = null;
+				streaming.Dispose ();
+				_streaming = null;
 			}
 		}
 	}

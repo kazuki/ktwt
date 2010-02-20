@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System;
+using System.Net;
+
 namespace ktwt.OAuth
 {
 	public class OAuthPasswordCache : OAuthCredentialCache
@@ -28,5 +31,10 @@ namespace ktwt.OAuth
 
 		public string UserName { get; private set; }
 		public string Password { get; private set; }
+
+		public override NetworkCredential GetCredential (Uri uri, string authType)
+		{
+			return new NetworkCredential (UserName, Password).GetCredential (uri, authType);
+		}
 	}
 }

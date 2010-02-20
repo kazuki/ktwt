@@ -31,7 +31,7 @@ namespace ktwt.OAuth
 		public string AccessToken { get; private set; }
 		public string AccessSecret { get; private set; }
 
-		public NetworkCredential GetCredential (Uri uri, string authType)
+		public virtual NetworkCredential GetCredential (Uri uri, string authType)
 		{
 			throw new NotSupportedException ();
 		}

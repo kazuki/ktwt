@@ -41,6 +41,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition />
                     <RowDefinition />
+                    <RowDefinition />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -49,7 +50,8 @@
                 <TextBlock Grid.Column="0" Grid.Row="0" Margin="10 0 5 0" VerticalAlignment="Center">キーワード:</TextBlock>
                 <TextBox Grid.Column="1" Grid.Row="0" x:Name="searchText" TextChanged="TextBox_TextChanged" />
                 <TextBlock Grid.Column="0" Grid.Row="1" Margin="10 0 5 0" VerticalAlignment="Center">アカウント:</TextBlock>
-                <ComboBox Grid.Column="1" Grid.Row="1" x:Name="searchAccount" SelectionChanged="ComboBox_SelectionChanged" ItemsSource="{Binding Path=ItemsSource, ElementName=tlAccount}" ItemTemplate="{Binding Path=ItemTemplate, ElementName=tlAccount}" />
+                <ComboBox Grid.Column="1" Grid.Row="1" x:Name="searchAccount" SelectionChanged="ComboBox_SelectionChanged" ItemsSource="{Binding Path=Accounts}" ItemTemplate="{Binding Path=ItemTemplate, ElementName=tlAccount}" />
+                <CheckBox Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="2" x:Name="searchStreaming" Checked="searchStreaming_Checked" Unchecked="searchStreaming_Checked" Margin="0 4 0 4">Streaming API を利用する</CheckBox>
             </Grid>
         </GroupBox>
         <GroupBox Visibility="Collapsed">
