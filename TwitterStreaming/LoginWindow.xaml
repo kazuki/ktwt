@@ -11,23 +11,14 @@
             <RowDefinition />
             <RowDefinition />
             <RowDefinition />
-            <RowDefinition />
-            <RowDefinition />
         </Grid.RowDefinitions>
         <Label Grid.Column="0" Grid.Row="0">Name:</Label>
         <Label Grid.Column="0" Grid.Row="1">Password:</Label>
-        <CheckBox Grid.Column="0" Grid.Row="2" VerticalAlignment="Center" x:Name="chkTrack">UseTrack:</CheckBox>
         <TextBox Grid.Column="1" Grid.Row="0" Width="200" x:Name="txtUsername" VerticalAlignment="Center" />
         <PasswordBox Grid.Column="1" Grid.Row="1" Width="200" x:Name="txtPassword" VerticalAlignment="Center" />
-        <TextBox Grid.Column="1" Grid.Row="2" Width="200" x:Name="txtTrackWords" VerticalAlignment="Center" />
-        <CheckBox Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="3" VerticalAlignment="Center" x:Name="useFollowStreaming" Margin="0 4 0 4">Homeタイムラインの取得にStreaming APIを利用する</CheckBox>
-        <Grid Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="4" >
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition />
-                <ColumnDefinition />
-            </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" Click="LoginButton_Click">ログイン</Button>
-            <Button Grid.Column="1" Click="CancelButton_Click">キャンセル</Button>
-        </Grid>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="2">
+            <Button Click="LoginButton_Click" Margin="2" Padding="3">ログイン</Button>
+            <Button Click="CancelButton_Click" Margin="2" Padding="3">キャンセル</Button>
+        </StackPanel>
     </Grid>
 </Window>

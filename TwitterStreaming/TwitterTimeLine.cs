@@ -16,45 +16,50 @@
  */
 
 using System;
-using System.Windows;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using ktwt.Twitter;
 
 namespace TwitterStreaming
 {
-	public partial class LoginWindow : Window
+	public class TwitterTimeLine : ObservableCollection<Status>
 	{
-		public LoginWindow ()
+		HashSet<ulong> _ids = new HashSet<ulong> ();
+
+		public new void Add (Status s)
 		{
-			InitializeComponent ();
-			Initialized += new EventHandler (LoginWindow_Initialized);
+			if (!_ids.Add (s.ID))
+				return;
+
+			for (int i = 0; i < Count; i ++) {
+				if (s.ID > this[i].ID) {
+					InsertItem (i, s);
+					return;
+				}
+			}
+			base.Add (s);
 		}
 
-		void LoginWindow_Initialized (object sender, EventArgs e)
+		public new void Insert (int idx, Status s)
 		{
-			txtUsername.SelectAll ();
-			txtPassword.SelectAll ();
-			txtUsername.Focus ();
+			throw new NotSupportedException ();
 		}
 
-		private void LoginButton_Click (object sender, RoutedEventArgs e)
+		protected override void ClearItems ()
 		{
-			DialogResult = true;
-			Close ();
+			base.ClearItems ();
+			_ids.Clear ();
 		}
 
-		private void CancelButton_Click (object sender, RoutedEventArgs e)
+		protected override void RemoveItem (int index)
 		{
-			DialogResult = false;
-			Close ();
+			_ids.Remove (this[index].ID);
+			base.RemoveItem (index);
 		}
 
-		public string UserName {
-			get { return txtUsername.Text; }
-			set { txtUsername.Text = value;}
-		}
-
-		public string Password {
-			get { return txtPassword.Password; }
-			set { txtPassword.Password = value; }
+		protected override void SetItem (int index, Status item)
+		{
+			throw new NotSupportedException ();
 		}
 	}
 }

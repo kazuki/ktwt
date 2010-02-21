@@ -59,9 +59,9 @@
             <RowDefinition />
         </Grid.RowDefinitions>
         <Menu Grid.Row="0" VerticalAlignment="Top">
-            <MenuItem Header="ウィンドウ">
+            <MenuItem Header="メニュー">
+                <MenuItem Header="設定" Click="MenuItem_ShowPreference_Click" />
                 <MenuItem Header="タイムラインを追加" Click="MenuItem_AddNewTimeline_Click" />
-                <!--<MenuItem Header="タブを追加" Click="MenuItem_AddNewTab_Click" />-->
             </MenuItem>
         </Menu>
         <Grid Grid.Row="1">

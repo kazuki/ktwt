@@ -18,9 +18,11 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Net;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using ktwt.OAuth;
 
 namespace TwitterStreaming
 {
@@ -46,7 +48,26 @@ namespace TwitterStreaming
 
 		private void Button_Click (object sender, RoutedEventArgs e)
 		{
-			_observableAccountList.Add (new TwitterAccount ());
+			LoginWindow win = new LoginWindow ();
+			bool? ret = win.ShowDialog ();
+			if (!ret.HasValue || !ret.Value)
+				return;
+			TwitterAccount account = new TwitterAccount ();
+			for (int i = 0; i < _observableAccountList.Count; i ++) {
+				ICredentials c = _observableAccountList[i].Credential;
+				string userName = (c is NetworkCredential ? (c as NetworkCredential).UserName : (c as OAuthPasswordCache).UserName);
+				if (userName.Equals (win.UserName)) {
+					MessageBox.Show ("入力されたユーザ名はすでにアカウントとして登録されています");
+					return;
+				}
+			}
+			account.Credential = new NetworkCredential (win.UserName, win.Password);
+			try {
+				account.UpdateOAuthAccessToken ();
+				_observableAccountList.Add (account);
+			} catch {
+				MessageBox.Show ("認証に失敗しました");
+			}
 		}
 
 		private void DeleteButton_Click (object sender, RoutedEventArgs e)
