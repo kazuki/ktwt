@@ -42,8 +42,15 @@ namespace TwitterStreaming
 
 		public void UpdateAccounts (TwitterAccount[] accounts)
 		{
+			HashSet<TwitterAccount> oldSet;
 			lock (_lock) {
+				 oldSet = new HashSet<TwitterAccount> (_accounts);
 				_accounts = accounts;
+			}
+			oldSet.ExceptWith (accounts);
+			foreach (TwitterAccount account in oldSet) {
+				if (account.StreamingClient != null)
+					account.StreamingClient.Dispose ();
 			}
 		}
 
@@ -55,6 +62,13 @@ namespace TwitterStreaming
 		{
 			lock (_searches) {
 				_searches.Add (search);
+			}
+		}
+
+		public SearchStatuses[] GetSearches ()
+		{
+			lock (_searches) {
+				return _searches.ToArray ();
 			}
 		}
 
@@ -147,7 +161,7 @@ namespace TwitterStreaming
 			TwitterAccount account = new TwitterAccount ();
 			account.Credential = credential;
 
-			JsonObject streaming = obj.Value["streaming"] as JsonObject;
+			/*JsonObject streaming = obj.Value["streaming"] as JsonObject;
 			if (streaming != null) {
 				switch ((streaming.Value["mode"] as JsonString).Value) {
 					case "follow":
@@ -155,11 +169,11 @@ namespace TwitterStreaming
 						account.TwitterClient.UpdateFriends ();
 						account.StreamingClient = new StreamingClient (account, account.TwitterClient.Friends);
 						break;
-					/*case "track":
+					case "track":
 						account.StreamingClient = new StreamingClient (account, (streaming.Value["keywords"] as JsonString).Value);
-						break;*/
+						break;
 				}
-			}
+			}*/
 			return account;
 		}
 
@@ -183,7 +197,7 @@ namespace TwitterStreaming
 				writer.WriteKey ("secret");
 				writer.WriteString (pc.AccessSecret);
 			}
-			writer.WriteKey ("streaming");
+			/*writer.WriteKey ("streaming");
 			if (account.StreamingClient == null) {
 				writer.WriteNull ();
 			} else {
@@ -191,13 +205,13 @@ namespace TwitterStreaming
 				writer.WriteKey ("mode");
 				if (account.StreamingClient.IsFollowMode) {
 					writer.WriteString ("follow");
-				} /*else if (account.StreamingClient.IsTrackMode) {
+				} else if (account.StreamingClient.IsTrackMode) {
 					writer.WriteString ("track");
 					writer.WriteKey ("keywords");
 					writer.WriteString (account.StreamingClient.SearchKeywords);
-				}*/
+				}
 				writer.WriteEndObject ();
-			}
+			}*/
 			writer.WriteEndObject ();
 		}
 		#endregion

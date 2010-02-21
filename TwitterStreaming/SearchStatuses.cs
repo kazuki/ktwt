@@ -20,23 +20,16 @@ using ktwt.Twitter;
 
 namespace TwitterStreaming
 {
-	public class SearchStatuses : IUpdateChecker, IDisposable
+	public class SearchStatuses : IUpdateChecker, IDisposable, IStreamingHandler
 	{
 		TwitterTimeLine _timeline = new TwitterTimeLine ();
-		StreamingClient _streaming = null;
 		ulong? _since_id = null;
 		delegate void EmptyDelegate ();
 
-		public SearchStatuses (TwitterAccount account, string keyword, bool useStreaming) : base ()
+		public SearchStatuses (TwitterAccount account, string keyword) : base ()
 		{
 			Account = account;
 			Keyword = keyword;
-
-			if (useStreaming) {
-				_streaming = new StreamingClient (account, keyword);
-				account.StreamingClient = _streaming;
-				_streaming.StatusArrived += new EventHandler<StatusArrivedEventArgs> (Streaming_StatusArrived);
-			}
 
 			// default
 			IsEnabled = true;
@@ -45,7 +38,7 @@ namespace TwitterStreaming
 			Count = 100;
 		}
 
-		void Streaming_StatusArrived (object sender, StatusArrivedEventArgs e)
+		void IStreamingHandler.Streaming_StatusArrived (object sender, StatusArrivedEventArgs e)
 		{
 			StreamingClient c = sender as StreamingClient;
 			Account.Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
@@ -68,6 +61,7 @@ namespace TwitterStreaming
 		public DateTime NextExecTime {
 			get { return LastExecTime + Interval; }
 		}
+		public StreamingClient StreamingClient { get; set; }
 
 		public void UpdateTimeLines ()
 		{
@@ -86,12 +80,9 @@ namespace TwitterStreaming
 
 		public void Dispose ()
 		{
-			StreamingClient streaming = _streaming;
-			if (streaming != null) {
-				if (Account.StreamingClient == streaming)
-					Account.StreamingClient = null;
-				streaming.Dispose ();
-				_streaming = null;
+			if (StreamingClient != null) {
+				StreamingClient.Dispose ();
+				StreamingClient = null;
 			}
 		}
 	}

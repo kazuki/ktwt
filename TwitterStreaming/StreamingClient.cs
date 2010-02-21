@@ -29,41 +29,48 @@ namespace TwitterStreaming
 	{
 		const int MaxFollowCount = 400;
 		static readonly Uri StreamingFilterUri = new Uri ("http://stream.twitter.com/1/statuses/filter.json");
-		public event EventHandler<StatusArrivedEventArgs> StatusArrived;
 		bool _active = true;
-		IStreamingState _currentState;
+		IStreamingState[] _currentStates;
 
-		StreamingClient (TwitterAccount account)
+		StreamingClient (TwitterAccount[] accounts, IStreamingHandler target)
 		{
-			Client = account.TwitterClient;
-			IsConnecting = false;
-			IsConnected = false;
-			IsTrackMode = false;
-			IsFollowMode = false;
+			Accounts = new TwitterAccount[accounts.Length];
+			Clients = new TwitterClient[accounts.Length];
+			for (int i = 0; i < accounts.Length; i ++) {
+				Accounts[i] = accounts[i];
+				Accounts[i].StreamingClient = this;
+				Clients[i] = accounts[i].TwitterClient;
+			}
 			SearchKeywords = string.Empty;
+			_currentStates = new IStreamingState[accounts.Length];
+			Target = target;
 		}
 
-		public StreamingClient (TwitterAccount account, User[] friends) : this (account)
+		public StreamingClient (TwitterAccount[] accounts, User[] friends, IStreamingHandler target) : this (accounts, target)
 		{
-			StringBuilder sb = new StringBuilder ();
-			for (int i = 0; i < Math.Min (MaxFollowCount, friends.Length); i ++) {
-				sb.Append (friends[i].ID);
-				sb.Append (',');
+			string[] postDatas = new string[accounts.Length];
+			for (int j = 0, p = 0; j < accounts.Length; j ++, p = Math.Min (friends.Length, p + MaxFollowCount) % friends.Length) {
+				StringBuilder sb = new StringBuilder ();
+				for (int i = 0; i < Math.Min (MaxFollowCount, friends.Length - p); i ++) {
+					sb.Append (friends[i + p].ID);
+					sb.Append (',');
+				}
+				if (sb.Length > 0)
+					sb.Remove (sb.Length - 1, 1);
+				postDatas[j] = "follow=" + OAuthBase.UrlEncode (sb.ToString ());
 			}
-			if (sb.Length > 0)
-				sb.Remove (sb.Length - 1, 1);
-
 			StreamingUri = StreamingFilterUri;
-			StreamingPostData = "follow=" + OAuthBase.UrlEncode (sb.ToString ());
-			IsFollowMode = true;
+			StreamingPostData = postDatas;
 			StreamingStart ();
 		}
 
-		public StreamingClient (TwitterAccount account, string searchKeywords) : this (account)
+		public StreamingClient (TwitterAccount[] accounts, string searchKeywords, IStreamingHandler target) : this (accounts, target)
 		{
 			StreamingUri = StreamingFilterUri;
-			StreamingPostData = "track=" + OAuthBase.UrlEncode (searchKeywords);
-			IsTrackMode = true;
+			string postData = "track=" + OAuthBase.UrlEncode (searchKeywords);
+			StreamingPostData = new string[accounts.Length];
+			for (int i = 0; i < accounts.Length; i ++)
+				StreamingPostData[i] = postData;
 			SearchKeywords = searchKeywords;
 			StreamingStart ();
 		}
@@ -99,13 +106,20 @@ namespace TwitterStreaming
 
 		void StreamingStart ()
 		{
-			Thread thrd = new Thread (StreamingThread);
-			thrd.IsBackground = true;
-			thrd.Start ();
+			for (int i = 0; i < _currentStates.Length; i ++) {
+				Thread thrd = new Thread (StreamingThread);
+				thrd.IsBackground = true;
+				thrd.Start (i);
+			}
 		}
 
-		void StreamingThread ()
+		void StreamingThread (object o)
 		{
+			int idx = (int)o;
+			bool IsConnecting = false, IsConnected = false;
+			int ReconnectCount = 0;
+			DateTime ReconnectTime = DateTime.MinValue;
+
 			string line = null;
 			TimeSpan maxWait = TimeSpan.FromMinutes (1);
 			TimeSpan startWait = TimeSpan.FromSeconds (2.5);
@@ -116,12 +130,12 @@ namespace TwitterStreaming
 			while (_active) {
 				try {
 					IsConnecting = true;
-					using (IStreamingState state = Client.StartStreaming (StreamingUri, "POST", StreamingPostData)) {
-						_currentState = state;
+					using (IStreamingState state = Clients[idx].StartStreaming (StreamingUri, "POST", StreamingPostData[idx])) {
+						_currentStates[idx] = state;
 						ReconnectCount = 0;
 						IsConnecting = false;
 						IsConnected = true;
-						while (true) {
+						while (_active) {
 							try {
 								line = ReadLineWithTimeout (state.Stream, ref buffer, ref filled, timeout);
 								if (line == null) break;
@@ -130,19 +144,18 @@ namespace TwitterStreaming
 								JsonObject jsonRootObj = (JsonObject)jsonReader.Read ();
 								if (jsonRootObj.Value.ContainsKey ("delete") || jsonRootObj.Value.ContainsKey ("limit"))
 									continue;
-								if (StatusArrived != null) {
-									try {
-										StatusArrived (this, new StatusArrivedEventArgs (JsonDeserializer.Deserialize<Status> (jsonRootObj)));
-									} catch {}
-								}
+								try {
+									Target.Streaming_StatusArrived (this, new StatusArrivedEventArgs (JsonDeserializer.Deserialize<Status> (jsonRootObj)));
+								} catch {}
 							} catch {
 								break;
 							}
 						}
 					}
 				} catch {}
+				if (!_active) break;
 
-				_currentState = null;
+				_currentStates[idx] = null;
 				IsConnected = false;
 				IsConnecting = false;
 
@@ -165,26 +178,30 @@ namespace TwitterStreaming
 				_active = false;
 			}
 
-			StatusArrived = null;
-			if (_currentState != null) {
-				ThreadPool.QueueUserWorkItem (delegate (object o) {
-					try {
-						(o as IDisposable).Dispose ();
-					} catch {}
-				}, _currentState);
+			Target = null;
+			for (int i = 0; i < _currentStates.Length; i ++) {
+				if (_currentStates[i] != null) {
+					ThreadPool.QueueUserWorkItem (delegate (object o) {
+						try {
+							(o as IDisposable).Dispose ();
+						} catch {}
+					}, _currentStates[i]);
+				}
+				if (Accounts[i].StreamingClient == this)
+					Accounts[i].StreamingClient = null;
 			}
 		}
 
-		public TwitterClient Client { get; private set; }
-		public bool IsConnected { get; private set; }
-		public bool IsConnecting { get; private set; }
-		public DateTime ReconnectTime { get; private set; }
-		public int ReconnectCount { get; private set; }
+		public TwitterAccount[] Accounts { get; private set; }
+		TwitterClient[] Clients { get; set; }
+		//public bool IsConnected { get; private set; }
+		//public bool IsConnecting { get; private set; }
+		//public DateTime ReconnectTime { get; private set; }
+		//public int ReconnectCount { get; private set; }
 		public Uri StreamingUri { get; private set; }
-		public string StreamingPostData { get; private set; }
+		public string[] StreamingPostData { get; private set; }
 		public string SearchKeywords { get; private set; }
-		public bool IsFollowMode { get; private set; }
-		public bool IsTrackMode { get; private set; }
+		public IStreamingHandler Target { get; private set; }
 	}
 
 	public class StatusArrivedEventArgs : EventArgs
@@ -195,5 +212,10 @@ namespace TwitterStreaming
 		}
 
 		public Status Status { get; private set; }
+	}
+
+	public interface IStreamingHandler
+	{
+		void Streaming_StatusArrived (object sender, StatusArrivedEventArgs e);
 	}
 }

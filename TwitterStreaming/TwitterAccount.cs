@@ -23,7 +23,7 @@ using ktwt.Twitter;
 
 namespace TwitterStreaming
 {
-	public class TwitterAccount : IUpdateChecker
+	public class TwitterAccount : IUpdateChecker, IStreamingHandler
 	{
 		OAuthClient _oauthClient;
 		TwitterClient _client;
@@ -101,6 +101,7 @@ namespace TwitterStreaming
 				}
 				_oauthClient.Credentials = value;
 				_credential = value;
+				ScreenName = ((OAuthPasswordCache)value).UserName;
 			}
 		}
 		internal Dispatcher Dispatcher {
@@ -120,12 +121,10 @@ namespace TwitterStreaming
 				_streamingClient = value;
 				if (_streamingClient == null)
 					return;
-				if (_streamingClient.IsFollowMode)
-					value.StatusArrived += new EventHandler<StatusArrivedEventArgs> (Streaming_StatusArrived);
 			}
 		}
 
-		void Streaming_StatusArrived (object sender, StatusArrivedEventArgs e)
+		void IStreamingHandler.Streaming_StatusArrived (object sender, StatusArrivedEventArgs e)
 		{
 			StreamingClient c = sender as StreamingClient;
 			_dispatcher.BeginInvoke (new EmptyDelegate (delegate () {

@@ -65,7 +65,9 @@ namespace TwitterStreaming
 				TwitterTimeLine tl = win.SelectedAccountTimeline;
 				info = new TimelineInfo (username + "'s " + (tl == account.HomeTimeline ? "home" : tl == account.Mentions ? "mentions" : "dm"), tl);
 			} else if (win.IsCheckedNewSearch && win.SearchKeyword.Length > 0) {
-				SearchStatuses search = new SearchStatuses (account, win.SearchKeyword, win.IsUseStreamingForSearch);
+				SearchStatuses search = new SearchStatuses (account, win.SearchKeyword);
+				if (win.IsUseStreamingForSearch)
+					search.StreamingClient = new StreamingClient (new TwitterAccount[] {account}, search.Keyword, search);
 				_mgr.AddSearchInfo (search);
 				info = new TimelineInfo ("Search \"" + search.Keyword + "\"", search.Statuses);
 			} else if (win.IsCheckedNewTab && win.NewTabTitle.Length > 0) {
@@ -77,10 +79,40 @@ namespace TwitterStreaming
 
 		private void MenuItem_ShowPreference_Click (object sender, RoutedEventArgs e)
 		{
-			PreferenceWindow win = new PreferenceWindow (_mgr.Accounts);
+			PreferenceWindow win = new PreferenceWindow (_mgr);
 			win.ShowDialog ();
-			_mgr.UpdateAccounts (win.Accounts);
-			postAccount.ItemsSource = _mgr.Accounts;
+			if (win.IsAccountArrayChanged) {
+				_mgr.UpdateAccounts (win.Accounts);
+				postAccount.ItemsSource = _mgr.Accounts;
+			}
+
+			if (win.IsStreamingTargetsChanged) {
+				// Re-construct Streaming Connections
+				for (int i = 0; i < _mgr.Accounts.Length; i ++) {
+					if (_mgr.Accounts[i].StreamingClient != null)
+						_mgr.Accounts[i].StreamingClient.Dispose ();
+				}
+				Dictionary<IStreamingHandler, List<TwitterAccount>> dic = new Dictionary<IStreamingHandler,List<TwitterAccount>> ();
+				for (int i = 0; i < _mgr.Accounts.Length; i ++) {
+					IStreamingHandler h = win.StreamingTargets[i];
+					if (h == null) continue;
+					List<TwitterAccount> list;
+					if (!dic.TryGetValue (h, out list)) {
+						list = new List<TwitterAccount> ();
+						dic.Add (h, list);
+					}
+					list.Add (_mgr.Accounts[i]);
+				}
+				foreach (KeyValuePair<IStreamingHandler, List<TwitterAccount>> pair in dic) {
+					TwitterAccount homeTarget = pair.Key as TwitterAccount;
+					SearchStatuses searchTarget = pair.Key as SearchStatuses;
+					if (homeTarget != null)
+						new StreamingClient (pair.Value.ToArray (), homeTarget.TwitterClient.Friends, homeTarget);
+					else if (searchTarget != null)
+						searchTarget.StreamingClient = new StreamingClient (pair.Value.ToArray (), searchTarget.Keyword, searchTarget);
+				}
+			}
+
 			_mgr.Save ();
 		}
 

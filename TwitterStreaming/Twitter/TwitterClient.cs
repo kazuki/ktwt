@@ -58,7 +58,7 @@ namespace ktwt.Twitter
 		int _apiLimitMax = -1, _apiLimitRemaining = -1;
 		DateTime _apiLimitResetTime = DateTime.MaxValue;
 
-		User[] _friends = new User[0], _followers = new User[0];
+		User[] _friends = null, _followers = new User[0];
 
 		public event EventHandler ApiLimitChanged;
 
@@ -163,7 +163,11 @@ namespace ktwt.Twitter
 		}
 
 		public User[] Friends {
-			get { return _friends; }
+			get {
+				if (_friends == null)
+					UpdateFriends ();
+				return _friends;
+			}
 		}
 		#endregion
 
