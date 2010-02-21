@@ -44,9 +44,7 @@ namespace TwitterStreaming
 			InitializeComponent ();
 			itemsControl.DataContext = this;
 			_mgr = new TwitterAccountManager ();
-			try {
-				_mgr.Load ();
-			} catch {}
+			_mgr.Load ();
 
 			postAccount.ItemsSource = _mgr.Accounts;
 			if (_mgr.Accounts.Length > 0)

@@ -96,15 +96,22 @@ namespace TwitterStreaming
 		#region Load / Save
 		static string ConfigFilePath = Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.ApplicationData), "ktwt.config.json");
 
-		public void Load ()
+		public bool Load ()
 		{
-			JsonObject root = (JsonObject)new JsonValueReader (new StreamReader (ConfigFilePath, System.Text.Encoding.UTF8)).Read ();
-			if (root.Value.ContainsKey ("accounts")) {
-				JsonArray array = (JsonArray)root.Value["accounts"];
-				TwitterAccount[] accounts = new TwitterAccount[array.Length];
-				for (int i = 0; i < array.Length; i++)
-					accounts[i] = LoadAccount ((JsonObject)array[i]);
-				UpdateAccounts (accounts);
+			if (!File.Exists (ConfigFilePath))
+				return false;
+			try {
+				JsonObject root = (JsonObject)new JsonValueReader (new StreamReader (ConfigFilePath, System.Text.Encoding.UTF8)).Read ();
+				if (root.Value.ContainsKey ("accounts")) {
+					JsonArray array = (JsonArray)root.Value["accounts"];
+					TwitterAccount[] accounts = new TwitterAccount[array.Length];
+					for (int i = 0; i < array.Length; i++)
+						accounts[i] = LoadAccount ((JsonObject)array[i]);
+					UpdateAccounts (accounts);
+				}
+				return true;
+			} catch {
+				return false;
 			}
 		}
 
