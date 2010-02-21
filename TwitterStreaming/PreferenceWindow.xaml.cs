@@ -50,11 +50,10 @@ namespace TwitterStreaming
 			Resources.Add ("targetTemplateSelector", selector);
 
 			_observableAccountList = new ObservableCollection<TwitterAccount> (mgr.Accounts);
-			SearchStatuses[] searches = mgr.GetSearches ();
 			List<object> list = new List<object> ();
 			list.Add ("null");
 			for (int i = 0; i < mgr.Accounts.Length; i ++) list.Add (mgr.Accounts[i]);
-			for (int i = 0; i < searches.Length; i ++) list.Add (searches[i]);
+			for (int i = 0; i < mgr.Searches.Length; i ++) list.Add (mgr.Searches[i]);
 			_targetList = list.ToArray ();
 			this.DataContext = _observableAccountList;
 			this.Closed += delegate (object sender, EventArgs e) {

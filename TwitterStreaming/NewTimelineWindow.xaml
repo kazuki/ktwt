@@ -54,7 +54,7 @@
                 <CheckBox Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="2" x:Name="searchStreaming" Checked="searchStreaming_Checked" Unchecked="searchStreaming_Checked" Margin="0 4 0 4">Streaming API を利用する</CheckBox>
             </Grid>
         </GroupBox>
-        <GroupBox Visibility="Collapsed">
+        <GroupBox>
             <GroupBox.Header>
                 <RadioButton GroupName="DataType" x:Name="chk2" Checked="RadioButton_Checked">既存の検索</RadioButton>
             </GroupBox.Header>
@@ -67,7 +67,14 @@
                     <ColumnDefinition />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Grid.Row="0" Margin="10 0 5 0" VerticalAlignment="Center">キーワード:</TextBlock>
-                <ComboBox Grid.Column="1" Grid.Row="0" SelectionChanged="ComboBox_SelectionChanged" />
+                <ComboBox Grid.Column="1" Grid.Row="0" SelectionChanged="ComboBox_SelectionChanged"
+                          ItemsSource="{Binding Path=Searches}" x:Name="existSearches">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Path=Keyword}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
             </Grid>
         </GroupBox>
         <GroupBox Visibility="Collapsed">

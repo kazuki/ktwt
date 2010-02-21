@@ -70,6 +70,8 @@ namespace TwitterStreaming
 					search.StreamingClient = new StreamingClient (new TwitterAccount[] {account}, search.Keyword, search);
 				_mgr.AddSearchInfo (search);
 				info = new TimelineInfo ("Search \"" + search.Keyword + "\"", search.Statuses);
+			} else if (win.IsCheckedExistedSearch && win.SelectedExistedSearch != null) {
+				info = new TimelineInfo ("Search \"" + win.SelectedExistedSearch.Keyword + "\"", win.SelectedExistedSearch.Statuses);
 			} else if (win.IsCheckedNewTab && win.NewTabTitle.Length > 0) {
 				info = new TabInfo (win.NewTabTitle);
 			}
@@ -86,32 +88,8 @@ namespace TwitterStreaming
 				postAccount.ItemsSource = _mgr.Accounts;
 			}
 
-			if (win.IsStreamingTargetsChanged) {
-				// Re-construct Streaming Connections
-				for (int i = 0; i < _mgr.Accounts.Length; i ++) {
-					if (_mgr.Accounts[i].StreamingClient != null)
-						_mgr.Accounts[i].StreamingClient.Dispose ();
-				}
-				Dictionary<IStreamingHandler, List<TwitterAccount>> dic = new Dictionary<IStreamingHandler,List<TwitterAccount>> ();
-				for (int i = 0; i < _mgr.Accounts.Length; i ++) {
-					IStreamingHandler h = win.StreamingTargets[i];
-					if (h == null) continue;
-					List<TwitterAccount> list;
-					if (!dic.TryGetValue (h, out list)) {
-						list = new List<TwitterAccount> ();
-						dic.Add (h, list);
-					}
-					list.Add (_mgr.Accounts[i]);
-				}
-				foreach (KeyValuePair<IStreamingHandler, List<TwitterAccount>> pair in dic) {
-					TwitterAccount homeTarget = pair.Key as TwitterAccount;
-					SearchStatuses searchTarget = pair.Key as SearchStatuses;
-					if (homeTarget != null)
-						new StreamingClient (pair.Value.ToArray (), homeTarget.TwitterClient.Friends, homeTarget);
-					else if (searchTarget != null)
-						searchTarget.StreamingClient = new StreamingClient (pair.Value.ToArray (), searchTarget.Keyword, searchTarget);
-				}
-			}
+			if (win.IsStreamingTargetsChanged)
+				_mgr.ReconstructAllStreaming (win.StreamingTargets);
 
 			_mgr.Save ();
 		}
@@ -120,12 +98,25 @@ namespace TwitterStreaming
 			get { return _timelines; }
 		}
 
+		bool UseTimeline (TwitterTimeLine tl)
+		{
+			for (int i = 0; i < _timelines.Count; i ++) {
+				TimelineInfo info = _timelines[i] as TimelineInfo;
+				if (info != null) {
+					if (info.Statuses == tl)
+						return true;
+				}
+			}
+			return false;
+		}
+
 		private void TimeLineCloseButton_Click (object sender, RoutedEventArgs e)
 		{
 			TimelineInfo info = (sender as Button).DataContext as TimelineInfo;
 			if (MessageBox.Show (info.Title + " を閉じてもよろしいですか?", string.Empty, MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
 				_timelines.Remove (info);
-				_mgr.CloseTimeLine (info.Statuses);
+				if (!UseTimeline (info.Statuses))
+					_mgr.CloseTimeLine (info.Statuses);
 			}
 		}
 

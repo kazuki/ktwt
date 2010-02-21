@@ -27,9 +27,8 @@ namespace TwitterStreaming
 {
 	public class TwitterAccountManager
 	{
-		object _lock = new object ();
 		TwitterAccount[] _accounts;
-		List<SearchStatuses> _searches = new List<SearchStatuses> ();
+		SearchStatuses[] _searches = new SearchStatuses[0];
 		Thread _restThread;
 
 		public TwitterAccountManager ()
@@ -42,11 +41,8 @@ namespace TwitterStreaming
 
 		public void UpdateAccounts (TwitterAccount[] accounts)
 		{
-			HashSet<TwitterAccount> oldSet;
-			lock (_lock) {
-				 oldSet = new HashSet<TwitterAccount> (_accounts);
-				_accounts = accounts;
-			}
+			HashSet<TwitterAccount> oldSet = new HashSet<TwitterAccount> (_accounts);
+			_accounts = accounts;
 			oldSet.ExceptWith (accounts);
 			foreach (TwitterAccount account in oldSet) {
 				if (account.StreamingClient != null)
@@ -60,29 +56,26 @@ namespace TwitterStreaming
 
 		public void AddSearchInfo (SearchStatuses search)
 		{
-			lock (_searches) {
-				_searches.Add (search);
-			}
+			List<SearchStatuses> list = new List<SearchStatuses> (_searches);
+			list.Add (search);
+			_searches = list.ToArray ();
 		}
 
-		public SearchStatuses[] GetSearches ()
-		{
-			lock (_searches) {
-				return _searches.ToArray ();
-			}
+		public SearchStatuses[] Searches {
+			get { return _searches; }
 		}
 
 		public void CloseTimeLine (TwitterTimeLine timeline)
 		{
 			IDisposable disposeObj = null;
-			lock (_searches) {
-				for (int i = 0; i < _searches.Count; i ++)
-					if (_searches[i].Statuses == timeline) {
-						disposeObj = _searches[i];
-						_searches.RemoveAt (i);
-						break;
-					}
-			}
+			List<SearchStatuses> list = new List<SearchStatuses> (_searches);
+			for (int i = 0; i < list.Count; i++)
+				if (list[i].Statuses == timeline) {
+					disposeObj = list[i];
+					list.RemoveAt (i);
+					_searches = list.ToArray ();
+					break;
+				}
 			if (disposeObj != null)
 				disposeObj.Dispose ();
 		}
@@ -90,14 +83,8 @@ namespace TwitterStreaming
 		void RestThread ()
 		{
 			while (true) {
-				List<IUpdateChecker> list = new List<IUpdateChecker> ();
-				lock (_lock) {
-					list.AddRange (_accounts);
-				}
-				lock (_searches) {
-					for (int i = 0; i < _searches.Count; i ++)
-						list.Add (_searches[i]);
-				}
+				List<IUpdateChecker> list = new List<IUpdateChecker> (_accounts);
+				list.AddRange (_searches);
 				for (int i = 0; i < list.Count; i++) {
 					try {
 						list[i].UpdateTimeLines ();
@@ -106,6 +93,44 @@ namespace TwitterStreaming
 				Thread.Sleep (1000);
 			}
 		}
+
+		#region Streaming Helpers
+		public void ReconstructAllStreaming (IStreamingHandler[] targets)
+		{
+			if (Accounts.Length != targets.Length)
+				throw new ArgumentException ();
+
+			CloseAllStreaming ();
+
+			Dictionary<IStreamingHandler, List<TwitterAccount>> dic = new Dictionary<IStreamingHandler, List<TwitterAccount>> ();
+			for (int i = 0; i < Accounts.Length; i++) {
+				IStreamingHandler h = targets[i];
+				if (h == null)
+					continue;
+				List<TwitterAccount> list;
+				if (!dic.TryGetValue (h, out list)) {
+					list = new List<TwitterAccount> ();
+					dic.Add (h, list);
+				}
+				list.Add (Accounts[i]);
+			}
+			foreach (KeyValuePair<IStreamingHandler, List<TwitterAccount>> pair in dic) {
+				TwitterAccount homeTarget = pair.Key as TwitterAccount;
+				SearchStatuses searchTarget = pair.Key as SearchStatuses;
+				if (homeTarget != null)
+					new StreamingClient (pair.Value.ToArray (), homeTarget.TwitterClient.Friends, homeTarget);
+				else if (searchTarget != null)
+					searchTarget.StreamingClient = new StreamingClient (pair.Value.ToArray (), searchTarget.Keyword, searchTarget);
+			}
+		}
+		public void CloseAllStreaming ()
+		{
+			for (int i = 0; i < Accounts.Length; i++) {
+				if (Accounts[i].StreamingClient != null)
+					Accounts[i].StreamingClient.Dispose ();
+			}
+		}
+		#endregion
 
 		#region Load / Save
 		static string ConfigFilePath = Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.ApplicationData), "ktwt.config.json");
@@ -118,10 +143,22 @@ namespace TwitterStreaming
 				JsonObject root = (JsonObject)new JsonValueReader (new StreamReader (ConfigFilePath, System.Text.Encoding.UTF8)).Read ();
 				if (root.Value.ContainsKey ("accounts")) {
 					JsonArray array = (JsonArray)root.Value["accounts"];
+					JsonArray accountsArray = array;
 					TwitterAccount[] accounts = new TwitterAccount[array.Length];
 					for (int i = 0; i < array.Length; i++)
 						accounts[i] = LoadAccount ((JsonObject)array[i]);
 					UpdateAccounts (accounts);
+
+					array = (JsonArray)root.Value["searches"];
+					SearchStatuses[] searches = new SearchStatuses[array.Length];
+					for (int i = 0; i < array.Length; i ++)
+						searches[i] = LoadSearch ((JsonObject)array[i], accounts);
+					_searches = searches;
+
+					IStreamingHandler[] targets = new IStreamingHandler[accountsArray.Length];
+					for (int i = 0; i < accountsArray.Length; i ++)
+						targets[i] = LoadStreamingTarget ((JsonObject)accountsArray[i], accounts, _searches);
+					ReconstructAllStreaming (targets);
 				}
 				return true;
 			} catch {
@@ -134,13 +171,19 @@ namespace TwitterStreaming
 			using (StreamWriter streamWriter = new StreamWriter (ConfigFilePath, false, System.Text.Encoding.UTF8))
 			using (JsonTextWriter writer = new JsonTextWriter (streamWriter)) {
 				writer.WriteStartObject ();
-				{
-					writer.WriteKey ("accounts");
-					writer.WriteStartArray ();
-					for (int i = 0; i < _accounts.Length; i ++)
-						WriteAccount (writer, _accounts[i]);
-					writer.WriteEndArray ();
-				}
+				
+				writer.WriteKey ("accounts");
+				writer.WriteStartArray ();
+				for (int i = 0; i < _accounts.Length; i ++)
+					WriteAccount (writer, _accounts[i]);
+				writer.WriteEndArray ();
+
+				writer.WriteKey ("searches");
+				writer.WriteStartArray ();
+				for (int i = 0; i < _searches.Length; i ++)
+					WriteSearch (writer, _searches[i]);
+				writer.WriteEndArray ();
+				
 				writer.WriteEndObject ();
 			}
 		}
@@ -160,20 +203,6 @@ namespace TwitterStreaming
 
 			TwitterAccount account = new TwitterAccount ();
 			account.Credential = credential;
-
-			/*JsonObject streaming = obj.Value["streaming"] as JsonObject;
-			if (streaming != null) {
-				switch ((streaming.Value["mode"] as JsonString).Value) {
-					case "follow":
-						account.UpdateOAuthAccessToken ();
-						account.TwitterClient.UpdateFriends ();
-						account.StreamingClient = new StreamingClient (account, account.TwitterClient.Friends);
-						break;
-					case "track":
-						account.StreamingClient = new StreamingClient (account, (streaming.Value["keywords"] as JsonString).Value);
-						break;
-				}
-			}*/
 			return account;
 		}
 
@@ -197,21 +226,66 @@ namespace TwitterStreaming
 				writer.WriteKey ("secret");
 				writer.WriteString (pc.AccessSecret);
 			}
-			/*writer.WriteKey ("streaming");
+			writer.WriteKey ("streaming");
 			if (account.StreamingClient == null) {
 				writer.WriteNull ();
 			} else {
 				writer.WriteStartObject ();
 				writer.WriteKey ("mode");
-				if (account.StreamingClient.IsFollowMode) {
+				if (account.StreamingClient.Target is TwitterAccount) {
 					writer.WriteString ("follow");
-				} else if (account.StreamingClient.IsTrackMode) {
+					writer.WriteKey ("username");
+					writer.WriteString ((account.StreamingClient.Target as TwitterAccount).ScreenName);
+				} else if (account.StreamingClient.Target is SearchStatuses) {
 					writer.WriteString ("track");
 					writer.WriteKey ("keywords");
 					writer.WriteString (account.StreamingClient.SearchKeywords);
 				}
 				writer.WriteEndObject ();
-			}*/
+			}
+			writer.WriteEndObject ();
+		}
+
+		IStreamingHandler LoadStreamingTarget (JsonObject obj, TwitterAccount[] accounts, SearchStatuses[] searches)
+		{
+			JsonObject root = obj.Value["streaming"] as JsonObject;
+			if (root == null) return null;
+			string mode = (root.Value["mode"] as JsonString).Value;
+			switch (mode) {
+				case "follow":
+					string username = (root.Value["username"] as JsonString).Value;
+					for (int i = 0; i < accounts.Length; i ++)
+						if (username.Equals (accounts[i].ScreenName))
+							return accounts[i];
+					break;
+				case "track":
+					string keywords = (root.Value["keywords"] as JsonString).Value;
+					for (int i = 0; i < searches.Length; i ++)
+						if (keywords.Equals (searches[i].Keyword))
+							return searches[i];
+					break;
+			}
+			return null;
+		}
+
+		SearchStatuses LoadSearch (JsonObject obj, TwitterAccount[] accounts)
+		{
+			string keywords = (obj.Value["keywords"] as JsonString).Value;
+			string username = (obj.Value["username"] as JsonString).Value;
+			for (int i = 0; i < accounts.Length; i ++) {
+				if (accounts[i].ScreenName == username)
+					return new SearchStatuses (accounts[i], keywords);
+			}
+			throw new Exception ();
+		}
+
+		void WriteSearch (JsonTextWriter writer, SearchStatuses search)
+		{
+			writer.WriteStartObject ();
+			writer.WriteKey ("keywords");
+			writer.WriteString (search.Keyword);
+			writer.WriteKey ("username");
+			writer.WriteString (search.Account.ScreenName);
 			writer.WriteEndObject ();
 		}
 		#endregion

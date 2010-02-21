@@ -46,6 +46,10 @@ namespace TwitterStreaming
 			get { return chk1.IsChecked.HasValue && chk1.IsChecked.Value; }
 		}
 
+		public bool IsCheckedExistedSearch {
+			get { return chk2.IsChecked.HasValue && chk2.IsChecked.Value; }
+		}
+
 		public bool IsCheckedNewTab {
 			get { return chk3.IsChecked.HasValue && chk3.IsChecked.Value; }
 		}
@@ -88,6 +92,10 @@ namespace TwitterStreaming
 						return null;
 				}
 			}
+		}
+
+		public SearchStatuses SelectedExistedSearch {
+			get { return existSearches.SelectedItem as SearchStatuses; }
 		}
 
 		public string SearchKeyword {
@@ -136,6 +144,8 @@ namespace TwitterStreaming
 				} else if (IsCheckedNewSearch) {
 					isValid = (SelectedAccount != null);
 					isValid &= (SearchKeyword.Length > 0);
+				} else if (IsCheckedExistedSearch) {
+					isValid = (SelectedExistedSearch != null);
 				} else if (IsCheckedNewTab) {
 					isValid = (NewTabTitle.Length > 0);
 				} else {
