@@ -79,7 +79,7 @@ namespace TwitterStreaming
 					for (int i = 0; i < _accounts.Length; i ++) {
 						if (_accounts[i].StreamingClient == null && _targets[i] == null)
 							continue;
-						if (_accounts[i].StreamingClient.Target == _targets[i])
+						if (_accounts[i].StreamingClient != null && _accounts[i].StreamingClient.Target == _targets[i])
 							continue;
 						IsStreamingTargetsChanged = true;
 						break;
