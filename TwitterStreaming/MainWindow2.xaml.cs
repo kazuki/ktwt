@@ -44,48 +44,53 @@ namespace TwitterStreaming
 			InitializeComponent ();
 			itemsControl.DataContext = this;
 			_mgr = new TwitterAccountManager ();
-
-			List<TwitterAccount> list = new List<TwitterAccount> ();
-			HashSet<string> userNames = new HashSet<string> ();
-			string lastUserName = string.Empty, lastPassword = string.Empty;
-			while (true) {
-				LoginWindow win = new LoginWindow ();
-				win.chkTrack.Visibility = Visibility.Collapsed;
-				win.txtTrackWords.Visibility = Visibility.Collapsed;
-				win.txtUsername.Text = lastUserName;
-				win.txtPassword.Password = lastPassword;
-				bool? ret = win.ShowDialog ();
-				if (!ret.HasValue || !ret.Value)
-					break;
-				TwitterAccount account = new TwitterAccount ();
-				lastUserName = win.txtUsername.Text;
-				lastPassword = win.txtPassword.Password;
-				if (userNames.Contains (lastUserName)) {
-					MessageBox.Show ("入力されたユーザ名はすでに認証済みアカウントとして登録されています。別なアカウント情報を指定してください。");
-					continue;
-				}
-				account.Credential = new NetworkCredential (lastUserName, lastPassword);
-				try {
-					account.UpdateOAuthAccessToken ();
-					account.TwitterClient.UpdateFriends ();
-					list.Add (account);
-					if (win.useFollowStreaming.IsChecked.HasValue && win.useFollowStreaming.IsChecked.Value)
-						account.StreamingClient = new StreamingClient (account, account.TwitterClient.Friends);
-					userNames.Add (lastUserName);
-					lastUserName = null;
-					lastPassword = null;
-					if (MessageBox.Show ("認証に成功しました。別なアカウントの情報を続けて入力しますか？", string.Empty, MessageBoxButton.YesNo) != MessageBoxResult.Yes)
+			try {
+				_mgr.Load ();
+			} catch {
+				List<TwitterAccount> list = new List<TwitterAccount> ();
+				HashSet<string> userNames = new HashSet<string> ();
+				string lastUserName = string.Empty, lastPassword = string.Empty;
+				while (true) {
+					LoginWindow win = new LoginWindow ();
+					win.chkTrack.Visibility = Visibility.Collapsed;
+					win.txtTrackWords.Visibility = Visibility.Collapsed;
+					win.txtUsername.Text = lastUserName;
+					win.txtPassword.Password = lastPassword;
+					bool? ret = win.ShowDialog ();
+					if (!ret.HasValue || !ret.Value)
 						break;
-				} catch {
-					MessageBox.Show ("認証に失敗しました。再度入力してください");
+					TwitterAccount account = new TwitterAccount ();
+					lastUserName = win.txtUsername.Text;
+					lastPassword = win.txtPassword.Password;
+					if (userNames.Contains (lastUserName)) {
+						MessageBox.Show ("入力されたユーザ名はすでに認証済みアカウントとして登録されています。別なアカウント情報を指定してください。");
+						continue;
+					}
+					account.Credential = new NetworkCredential (lastUserName, lastPassword);
+					try {
+						account.UpdateOAuthAccessToken ();
+						account.TwitterClient.UpdateFriends ();
+						list.Add (account);
+						if (win.useFollowStreaming.IsChecked.HasValue && win.useFollowStreaming.IsChecked.Value)
+							account.StreamingClient = new StreamingClient (account, account.TwitterClient.Friends);
+						userNames.Add (lastUserName);
+						lastUserName = null;
+						lastPassword = null;
+						if (MessageBox.Show ("認証に成功しました。別なアカウントの情報を続けて入力しますか？", string.Empty, MessageBoxButton.YesNo) != MessageBoxResult.Yes)
+							break;
+					} catch {
+						MessageBox.Show ("認証に失敗しました。再度入力してください");
+					}
 				}
+				if (list.Count == 0) {
+					MessageBox.Show ("認証に成功したアカウントの情報がないためアプリケーションを終了します");
+					Application.Current.Shutdown ();
+					return;
+				}
+				_mgr.UpdateAccounts (list.ToArray ());
+				_mgr.Save ();
 			}
-			if (list.Count == 0) {
-				MessageBox.Show ("認証に成功したアカウントの情報がないためアプリケーションを終了します");
-				Application.Current.Shutdown ();
-				return;
-			}
-			_mgr.UpdateAccounts (list.ToArray ());
+
 			postAccount.ItemsSource = _mgr.Accounts;
 			postAccount.SelectedIndex = 0;
 		}

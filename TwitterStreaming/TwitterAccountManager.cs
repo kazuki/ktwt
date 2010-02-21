@@ -17,7 +17,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Net;
 using System.Threading;
+using ktwt.Json;
+using ktwt.OAuth;
 
 namespace TwitterStreaming
 {
@@ -88,5 +92,107 @@ namespace TwitterStreaming
 				Thread.Sleep (1000);
 			}
 		}
+
+		#region Load / Save
+		static string ConfigFilePath = Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.ApplicationData), "ktwt.config.json");
+
+		public void Load ()
+		{
+			JsonObject root = (JsonObject)new JsonValueReader (new StreamReader (ConfigFilePath, System.Text.Encoding.UTF8)).Read ();
+			if (root.Value.ContainsKey ("accounts")) {
+				JsonArray array = (JsonArray)root.Value["accounts"];
+				TwitterAccount[] accounts = new TwitterAccount[array.Length];
+				for (int i = 0; i < array.Length; i++)
+					accounts[i] = LoadAccount ((JsonObject)array[i]);
+				UpdateAccounts (accounts);
+			}
+		}
+
+		public void Save ()
+		{
+			using (StreamWriter streamWriter = new StreamWriter (ConfigFilePath, false, System.Text.Encoding.UTF8))
+			using (JsonTextWriter writer = new JsonTextWriter (streamWriter)) {
+				writer.WriteStartObject ();
+				{
+					writer.WriteKey ("accounts");
+					writer.WriteStartArray ();
+					for (int i = 0; i < _accounts.Length; i ++)
+						WriteAccount (writer, _accounts[i]);
+					writer.WriteEndArray ();
+				}
+				writer.WriteEndObject ();
+			}
+		}
+
+		TwitterAccount LoadAccount (JsonObject obj)
+		{
+			string uname = (obj.Value["username"] as JsonString).Value;
+			string password = (obj.Value["password"] as JsonString).Value;
+			ICredentials credential = null;
+			if (obj.Value.ContainsKey ("token")) {
+				string token = (obj.Value["token"] as JsonString).Value;
+				string secret = (obj.Value["secret"] as JsonString).Value;
+				credential = new OAuthPasswordCache (uname, password, token, secret);
+			} else {
+				credential = new NetworkCredential (uname, password);
+			}
+
+			TwitterAccount account = new TwitterAccount ();
+			account.Credential = credential;
+
+			JsonObject streaming = obj.Value["streaming"] as JsonObject;
+			if (streaming != null) {
+				switch ((streaming.Value["mode"] as JsonString).Value) {
+					case "follow":
+						account.UpdateOAuthAccessToken ();
+						account.TwitterClient.UpdateFriends ();
+						account.StreamingClient = new StreamingClient (account, account.TwitterClient.Friends);
+						break;
+					/*case "track":
+						account.StreamingClient = new StreamingClient (account, (streaming.Value["keywords"] as JsonString).Value);
+						break;*/
+				}
+			}
+			return account;
+		}
+
+		void WriteAccount (JsonTextWriter writer, TwitterAccount account)
+		{
+			writer.WriteStartObject ();
+			if (account.Credential is NetworkCredential) {
+				NetworkCredential nc = account.Credential as NetworkCredential;
+				writer.WriteKey ("username");
+				writer.WriteString (nc.UserName);
+				writer.WriteKey ("password");
+				writer.WriteString (nc.Password);
+			} else if (account.Credential is OAuthPasswordCache) {
+				OAuthPasswordCache pc = account.Credential as OAuthPasswordCache;
+				writer.WriteKey ("username");
+				writer.WriteString (pc.UserName);
+				writer.WriteKey ("password");
+				writer.WriteString (pc.Password);
+				writer.WriteKey ("token");
+				writer.WriteString (pc.AccessToken);
+				writer.WriteKey ("secret");
+				writer.WriteString (pc.AccessSecret);
+			}
+			writer.WriteKey ("streaming");
+			if (account.StreamingClient == null) {
+				writer.WriteNull ();
+			} else {
+				writer.WriteStartObject ();
+				writer.WriteKey ("mode");
+				if (account.StreamingClient.IsFollowMode) {
+					writer.WriteString ("follow");
+				} /*else if (account.StreamingClient.IsTrackMode) {
+					writer.WriteString ("track");
+					writer.WriteKey ("keywords");
+					writer.WriteString (account.StreamingClient.SearchKeywords);
+				}*/
+				writer.WriteEndObject ();
+			}
+			writer.WriteEndObject ();
+		}
+		#endregion
 	}
 }
