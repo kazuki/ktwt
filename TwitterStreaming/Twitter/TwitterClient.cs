@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -25,7 +26,7 @@ using ktwt.OAuth;
 
 namespace ktwt.Twitter
 {
-	public class TwitterClient
+	public class TwitterClient : INotifyPropertyChanged
 	{
 		public const int MaxStatusLength = 140;
 		public const int OAuthApiLimitMax = 350;
@@ -70,14 +71,26 @@ namespace ktwt.Twitter
 		#region API Info
 		public int ApiLimitMax {
 			get { return _apiLimitMax; }
+			private set {
+				_apiLimitMax = value;
+				InvokePropertyChanged ("ApiLimitMax");
+			}
 		}
 
 		public int ApiLimitRemaining {
 			get { return _apiLimitRemaining; }
+			private set {
+				_apiLimitRemaining = value;
+				InvokePropertyChanged ("ApiLimitRemaining");
+			}
 		}
 
 		public DateTime ApiLimitResetTime {
 			get { return _apiLimitResetTime; }
+			private set {
+				_apiLimitResetTime = value;
+				InvokePropertyChanged ("ApiLimitResetTime");
+			}
 		}
 		#endregion
 
@@ -320,11 +333,11 @@ namespace ktwt.Twitter
 			long temp;
 			string value = headers[X_RateLimit_Limit];
 			if (value != null && long.TryParse (value, out temp) && temp != BasicApiLimitMax) {
-				_apiLimitMax = (int)temp;
+				ApiLimitMax = (int)temp;
 				value = headers[X_RateLimit_Remaining];
-				if (value != null && long.TryParse (value, out temp)) _apiLimitRemaining = (int)temp;
+				if (value != null && long.TryParse (value, out temp)) ApiLimitRemaining = (int)temp;
 				value = headers[X_RateLimit_Reset];
-				if (value != null && long.TryParse (value, out temp)) _apiLimitResetTime = UnixTimeStart + TimeSpan.FromSeconds (temp);
+				if (value != null && long.TryParse (value, out temp)) ApiLimitResetTime = UnixTimeStart + TimeSpan.FromSeconds (temp);
 			}
 
 			if (ApiLimitChanged != null) {
@@ -365,6 +378,18 @@ namespace ktwt.Twitter
 				}
 			}
 		}
+		#endregion
+
+		#region INotifyPropertyChanged Members
+
+		public event PropertyChangedEventHandler PropertyChanged;
+
+		void InvokePropertyChanged (string name)
+		{
+			if (PropertyChanged != null)
+				PropertyChanged (this, new PropertyChangedEventArgs (name));
+		}
+
 		#endregion
 	}
 }

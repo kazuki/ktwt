@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Net;
 using System.Threading;
@@ -61,17 +62,15 @@ namespace TwitterStreaming
 			object info = null;
 			TwitterAccount account = win.SelectedAccount;
 			if (win.IsCheckedAccountTimeline) {
-				string username = (string)account.Credential.GetType ().GetProperty ("UserName").GetValue (account.Credential, null);
-				TwitterTimeLine tl = win.SelectedAccountTimeline;
-				info = new TimelineInfo (username + "'s " + (tl == account.HomeTimeline ? "home" : tl == account.Mentions ? "mentions" : "dm"), tl);
+				info = new TimelineInfo (account, win.SelectedAccountTimeline);
 			} else if (win.IsCheckedNewSearch && win.SearchKeyword.Length > 0) {
 				SearchStatuses search = new SearchStatuses (account, win.SearchKeyword);
 				if (win.IsUseStreamingForSearch)
 					search.StreamingClient = new StreamingClient (new TwitterAccount[] {account}, search.Keyword, search);
 				_mgr.AddSearchInfo (search);
-				info = new TimelineInfo ("Search \"" + search.Keyword + "\"", search.Statuses);
+				info = new TimelineInfo (search);
 			} else if (win.IsCheckedExistedSearch && win.SelectedExistedSearch != null) {
-				info = new TimelineInfo ("Search \"" + win.SelectedExistedSearch.Keyword + "\"", win.SelectedExistedSearch.Statuses);
+				info = new TimelineInfo (win.SelectedExistedSearch);
 			} else if (win.IsCheckedNewTab && win.NewTabTitle.Length > 0) {
 				info = new TabInfo (win.NewTabTitle);
 			}
@@ -88,8 +87,12 @@ namespace TwitterStreaming
 				postAccount.ItemsSource = _mgr.Accounts;
 			}
 
-			if (win.IsStreamingTargetsChanged)
+			if (win.IsStreamingTargetsChanged) {
 				_mgr.ReconstructAllStreaming (win.StreamingTargets);
+				for (int i = 0; i < _timelines.Count; i ++)
+					if (_timelines[i] is TimelineInfo)
+						(_timelines[i] as TimelineInfo).UpdateStreamingConstruction ();
+			}
 
 			_mgr.Save ();
 		}
@@ -250,16 +253,46 @@ namespace TwitterStreaming
 		}
 	}
 
-	public class TimelineInfo
+	public class TimelineInfo : INotifyPropertyChanged
 	{
-		public TimelineInfo (string title, TwitterTimeLine timeline)
+		TimelineInfo (TwitterTimeLine timeline)
 		{
-			Title = title;
 			Statuses = timeline;
 		}
 
+		public TimelineInfo (TwitterAccount account, TwitterTimeLine timeline) : this (timeline)
+		{
+			RestAccount = account;
+			Title = account.ScreenName + "'s " +
+				(timeline == account.HomeTimeline ? "home" :
+				(timeline == account.Mentions ? "mentions" : "dm"));
+		}
+
+		public TimelineInfo (SearchStatuses search) : this (search.Statuses)
+		{
+			Search = search;
+			RestAccount = search.Account;
+			Title = "Search \"" + search.Keyword + "\"";
+		}
+
 		public string Title { get; set; }
+		public TwitterAccount RestAccount { get; private set; }
 		public TwitterTimeLine Statuses { get; private set; }
+		public SearchStatuses Search { get; private set; }
+		public StreamingClient StreamingClient {
+			get {
+				if (Search != null)
+					return Search.StreamingClient;
+				return RestAccount.StreamingClient;
+			}
+		}
+
+		public event PropertyChangedEventHandler PropertyChanged;
+		public void UpdateStreamingConstruction ()
+		{
+			if (PropertyChanged != null)
+				PropertyChanged (this, new PropertyChangedEventArgs ("StreamingClient"));
+		}
 	}
 
 	public class TabInfo

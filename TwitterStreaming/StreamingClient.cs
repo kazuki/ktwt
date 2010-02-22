@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -30,19 +31,18 @@ namespace TwitterStreaming
 		const int MaxFollowCount = 400;
 		static readonly Uri StreamingFilterUri = new Uri ("http://stream.twitter.com/1/statuses/filter.json");
 		bool _active = true;
-		IStreamingState[] _currentStates;
+		InternalState[] _states;
 
 		StreamingClient (TwitterAccount[] accounts, IStreamingHandler target)
 		{
 			Accounts = new TwitterAccount[accounts.Length];
-			Clients = new TwitterClient[accounts.Length];
+			_states = new InternalState[accounts.Length];
 			for (int i = 0; i < accounts.Length; i ++) {
 				Accounts[i] = accounts[i];
 				Accounts[i].StreamingClient = this;
-				Clients[i] = accounts[i].TwitterClient;
+				_states[i] = new InternalState (accounts[i]);
 			}
 			SearchKeywords = string.Empty;
-			_currentStates = new IStreamingState[accounts.Length];
 			Target = target;
 		}
 
@@ -57,10 +57,9 @@ namespace TwitterStreaming
 				}
 				if (sb.Length > 0)
 					sb.Remove (sb.Length - 1, 1);
-				postDatas[j] = "follow=" + OAuthBase.UrlEncode (sb.ToString ());
+				_states[j].StreamingPostData = "follow=" + OAuthBase.UrlEncode (sb.ToString ());
 			}
 			StreamingUri = StreamingFilterUri;
-			StreamingPostData = postDatas;
 			StreamingStart ();
 		}
 
@@ -68,9 +67,8 @@ namespace TwitterStreaming
 		{
 			StreamingUri = StreamingFilterUri;
 			string postData = "track=" + OAuthBase.UrlEncode (searchKeywords);
-			StreamingPostData = new string[accounts.Length];
 			for (int i = 0; i < accounts.Length; i ++)
-				StreamingPostData[i] = postData;
+				_states[i].StreamingPostData = postData;
 			SearchKeywords = searchKeywords;
 			StreamingStart ();
 		}
@@ -106,20 +104,16 @@ namespace TwitterStreaming
 
 		void StreamingStart ()
 		{
-			for (int i = 0; i < _currentStates.Length; i ++) {
+			for (int i = 0; i < _states.Length; i ++) {
 				Thread thrd = new Thread (StreamingThread);
 				thrd.IsBackground = true;
-				thrd.Start (i);
+				thrd.Start (_states[i]);
 			}
 		}
 
 		void StreamingThread (object o)
 		{
-			int idx = (int)o;
-			bool IsConnecting = false, IsConnected = false;
-			int ReconnectCount = 0;
-			DateTime ReconnectTime = DateTime.MinValue;
-
+			InternalState info = (InternalState)o;
 			string line = null;
 			TimeSpan maxWait = TimeSpan.FromMinutes (1);
 			TimeSpan startWait = TimeSpan.FromSeconds (2.5);
@@ -129,12 +123,11 @@ namespace TwitterStreaming
 			int filled = 0;
 			while (_active) {
 				try {
-					IsConnecting = true;
-					using (IStreamingState state = Clients[idx].StartStreaming (StreamingUri, "POST", StreamingPostData[idx])) {
-						_currentStates[idx] = state;
-						ReconnectCount = 0;
-						IsConnecting = false;
-						IsConnected = true;
+					info.ConnectionState = StreamingState.Connecting;
+					using (IStreamingState state = info.Account.TwitterClient.StartStreaming (StreamingUri, "POST", info.StreamingPostData)) {
+						info.Handle = state;
+						info.RetryCount = 0;
+						info.ConnectionState = StreamingState.Connected;
 						while (_active) {
 							try {
 								line = ReadLineWithTimeout (state.Stream, ref buffer, ref filled, timeout);
@@ -155,18 +148,18 @@ namespace TwitterStreaming
 				} catch {}
 				if (!_active) break;
 
-				_currentStates[idx] = null;
-				IsConnected = false;
-				IsConnecting = false;
+				info.Handle = null;
+				info.ConnectionState = StreamingState.Disconnected;
 
-				if (ReconnectCount > 0) {
+				if (info.RetryCount > 0) {
 					wait = wait + wait;
 					if (wait > maxWait)
 						wait = maxWait;
-					ReconnectTime = DateTime.Now + wait;
+					info.NextRetryTime = DateTime.Now + wait;
+					info.ConnectionState = StreamingState.Waiting;
 					Thread.Sleep (wait);
 				}
-				ReconnectCount++;
+				info.RetryCount++;
 			}
 		}
 
@@ -179,13 +172,13 @@ namespace TwitterStreaming
 			}
 
 			Target = null;
-			for (int i = 0; i < _currentStates.Length; i ++) {
-				if (_currentStates[i] != null) {
+			for (int i = 0; i < _states.Length; i ++) {
+				if (_states[i].Handle != null) {
 					ThreadPool.QueueUserWorkItem (delegate (object o) {
 						try {
 							(o as IDisposable).Dispose ();
 						} catch {}
-					}, _currentStates[i]);
+					}, _states[i].Handle);
 				}
 				if (Accounts[i].StreamingClient == this)
 					Accounts[i].StreamingClient = null;
@@ -193,15 +186,63 @@ namespace TwitterStreaming
 		}
 
 		public TwitterAccount[] Accounts { get; private set; }
-		TwitterClient[] Clients { get; set; }
-		//public bool IsConnected { get; private set; }
-		//public bool IsConnecting { get; private set; }
-		//public DateTime ReconnectTime { get; private set; }
-		//public int ReconnectCount { get; private set; }
+		public InternalState[] States { get { return _states; } }
 		public Uri StreamingUri { get; private set; }
-		public string[] StreamingPostData { get; private set; }
 		public string SearchKeywords { get; private set; }
 		public IStreamingHandler Target { get; private set; }
+
+		public class InternalState : INotifyPropertyChanged
+		{
+			StreamingState _state = StreamingState.Disconnected;
+			int _retryCount = 0;
+			DateTime _nextRetry = DateTime.MaxValue;
+
+			public InternalState (TwitterAccount account)
+			{
+				Account = account;
+			}
+
+			public IStreamingState Handle { get; set; }
+			public TwitterAccount Account { get; set; }
+			public string StreamingPostData { get; set; }
+			public StreamingState ConnectionState {
+				get { return _state; }
+				set {
+					_state = value;
+					InvokePropertyChanged ("ConnectionState");
+				}
+			}
+
+			public DateTime NextRetryTime {
+				get { return _nextRetry; }
+				set {
+					_nextRetry = value;
+					InvokePropertyChanged ("NextRetryTime");
+				}
+			}
+			public int RetryCount {
+				get { return _retryCount; }
+				set {
+					_retryCount = value;
+					InvokePropertyChanged ("RetryCount");
+				}
+			}
+
+			public event PropertyChangedEventHandler PropertyChanged;
+			void InvokePropertyChanged (string name)
+			{
+				if (PropertyChanged != null)
+					PropertyChanged (this, new PropertyChangedEventArgs (name));
+			}
+		}
+
+		public enum StreamingState
+		{
+			Disconnected,
+			Connecting,
+			Connected,
+			Waiting
+		}
 	}
 
 	public class StatusArrivedEventArgs : EventArgs
