@@ -115,8 +115,10 @@ namespace TwitterStreaming
 			TimelineInfo info = (sender as Button).DataContext as TimelineInfo;
 			if (MessageBox.Show (info.Title + " を閉じてもよろしいですか?", string.Empty, MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
 				_timelines.Remove (info);
-				if (!UseTimeline (info.Statuses))
+				if (!UseTimeline (info.Statuses)) {
 					_mgr.CloseTimeLine (info.Statuses);
+					_mgr.Save ();
+				}
 			}
 		}
 
