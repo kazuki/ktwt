@@ -58,26 +58,19 @@ namespace TwitterStreaming
 			get { return searchStreaming.IsChecked.HasValue && searchStreaming.IsChecked.Value; }
 		}
 
-		TwitterAccount GetSelectedAccount (ComboBox box)
-		{
-			if (box.SelectedIndex < 0)
-				return null;
-			return _mgr.Accounts[box.SelectedIndex];
-		}
-
 		public TwitterAccount SelectedAccount {
 			get {
 				if (IsCheckedAccountTimeline)
-					return GetSelectedAccount (tlAccount);
+					return tlAccount.SelectedItem as TwitterAccount;
 				if (IsCheckedNewSearch)
-					return GetSelectedAccount (searchAccount);
+					return searchAccount.SelectedItem as TwitterAccount;
 				return null;
 			}
 		}
 
 		public TwitterTimeLine SelectedAccountTimeline {
 			get {
-				TwitterAccount account = GetSelectedAccount (tlAccount);
+				TwitterAccount account = tlAccount.SelectedItem as TwitterAccount;
 				if (account == null)
 					return null;
 
