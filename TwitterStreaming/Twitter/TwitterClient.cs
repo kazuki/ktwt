@@ -44,6 +44,7 @@ namespace ktwt.Twitter
 		static readonly Uri FriendIDsURL = new Uri ("https://twitter.com/friends/ids.json");
 		const string UsersShowURL = "https://twitter.com/users/show.json";
 		const string UserFriendsURL = "https://api.twitter.com/1/statuses/friends.json";
+		const string UserFollowersURL = "https://api.twitter.com/1/statuses/followers.json";
 
 		const string X_RateLimit_Limit = "X-RateLimit-Limit";
 		const string X_RateLimit_Remaining = "X-RateLimit-Remaining";
@@ -60,7 +61,7 @@ namespace ktwt.Twitter
 		int _apiLimitMax = -1, _apiLimitRemaining = -1;
 		DateTime _apiLimitResetTime = DateTime.MaxValue;
 
-		User[] _friends = null, _followers = new User[0];
+		User[] _friends = null, _followers = null;
 		ulong[] _friendIDs = null;
 
 		public event EventHandler ApiLimitChanged;
@@ -166,26 +167,38 @@ namespace ktwt.Twitter
 
 		public User[] GetFriends (ulong? user_id, string screen_name)
 		{
+			return GetFriendsOrFollowers (UserFriendsURL, user_id, screen_name);
+		}
+
+		public User[] GetFollowers (ulong? user_id, string screen_name)
+		{
+			return GetFriendsOrFollowers (UserFollowersURL, user_id, screen_name);
+		}
+
+		User[] GetFriendsOrFollowers (string url, ulong? user_id, string screen_name)
+		{
 			string query_base = string.Empty;
-			if (user_id.HasValue) query_base = "?user_id=" + user_id.Value.ToString ();
-			else if (screen_name != null && screen_name.Length > 0) query_base = "?screen_name=" + OAuthBase.UrlEncode (screen_name);
+			if (user_id.HasValue)
+				query_base = "?user_id=" + user_id.Value.ToString ();
+			else if (screen_name != null && screen_name.Length > 0)
+				query_base = "?screen_name=" + OAuthBase.UrlEncode (screen_name);
 
 			query_base = (query_base.Length == 0 ? "?cursor=" : "&cursor=");
 			string query = query_base + "-1";
-			List<User> friends = new List<User> ();
+			List<User> users = new List<User> ();
 			while (true) {
-				string json = DownloadString (new Uri (UserFriendsURL + query), HTTP_GET, null);
+				string json = DownloadString (new Uri (url + query), HTTP_GET, null);
 				JsonObject obj = (JsonObject)new JsonValueReader (json).Read ();
 				JsonArray array = (JsonArray)obj.Value["users"];
-				for (int i = 0; i < array.Length; i ++)
-					friends.Add (JsonDeserializer.Deserialize<User> ((JsonObject)array[i]));
-				
+				for (int i = 0; i < array.Length; i++)
+					users.Add (JsonDeserializer.Deserialize<User> ((JsonObject)array[i]));
+
 				string next = (obj.Value["next_cursor_str"] as JsonString).Value;
 				if (next == "0")
 					break;
 				query = query_base + next;
 			}
-			return friends.ToArray ();
+			return users.ToArray ();
 		}
 
 		public void UpdateFriends ()
@@ -198,6 +211,19 @@ namespace ktwt.Twitter
 				if (_friends == null)
 					UpdateFriends ();
 				return _friends;
+			}
+		}
+
+		public void UpdateFollowers ()
+		{
+			_followers = GetFollowers (null, null);
+		}
+
+		public User[] Followers {
+			get {
+				if (_followers == null)
+					UpdateFollowers ();
+				return _followers;
 			}
 		}
 		#endregion
