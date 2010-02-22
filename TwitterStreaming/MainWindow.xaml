@@ -68,7 +68,8 @@
                     <ListBox.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="Reply" Click="ReplyMenuItem_Click" />
-                            <MenuItem Header="Retweet" Click="RetweetMenuItem_Click" />
+                            <MenuItem Header="Retweet (RT)" Click="RetweetMenuItem_Click" />
+                            <MenuItem Header="QuotedTweet (QT)" Click="QuotedTweetMenuItem_Click" />
                         </ContextMenu>
                     </ListBox.ContextMenu>
                     <ListBox.ItemTemplate>

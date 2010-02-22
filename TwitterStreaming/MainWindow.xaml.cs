@@ -198,7 +198,7 @@ namespace TwitterStreaming
 			postLengthText.Text = diff.ToString ();
 			postLengthText.Foreground = (diff < 0 ? Brushes.Red : Brushes.White);
 			if (_replyInfo != null) {
-				if (postTextBox.Text.Contains (_replyName))
+				if (CheckReplyText (postTextBox.Text))
 					SetReplySetting ();
 				else
 					ResetReplySetting (true);
@@ -212,7 +212,7 @@ namespace TwitterStreaming
 			postTextBox.IsReadOnly = true;
 			postTextBox.Foreground = Brushes.DimGray;
 			postButton.IsEnabled = false;
-			if (_replyInfo != null && !txt.StartsWith (_replyName))
+			if (!CheckReplyText (txt))
 				ResetReplySetting (false);
 			ThreadPool.QueueUserWorkItem (PostProcess, new object[] {
 				txt,
@@ -242,9 +242,20 @@ namespace TwitterStreaming
 			}));
 		}
 
+		bool CheckReplyText (string txt)
+		{
+			if (_replyInfo == null || _replyName == null || _replyName.Length == 0)
+				return false;
+			if (_replyName[0] == '@' && txt.StartsWith (_replyName))
+				return true; // reply
+			if (_replyName[0] == ' ' && _replyName[1] == 'Q' && txt.Contains (_replyName))
+				return true; // QT
+			return false;
+		}
+
 		void SetReplySetting ()
 		{
-			postButton.Content = "Reply";
+			postButton.Content = (_replyName[0] == '@' ? "Reply" : " QT ");
 		}
 
 		void ResetReplySetting (bool btnTextOnly)
@@ -273,6 +284,20 @@ namespace TwitterStreaming
 			TwitterAccount account = (lb.DataContext as TimelineInfo).RestAccount;
 			Status retweeted = account.TwitterClient.Retweet (status.ID);
 			account.HomeTimeline.Add (retweeted);
+		}
+
+		private void QuotedTweetMenuItem_Click (object sender, RoutedEventArgs e)
+		{
+			Status status = ((ListBox)((ContextMenu)((MenuItem)sender).Parent).PlacementTarget).SelectedItem as Status;
+
+			_replyInfo = status;
+			_replyName = " QT @" + status.User.ScreenName;
+			postTextBox.Text = _replyName + ": " + status.Text;
+			SetReplySetting ();
+			Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
+				postTextBox.SelectionStart = 0;
+				postTextBox.Focus ();
+			}));
 		}
 	}
 
