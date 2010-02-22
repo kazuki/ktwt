@@ -63,8 +63,14 @@
                         <Button Click="TimeLineCloseButton_Click">×</Button>
                     </StackPanel>
                 </Grid>
-                <ListBox Background="#222" Grid.Row="1" SelectionMode="Extended" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                <ListBox Background="#222" Grid.Row="1" SelectionMode="Single" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                          ItemsSource="{Binding Path=Statuses}" IsSynchronizedWithCurrentItem="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Reply" Click="ReplyMenuItem_Click" />
+                            <MenuItem Header="Retweet" Click="RetweetMenuItem_Click" />
+                        </ContextMenu>
+                    </ListBox.ContextMenu>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <c:TwitterStatusViewer Status="{Binding}" LinkClick="TwitterStatusViewer_LinkClick" MouseDoubleClick="TwitterStatusViewer_MouseDoubleClick" />

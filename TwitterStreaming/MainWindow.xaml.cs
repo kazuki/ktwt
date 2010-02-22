@@ -170,7 +170,9 @@ namespace TwitterStreaming
 
 		private void TwitterStatusViewer_MouseDoubleClick (object sender, MouseButtonEventArgs e)
 		{
-			Status selected = (sender as TwitterStatusViewer).Status;
+			Status selected = sender as Status;
+			if (selected == null)
+				selected = (sender as TwitterStatusViewer).Status;
 			if (selected.ID == 0 || selected.User.ScreenName == null)
 				return;
 
@@ -252,6 +254,25 @@ namespace TwitterStreaming
 				_replyName = null;
 			}
 			postButton.Content = "Post";
+		}
+
+		private void ReplyMenuItem_Click (object sender, RoutedEventArgs e)
+		{
+			ListBox lb = (ListBox)((ContextMenu)((MenuItem)sender).Parent).PlacementTarget;
+			if (lb.SelectedItem == null) return;
+			TwitterStatusViewer_MouseDoubleClick (lb.SelectedItem, null);
+		}
+
+		private void RetweetMenuItem_Click (object sender, RoutedEventArgs e)
+		{
+			ListBox lb = (ListBox)((ContextMenu)((MenuItem)sender).Parent).PlacementTarget;
+			Status status = lb.SelectedItem as Status;
+			if (status == null) return;
+			if (MessageBox.Show (string.Format ("以下の投稿をRetweetしますか？\r\n{0}: {1}", status.User.ScreenName, status.Text), string.Empty, MessageBoxButton.YesNo) != MessageBoxResult.Yes)
+				return;
+			TwitterAccount account = (lb.DataContext as TimelineInfo).RestAccount;
+			Status retweeted = account.TwitterClient.Retweet (status.ID);
+			account.HomeTimeline.Add (retweeted);
 		}
 	}
 

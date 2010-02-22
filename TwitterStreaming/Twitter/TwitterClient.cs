@@ -39,6 +39,7 @@ namespace ktwt.Twitter
 		const string StatusesHomeTimelineURL = "https://api.twitter.com/1/statuses/home_timeline.json";
 		const string StatusesMentionsURL = "https://twitter.com/statuses/mentions.json";
 		const string StatusesUpdateURL = "https://twitter.com/statuses/update.json";
+		const string StatusesRetweetURL = "https://api.twitter.com/1/statuses/retweet/{0}.json";
 		const string SearchURL = "http://search.twitter.com/search.json";
 		static readonly Uri FriendIDsURL = new Uri ("https://twitter.com/friends/ids.json");
 		const string UsersShowURL = "https://twitter.com/users/show.json";
@@ -138,6 +139,12 @@ namespace ktwt.Twitter
 			if (geo_lat != null && geo_lat.Length > 0) query += "&lat=" + geo_lat;
 			if (geo_long != null && geo_long.Length > 0) query += "&long=" + geo_long;
 			string json = DownloadString (new Uri (StatusesUpdateURL + query), HTTP_POST, null);
+			return JsonDeserializer.Deserialize<Status> ((JsonObject)new JsonValueReader (json).Read ());
+		}
+
+		public Status Retweet (ulong id)
+		{
+			string json = DownloadString (new Uri (string.Format (StatusesRetweetURL, id)), HTTP_POST, null);
 			return JsonDeserializer.Deserialize<Status> ((JsonObject)new JsonValueReader (json).Read ());
 		}
 		#endregion
