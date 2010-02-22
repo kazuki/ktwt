@@ -70,6 +70,7 @@
                             <MenuItem Header="Reply" Click="ReplyMenuItem_Click" />
                             <MenuItem Header="Retweet (RT)" Click="RetweetMenuItem_Click" />
                             <MenuItem Header="QuotedTweet (QT)" Click="QuotedTweetMenuItem_Click" />
+                            <MenuItem Header="非公式Retweet (非奨励)" Click="BadRetweetMenuItem_Click" />
                         </ContextMenu>
                     </ListBox.ContextMenu>
                     <ListBox.ItemTemplate>

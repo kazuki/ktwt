@@ -212,7 +212,7 @@ namespace TwitterStreaming
 			postTextBox.IsReadOnly = true;
 			postTextBox.Foreground = Brushes.DimGray;
 			postButton.IsEnabled = false;
-			if (!CheckReplyText (txt))
+			if (!CheckReplyText (txt) || (_replyName != null && _replyName[1] == 'R'))
 				ResetReplySetting (false);
 			ThreadPool.QueueUserWorkItem (PostProcess, new object[] {
 				txt,
@@ -248,14 +248,17 @@ namespace TwitterStreaming
 				return false;
 			if (_replyName[0] == '@' && txt.StartsWith (_replyName))
 				return true; // reply
-			if (_replyName[0] == ' ' && _replyName[1] == 'Q' && txt.Contains (_replyName))
+			if (_replyName[0] == 'Q' && txt.Contains (_replyName))
 				return true; // QT
+			if (_replyName[0] == 'R' && txt.Contains (_replyName))
+				return true; // Unofficial RT
 			return false;
 		}
 
 		void SetReplySetting ()
 		{
-			postButton.Content = (_replyName[0] == '@' ? "Reply" : " QT ");
+			postButton.Content = (_replyName[0] == '@' ? "Reply" :
+				_replyName[0] == 'Q' ? " QT " : "Retweet");
 		}
 
 		void ResetReplySetting (bool btnTextOnly)
@@ -291,7 +294,21 @@ namespace TwitterStreaming
 			Status status = ((ListBox)((ContextMenu)((MenuItem)sender).Parent).PlacementTarget).SelectedItem as Status;
 
 			_replyInfo = status;
-			_replyName = " QT @" + status.User.ScreenName;
+			_replyName = "QT @" + status.User.ScreenName;
+			postTextBox.Text = " " + _replyName + ": " + status.Text;
+			SetReplySetting ();
+			Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
+				postTextBox.SelectionStart = 0;
+				postTextBox.Focus ();
+			}));
+		}
+
+		private void BadRetweetMenuItem_Click (object sender, RoutedEventArgs e)
+		{
+			Status status = ((ListBox)((ContextMenu)((MenuItem)sender).Parent).PlacementTarget).SelectedItem as Status;
+
+			_replyInfo = status;
+			_replyName = "RT @" + status.User.ScreenName;
 			postTextBox.Text = _replyName + ": " + status.Text;
 			SetReplySetting ();
 			Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
