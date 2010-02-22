@@ -21,6 +21,8 @@ namespace ktwt.Twitter
 {
 	public class Status
 	{
+		string _text = string.Empty;
+
 		public Status ()
 		{
 		}
@@ -29,7 +31,10 @@ namespace ktwt.Twitter
 		public ulong ID { get; set; }
 
 		[JsonObjectMapping ("text", JsonValueType.String)]
-		public string Text { get; set; }
+		public string Text {
+			get { return _text; }
+			set { _text = value.Replace ("&lt;", "<").Replace ("&gt;", ">").Replace ("&quot;", "\"").Replace ("&amp;", "&"); }
+		}
 
 		[JsonObjectMapping ("source", JsonValueType.String)]
 		public string Source { get; set; }
