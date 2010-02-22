@@ -46,13 +46,13 @@ namespace TwitterStreaming
 			Target = target;
 		}
 
-		public StreamingClient (TwitterAccount[] accounts, User[] friends, IStreamingHandler target) : this (accounts, target)
+		public StreamingClient (TwitterAccount[] accounts, ulong[] friendIDs, IStreamingHandler target) : this (accounts, target)
 		{
 			string[] postDatas = new string[accounts.Length];
-			for (int j = 0, p = 0; j < accounts.Length; j ++, p = Math.Min (friends.Length, p + MaxFollowCount) % friends.Length) {
+			for (int j = 0, p = 0; j < accounts.Length; j++, p = Math.Min (friendIDs.Length, p + MaxFollowCount) % friendIDs.Length) {
 				StringBuilder sb = new StringBuilder ();
-				for (int i = 0; i < Math.Min (MaxFollowCount, friends.Length - p); i ++) {
-					sb.Append (friends[i + p].ID);
+				for (int i = 0; i < Math.Min (MaxFollowCount, friendIDs.Length - p); i++) {
+					sb.Append (friendIDs[i + p]);
 					sb.Append (',');
 				}
 				if (sb.Length > 0)

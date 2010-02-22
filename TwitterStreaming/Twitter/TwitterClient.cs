@@ -60,6 +60,7 @@ namespace ktwt.Twitter
 		DateTime _apiLimitResetTime = DateTime.MaxValue;
 
 		User[] _friends = null, _followers = new User[0];
+		ulong[] _friendIDs = null;
 
 		public event EventHandler ApiLimitChanged;
 
@@ -220,14 +221,22 @@ namespace ktwt.Twitter
 		#endregion
 
 		#region Social Graph Methods
-		public ulong[] GetFriendIDs ()
+		public void UpdateFriendIDs ()
 		{
 			string json = DownloadString (FriendIDsURL, HTTP_GET, null);
 			JsonArray array = (JsonArray)new JsonValueReader (json).Read ();
 			ulong[] friends = new ulong[array.Length];
 			for (int i = 0; i < array.Length; i ++)
 				friends[i] = (ulong)(array[i] as JsonNumber).Value;
-			return friends;
+			_friendIDs = friends;
+		}
+
+		public ulong[] FriendIDs {
+			get {
+				if (_friendIDs == null)
+					UpdateFriendIDs ();
+				return _friendIDs;
+			}
 		}
 		#endregion
 
