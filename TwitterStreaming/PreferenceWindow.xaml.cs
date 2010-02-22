@@ -105,6 +105,7 @@ namespace TwitterStreaming
 		private void Button_Click (object sender, RoutedEventArgs e)
 		{
 			LoginWindow win = new LoginWindow ();
+			win.Owner = this;
 			bool? ret = win.ShowDialog ();
 			if (!ret.HasValue || !ret.Value)
 				return;

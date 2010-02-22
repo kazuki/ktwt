@@ -55,6 +55,7 @@ namespace TwitterStreaming
 		private void MenuItem_AddNewTimeline_Click (object sender, RoutedEventArgs e)
 		{
 			NewTimelineWindow win = new NewTimelineWindow (_mgr);
+			win.Owner = this;
 			bool? ret = win.ShowDialog ();
 			if (!ret.HasValue || !ret.Value)
 				return;
@@ -81,6 +82,7 @@ namespace TwitterStreaming
 		private void MenuItem_ShowPreference_Click (object sender, RoutedEventArgs e)
 		{
 			PreferenceWindow win = new PreferenceWindow (_mgr);
+			win.Owner = this;
 			win.ShowDialog ();
 			if (win.IsAccountArrayChanged) {
 				_mgr.UpdateAccounts (win.Accounts);
