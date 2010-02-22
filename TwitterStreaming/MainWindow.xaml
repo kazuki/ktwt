@@ -1,8 +1,8 @@
-﻿<Window x:Class="TwitterStreaming.MainWindow2"
+﻿<Window x:Class="TwitterStreaming.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:c="clr-namespace:TwitterStreaming"
-    Title="MainWindow2" Height="300" Width="300">
+    Title="ktwt (Simple Twitter Client with OAuth-REST/Streaming API)" Width="640" Height="480">
     <Window.Resources>
         <DataTemplate x:Key="timelineTemplate">
             <Grid Background="#222">

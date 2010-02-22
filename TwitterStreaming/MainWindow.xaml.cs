@@ -31,7 +31,7 @@ using ktwt.Twitter;
 
 namespace TwitterStreaming
 {
-	public partial class MainWindow2 : Window
+	public partial class MainWindow : Window
 	{
 		TwitterAccountManager _mgr;
 		ObservableCollection<object> _timelines = new ObservableCollection<object> ();
@@ -40,7 +40,7 @@ namespace TwitterStreaming
 		Status _replyInfo;
 		string _replyName;
 
-		public MainWindow2 ()
+		public MainWindow ()
 		{
 			InitializeComponent ();
 			itemsControl.DataContext = this;
