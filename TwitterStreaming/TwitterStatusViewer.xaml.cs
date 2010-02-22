@@ -53,32 +53,36 @@ namespace TwitterStreaming
 
 			if (s.User.ProfileImageUrl != null)
 				self.userImage.Source = new BitmapImage (new Uri (s.User.ProfileImageUrl));
-			{
-				Hyperlink nameLink = new Hyperlink ();
-				nameLink.Foreground = self.nameTextBlock.Foreground;
-				nameLink.Inlines.Add (s.User.ScreenName + " [" + s.User.Name + "]");
-				nameLink.Tag = "/" + s.User.ScreenName;
-				nameLink.Click += new RoutedEventHandler (self.Hyperlink_Click);
-				self.nameTextBlock.Inlines.Add (nameLink);
-			}
+
+			Brush defFg = self.nameTextBlock.Foreground;
+			FontWeight defWeight = self.nameTextBlock.FontWeight;
+			RoutedEventHandler defLinkHandler = new RoutedEventHandler (self.Hyperlink_Click);
+			InlineCollection nameInlines = self.nameTextBlock.Inlines;
+			nameInlines.Add (CreateHyperlink (s.User.ScreenName + " [" + s.User.Name + "]", "/" + s.User.ScreenName, defFg, defWeight, defLinkHandler));
 			if (!string.IsNullOrEmpty (s.InReplyToScreenName)) {
-				Hyperlink replyName = new Hyperlink ();
-				replyName.Foreground = self.nameTextBlock.Foreground;
-				replyName.Inlines.Add ("@" + s.InReplyToScreenName);
-				replyName.Tag = "/" + s.InReplyToScreenName + (s.InReplyToStatusId == 0 ? string.Empty : "/status/" + s.InReplyToStatusId.ToString ());
-				replyName.Click += new RoutedEventHandler (self.Hyperlink_Click);
-				self.nameTextBlock.Inlines.Add (" in reply to ");
-				self.nameTextBlock.Inlines.Add (replyName);
+				nameInlines.Add (CreateTextBlock (" in reply to ", defFg, FontWeights.Normal));
+				nameInlines.Add (CreateHyperlink ("@" + s.InReplyToScreenName, "/" + s.InReplyToScreenName + (s.InReplyToStatusId == 0 ? string.Empty : "/status/" + s.InReplyToStatusId.ToString ()), defFg, defWeight, defLinkHandler));
 			}
 			if (s != s1) {
-				Hyperlink retweeter = new Hyperlink ();
-				retweeter.Foreground = self.nameTextBlock.Foreground;
-				retweeter.Inlines.Add ("@" + s1.User.ScreenName);
-				retweeter.Tag = "/" + s1.User.ScreenName;
-				retweeter.Click += new RoutedEventHandler (self.Hyperlink_Click);
-				self.nameTextBlock.Inlines.Add (" retweeted by ");
-				self.nameTextBlock.Inlines.Add (retweeter);
+				nameInlines.Add (CreateTextBlock (" retweeted by ", defFg, FontWeights.Normal));
+				nameInlines.Add (CreateHyperlink ("@" + s1.User.ScreenName, "/" + s1.User.ScreenName, defFg, defWeight, defLinkHandler));
 			}
+			if (s.Source != null) {
+				int p1 = s.Source.IndexOf ('>');
+				int p2 = s.Source.IndexOf ('<', Math.Max (0, p1));
+				string appName = s.Source;
+				if (p1 >= 0 && p2 > 0)
+					appName = s.Source.Substring (p1 + 1, p2 - p1 - 1);
+				p1 = s.Source.IndexOf ('\"');
+				p2 = s.Source.IndexOf ('\"', Math.Max (0, p1 + 1));
+				nameInlines.Add (CreateTextBlock (" from ", defFg, FontWeights.Normal));
+				if (p1 >= 0 && p2 > 0) {
+					nameInlines.Add (CreateHyperlink (appName, s.Source.Substring (p1 + 1, p2 - p1 - 1), defFg, defWeight, defLinkHandler));
+				} else {
+					nameInlines.Add (appName);
+				}
+			}
+			nameInlines.Add (CreateTextBlock (" (" + s.CreatedAt.ToString ("MM/dd HH:mm:ss") + ")", defFg, FontWeights.Normal));
 
 			InlineCollection inlines = self.postTextBlock.Inlines;
 			Match m = _urlRegex.Match (s.Text);
@@ -104,6 +108,25 @@ namespace TwitterStreaming
 				m = m.NextMatch ();
 			}
 			inlines.Add (s.Text.Substring (last));
+		}
+
+		static TextBlock CreateTextBlock (string text, Brush foreground, FontWeight weight)
+		{
+			TextBlock bx = new TextBlock ();
+			bx.Foreground = foreground;
+			bx.FontWeight = weight;
+			bx.Inlines.Add (text);
+			return bx;
+		}
+
+		static Hyperlink CreateHyperlink (string text, string url, Brush foreground, FontWeight weight, RoutedEventHandler handler)
+		{
+			Hyperlink link = new Hyperlink ();
+			link.Foreground = foreground;
+			link.Inlines.Add (text);
+			link.Tag = url;
+			link.Click += handler;
+			return link;
 		}
 
 		void Hyperlink_Click (object sender, RoutedEventArgs e)

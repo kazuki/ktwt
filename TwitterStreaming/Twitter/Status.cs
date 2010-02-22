@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System;
 using ktwt.Json;
 
 namespace ktwt.Twitter
@@ -26,6 +27,9 @@ namespace ktwt.Twitter
 		public Status ()
 		{
 		}
+
+		[JsonObjectMapping ("created_at", JsonValueType.String)]
+		public DateTime CreatedAt { get; set; }
 
 		[JsonObjectMapping ("id", JsonValueType.Number)]
 		public ulong ID { get; set; }

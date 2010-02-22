@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -26,6 +27,8 @@ namespace ktwt.Json
 	{
 		static readonly Type MappingAttributeType = typeof (JsonObjectMappingAttribute);
 		static Dictionary<Type, CacheEntry> _reflectionCache = new Dictionary<Type, CacheEntry> ();
+		const string DateTimeFormat = "ddd MMM dd HH:mm:ss zzzz yyyy";
+		static IFormatProvider InvariantCulture = CultureInfo.InvariantCulture;
 
 		public static T Deserialize<T> (JsonObject obj) where T : class, new ()
 		{
@@ -45,31 +48,36 @@ namespace ktwt.Json
 			object r = FormatterServices.GetUninitializedObject (t);
 			for (int i = 0; i < c.Attributes.Length; i ++) {
 				JsonValue v;
-				if (!obj.Value.TryGetValue (c.Attributes[i].Key, out v) || v.ValueType != c.Attributes[i].ValueType) continue;
-				switch (c.Attributes[i].ValueType) {
+				JsonObjectMappingAttribute att = c.Attributes[i];
+				PropertyInfo prop = c.Properties[i];
+				if (!obj.Value.TryGetValue (att.Key, out v) || v.ValueType != att.ValueType) continue;
+				switch (att.ValueType) {
 					case JsonValueType.Number:
 						double d = (v as JsonNumber).Value;
-						if (c.Properties[i].PropertyType == typeof (ulong))
-							c.Properties[i].SetValue (r, (ulong)d, null);
-						else if (c.Properties[i].PropertyType == typeof (long))
-							c.Properties[i].SetValue (r, (long)d, null);
-						else if (c.Properties[i].PropertyType == typeof (uint))
-							c.Properties[i].SetValue (r, (uint)d, null);
-						else if (c.Properties[i].PropertyType == typeof (int))
-							c.Properties[i].SetValue (r, (int)d, null);
-						else if (c.Properties[i].PropertyType == typeof (double))
-							c.Properties[i].SetValue (r, (double)d, null);
-						else if (c.Properties[i].PropertyType == typeof (float))
-							c.Properties[i].SetValue (r, (float)d, null);
+						if (prop.PropertyType == typeof (ulong))
+							prop.SetValue (r, (ulong)d, null);
+						else if (prop.PropertyType == typeof (long))
+							prop.SetValue (r, (long)d, null);
+						else if (prop.PropertyType == typeof (uint))
+							prop.SetValue (r, (uint)d, null);
+						else if (prop.PropertyType == typeof (int))
+							prop.SetValue (r, (int)d, null);
+						else if (prop.PropertyType == typeof (double))
+							prop.SetValue (r, (double)d, null);
+						else if (prop.PropertyType == typeof (float))
+							prop.SetValue (r, (float)d, null);
 						break;
 					case JsonValueType.String:
-						c.Properties[i].SetValue (r, (v as JsonString).Value, null);
+						if (prop.PropertyType == typeof (DateTime))
+							prop.SetValue (r, DateTime.ParseExact ((v as JsonString).Value, DateTimeFormat, InvariantCulture), null);
+						else
+							prop.SetValue (r, (v as JsonString).Value, null);
 						break;
 					case JsonValueType.Boolean:
-						c.Properties[i].SetValue (r, (v as JsonBoolean).Value, null);
+						prop.SetValue (r, (v as JsonBoolean).Value, null);
 						break;
 					case JsonValueType.Object:
-						c.Properties[i].SetValue (r, Deserialize (v as JsonObject, c.Properties[i].PropertyType), null);
+						prop.SetValue (r, Deserialize (v as JsonObject, prop.PropertyType), null);
 						break;
 					default:
 						throw new NotSupportedException ();
