@@ -51,8 +51,16 @@ namespace TwitterStreaming
 			if (s.RetweetedStatus != null)
 				s = s.RetweetedStatus;
 
-			if (s.User.ProfileImageUrl != null) self.userImage.Source = new BitmapImage (new Uri (s.User.ProfileImageUrl));
-			self.nameTextBlock.Inlines.Add (s.User.ScreenName + " [" + s.User.Name + "]");
+			if (s.User.ProfileImageUrl != null)
+				self.userImage.Source = new BitmapImage (new Uri (s.User.ProfileImageUrl));
+			{
+				Hyperlink nameLink = new Hyperlink ();
+				nameLink.Foreground = self.nameTextBlock.Foreground;
+				nameLink.Inlines.Add (s.User.ScreenName + " [" + s.User.Name + "]");
+				nameLink.Tag = "/" + s.User.ScreenName;
+				nameLink.Click += new RoutedEventHandler (self.Hyperlink_Click);
+				self.nameTextBlock.Inlines.Add (nameLink);
+			}
 			if (!string.IsNullOrEmpty (s.InReplyToScreenName)) {
 				Hyperlink replyName = new Hyperlink ();
 				replyName.Foreground = self.nameTextBlock.Foreground;

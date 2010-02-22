@@ -316,6 +316,40 @@ namespace TwitterStreaming
 				postTextBox.Focus ();
 			}));
 		}
+
+		private void CopyMenuItem_Click (object sender, RoutedEventArgs e)
+		{
+			string tag = (sender as MenuItem).Tag as string;
+			Status status = ((ListBox)((ContextMenu)((MenuItem)sender).Parent).PlacementTarget).SelectedItem as Status;
+			if (status == null || tag == null)
+				return;
+			string txt = null;
+			switch (tag) {
+				case "ScreenName": txt = status.User.ScreenName; break;
+				case "Name": txt = status.User.Name; break;
+				case "Text": txt = status.Text; break;
+			}
+			if (txt == null) return;
+			Clipboard.SetText (txt);
+		}
+
+		private void OpenLinkMenuItem_Click (object sender, RoutedEventArgs e)
+		{
+			string tag = (sender as MenuItem).Tag as string;
+			Status status = ((ListBox)((ContextMenu)((MenuItem)sender).Parent).PlacementTarget).SelectedItem as Status;
+			if (status == null || tag == null)
+				return;
+			string url = null;
+			switch (tag) {
+				case "Permalink": url = string.Format ("/{0}/status/{1}", status.User.ScreenName, status.ID); break;
+				case "User": url = "/" + status.User.ScreenName; break;
+			}
+			if (url == null) return;
+			url = "https://twitter.com" + url;
+			try {
+				Process.Start (url);
+			} catch {}
+		}
 	}
 
 	public class TimelineInfo : INotifyPropertyChanged

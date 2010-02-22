@@ -71,6 +71,13 @@
                             <MenuItem Header="Retweet (RT)" Click="RetweetMenuItem_Click" />
                             <MenuItem Header="QuotedTweet (QT)" Click="QuotedTweetMenuItem_Click" />
                             <MenuItem Header="非公式Retweet (非奨励)" Click="BadRetweetMenuItem_Click" />
+                            <Separator />
+                            <MenuItem Header="ScreenNameをコピー" Tag="ScreenName" Click="CopyMenuItem_Click" />
+                            <MenuItem Header="名前をコピー" Tag="Name" Click="CopyMenuItem_Click" />
+                            <MenuItem Header="本文をコピー" Tag="Text" Click="CopyMenuItem_Click" />
+                            <Separator />
+                            <MenuItem Header="パーマリンクを開く" Tag="Permalink" Click="OpenLinkMenuItem_Click" />
+                            <MenuItem Header="ユーザページを開く" Tag="User" Click="OpenLinkMenuItem_Click" />
                         </ContextMenu>
                     </ListBox.ContextMenu>
                     <ListBox.ItemTemplate>
