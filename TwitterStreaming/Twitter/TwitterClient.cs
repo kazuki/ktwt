@@ -166,16 +166,26 @@ namespace ktwt.Twitter
 
 		public User[] GetFriends (ulong? user_id, string screen_name)
 		{
-			string query = string.Empty;
-			if (user_id.HasValue) query = "?user_id=" + user_id.Value.ToString ();
-			else if (screen_name != null && screen_name.Length > 0) query = "?screen_name=" + OAuthBase.UrlEncode (screen_name);
+			string query_base = string.Empty;
+			if (user_id.HasValue) query_base = "?user_id=" + user_id.Value.ToString ();
+			else if (screen_name != null && screen_name.Length > 0) query_base = "?screen_name=" + OAuthBase.UrlEncode (screen_name);
 
-			string json = DownloadString (new Uri (UserFriendsURL + query), HTTP_GET, null);
-			JsonArray array = (JsonArray)new JsonValueReader (json).Read ();
-			User[] friends = new User[array.Length];
-			for (int i = 0; i < friends.Length; i ++)
-				friends[i] = JsonDeserializer.Deserialize<User> ((JsonObject)array[i]);
-			return friends;
+			query_base = (query_base.Length == 0 ? "?cursor=" : "&cursor=");
+			string query = query_base + "-1";
+			List<User> friends = new List<User> ();
+			while (true) {
+				string json = DownloadString (new Uri (UserFriendsURL + query), HTTP_GET, null);
+				JsonObject obj = (JsonObject)new JsonValueReader (json).Read ();
+				JsonArray array = (JsonArray)obj.Value["users"];
+				for (int i = 0; i < array.Length; i ++)
+					friends.Add (JsonDeserializer.Deserialize<User> ((JsonObject)array[i]));
+				
+				string next = (obj.Value["next_cursor_str"] as JsonString).Value;
+				if (next == "0")
+					break;
+				query = query_base + next;
+			}
+			return friends.ToArray ();
 		}
 
 		public void UpdateFriends ()
