@@ -47,6 +47,9 @@ namespace TwitterStreaming
 		static void StatusPropertyChanged (DependencyObject d, DependencyPropertyChangedEventArgs e) {
 			TwitterStatusViewer self = (TwitterStatusViewer)d;
 			Status s = (Status)e.NewValue;
+			Status s1 = s;
+			if (s.RetweetedStatus != null)
+				s = s.RetweetedStatus;
 
 			if (s.User.ProfileImageUrl != null) self.userImage.Source = new BitmapImage (new Uri (s.User.ProfileImageUrl));
 			self.nameTextBlock.Inlines.Add (s.User.ScreenName + " [" + s.User.Name + "]");
@@ -58,6 +61,15 @@ namespace TwitterStreaming
 				replyName.Click += new RoutedEventHandler (self.Hyperlink_Click);
 				self.nameTextBlock.Inlines.Add (" in reply to ");
 				self.nameTextBlock.Inlines.Add (replyName);
+			}
+			if (s != s1) {
+				Hyperlink retweeter = new Hyperlink ();
+				retweeter.Foreground = self.nameTextBlock.Foreground;
+				retweeter.Inlines.Add ("@" + s1.User.ScreenName);
+				retweeter.Tag = "/" + s1.User.ScreenName;
+				retweeter.Click += new RoutedEventHandler (self.Hyperlink_Click);
+				self.nameTextBlock.Inlines.Add (" retweeted by ");
+				self.nameTextBlock.Inlines.Add (retweeter);
 			}
 
 			InlineCollection inlines = self.postTextBlock.Inlines;
