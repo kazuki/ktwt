@@ -35,7 +35,6 @@ namespace TwitterStreaming
 	{
 		TwitterAccountManager _mgr;
 		ObservableCollection<object> _timelines = new ObservableCollection<object> ();
-		delegate void EmptyDelegate ();
 
 		Status _replyInfo;
 		string _replyName;

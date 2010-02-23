@@ -24,7 +24,6 @@ namespace TwitterStreaming
 	{
 		TwitterTimeLine _timeline = new TwitterTimeLine ();
 		ulong? _since_id = null;
-		delegate void EmptyDelegate ();
 
 		public SearchStatuses (TwitterAccount account, string keyword) : base ()
 		{

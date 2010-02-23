@@ -79,6 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConsumerKeyStore.cs" />
+    <Compile Include="EmptyDelegate.cs" />
     <Compile Include="Json\JsonTextWriter.cs" />
     <Compile Include="StreamingClient.cs" />
     <Compile Include="IUpdateChecker.cs" />

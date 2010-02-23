@@ -36,7 +36,6 @@ namespace TwitterStreaming
 		Dispatcher _dispatcher;
 
 		ulong? _home_since_id = null, _mentions_since_id = null, _dms_since_id = null;
-		delegate void EmptyDelegate ();
 
 		public TwitterAccount ()
 		{
