@@ -134,8 +134,10 @@ namespace TwitterStreaming
 
 		#region Load / Save
 		static string ConfigFilePath = Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.ApplicationData), "ktwt.config.json");
+		public delegate void ConfigLoadDelegate (JsonObject root);
+		public delegate void ConfigSaveDelegate (JsonTextWriter writer);
 
-		public bool Load ()
+		public bool Load (ConfigLoadDelegate load)
 		{
 			if (!File.Exists (ConfigFilePath))
 				return false;
@@ -160,13 +162,14 @@ namespace TwitterStreaming
 						targets[i] = LoadStreamingTarget ((JsonObject)accountsArray[i], accounts, _searches);
 					ReconstructAllStreaming (targets);
 				}
+				load (root);
 				return true;
 			} catch {
 				return false;
 			}
 		}
 
-		public void Save ()
+		public void Save (ConfigSaveDelegate save)
 		{
 			using (StreamWriter streamWriter = new StreamWriter (ConfigFilePath, false, System.Text.Encoding.UTF8))
 			using (JsonTextWriter writer = new JsonTextWriter (streamWriter)) {
@@ -183,7 +186,8 @@ namespace TwitterStreaming
 				for (int i = 0; i < _searches.Length; i ++)
 					WriteSearch (writer, _searches[i]);
 				writer.WriteEndArray ();
-				
+
+				save (writer);
 				writer.WriteEndObject ();
 			}
 		}

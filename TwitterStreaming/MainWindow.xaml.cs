@@ -28,6 +28,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using ktwt.Twitter;
+using ktwt.Json;
 
 namespace TwitterStreaming
 {
@@ -44,11 +45,89 @@ namespace TwitterStreaming
 			InitializeComponent ();
 			itemsControl.DataContext = this;
 			_mgr = new TwitterAccountManager ();
-			_mgr.Load ();
+			_mgr.Load (LoadConfig);
 
 			postAccount.ItemsSource = _mgr.Accounts;
 			if (_mgr.Accounts.Length > 0)
 				postAccount.SelectedIndex = 0;
+		}
+
+		void LoadConfig (JsonObject root)
+		{
+			if (!root.Value.ContainsKey ("windows")) return;
+			LoadConfigInternal ((JsonArray)root.Value["windows"], _timelines);
+		}
+		void LoadConfigInternal (JsonArray array, ObservableCollection<object> timelines)
+		{
+			for (int i = 0; i < array.Length; i ++) {
+				JsonObject obj = array[i] as JsonObject;
+				if (obj != null) {
+					TimelineInfo info = null;
+					string type = (obj.Value["type"] as JsonString).Value;
+					if (type == "account") {
+						string subtype = (obj.Value["subtype"] as JsonString).Value;
+						string name = (obj.Value["name"] as JsonString).Value;
+						TwitterAccount account = null;
+						foreach (TwitterAccount item in _mgr.Accounts)
+							if (name.Equals (item.ScreenName)) {
+								account = item;
+								break;
+							}
+						if (account == null) continue;
+						switch (subtype) {
+							case "home": info = new TimelineInfo (account, account.HomeTimeline); break;
+							case "mentions": info = new TimelineInfo (account, account.Mentions); break;
+							case "directmessages": info = new TimelineInfo (account, account.DirectMessages); break;
+						}
+					} else if (type == "search") {
+						string keywords = (obj.Value["keywords"] as JsonString).Value;
+						foreach (SearchStatuses search in _mgr.Searches)
+							if (keywords.Equals (search.Keyword)) {
+								info = new TimelineInfo (search);
+								break;
+							}
+					}
+					if (info != null)
+						timelines.Add (info);
+				}
+			}
+		}
+
+		void SaveConfig ()
+		{
+			_mgr.Save (delegate (JsonTextWriter writer) {
+				writer.WriteKey ("windows");
+				writer.WriteStartArray ();
+				SaveConfigInternal (writer, _timelines);
+				writer.WriteEndArray ();
+			});
+		}
+		void SaveConfigInternal (JsonTextWriter writer, ObservableCollection<object> timelines)
+		{
+			foreach (object item in timelines) {
+				TimelineInfo tl = item as TimelineInfo;
+				if (tl != null) {
+					writer.WriteStartObject ();
+					writer.WriteKey ("type");
+					if (tl.Search == null) {
+						writer.WriteString ("account");
+						writer.WriteKey ("subtype");
+						if (tl.Statuses == tl.RestAccount.HomeTimeline)
+							writer.WriteString ("home");
+						else if (tl.Statuses == tl.RestAccount.Mentions)
+							writer.WriteString ("mentions");
+						else if (tl.Statuses == tl.RestAccount.DirectMessages)
+							writer.WriteString ("directmessages");
+						writer.WriteKey ("name");
+						writer.WriteString (tl.RestAccount.ScreenName);
+					} else {
+						writer.WriteString ("search");
+						writer.WriteKey ("keywords");
+						writer.WriteString (tl.Search.Keyword);
+					}
+					writer.WriteEndObject ();
+				}
+			}
 		}
 
 		private void MenuItem_AddNewTimeline_Click (object sender, RoutedEventArgs e)
@@ -74,8 +153,10 @@ namespace TwitterStreaming
 			} else if (win.IsCheckedNewTab && win.NewTabTitle.Length > 0) {
 				info = new TabInfo (win.NewTabTitle);
 			}
-			if (info != null)
+			if (info != null) {
 				_timelines.Add (info);
+				SaveConfig ();
+			}
 		}
 
 		private void MenuItem_ShowPreference_Click (object sender, RoutedEventArgs e)
@@ -95,7 +176,7 @@ namespace TwitterStreaming
 						(_timelines[i] as TimelineInfo).UpdateStreamingConstruction ();
 			}
 
-			_mgr.Save ();
+			SaveConfig ();
 		}
 
 		public ObservableCollection<object> TimeLines {
@@ -121,7 +202,7 @@ namespace TwitterStreaming
 				_timelines.Remove (info);
 				if (!UseTimeline (info.Statuses)) {
 					_mgr.CloseTimeLine (info.Statuses);
-					_mgr.Save ();
+					SaveConfig ();
 				}
 			}
 		}
