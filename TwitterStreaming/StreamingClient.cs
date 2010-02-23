@@ -48,19 +48,21 @@ namespace TwitterStreaming
 
 		public StreamingClient (TwitterAccount[] accounts, ulong[] friendIDs, IStreamingHandler target) : this (accounts, target)
 		{
-			string[] postDatas = new string[accounts.Length];
-			for (int j = 0, p = 0; j < accounts.Length; j++, p = Math.Min (friendIDs.Length, p + MaxFollowCount) % friendIDs.Length) {
-				StringBuilder sb = new StringBuilder ();
-				for (int i = 0; i < Math.Min (MaxFollowCount, friendIDs.Length - p); i++) {
-					sb.Append (friendIDs[i + p]);
-					sb.Append (',');
+			ThreadPool.QueueUserWorkItem (delegate (object o) {
+				string[] postDatas = new string[accounts.Length];
+				for (int j = 0, p = 0; j < accounts.Length; j++, p = Math.Min (friendIDs.Length, p + MaxFollowCount) % friendIDs.Length) {
+					StringBuilder sb = new StringBuilder ();
+					for (int i = 0; i < Math.Min (MaxFollowCount, friendIDs.Length - p); i++) {
+						sb.Append (friendIDs[i + p]);
+						sb.Append (',');
+					}
+					if (sb.Length > 0)
+						sb.Remove (sb.Length - 1, 1);
+					_states[j].StreamingPostData = "follow=" + OAuthBase.UrlEncode (sb.ToString ());
 				}
-				if (sb.Length > 0)
-					sb.Remove (sb.Length - 1, 1);
-				_states[j].StreamingPostData = "follow=" + OAuthBase.UrlEncode (sb.ToString ());
-			}
-			StreamingUri = StreamingFilterUri;
-			StreamingStart ();
+				StreamingUri = StreamingFilterUri;
+				StreamingStart ();
+			});
 		}
 
 		public StreamingClient (TwitterAccount[] accounts, string searchKeywords, IStreamingHandler target) : this (accounts, target)
