@@ -45,6 +45,7 @@ namespace ktwt.Twitter
 		const string UsersShowURL = "https://twitter.com/users/show.json";
 		const string UserFriendsURL = "https://api.twitter.com/1/statuses/friends.json";
 		const string UserFollowersURL = "https://api.twitter.com/1/statuses/followers.json";
+		static readonly Uri AccountVerifyCredentialsURL = new Uri ("https://api.twitter.com/1/account/verify_credentials.json");
 
 		const string X_RateLimit_Limit = "X-RateLimit-Limit";
 		const string X_RateLimit_Remaining = "X-RateLimit-Remaining";
@@ -281,6 +282,14 @@ namespace ktwt.Twitter
 					UpdateFriendIDs ();
 				return _friendIDs;
 			}
+		}
+		#endregion
+
+		#region Account Methods
+		public User VerifyCredentials ()
+		{
+			string json = DownloadString (AccountVerifyCredentialsURL, HTTP_GET, null);
+			return (User)JsonDeserializer.Deserialize<User> ((JsonObject)new JsonValueReader (json).Read ());
 		}
 		#endregion
 
