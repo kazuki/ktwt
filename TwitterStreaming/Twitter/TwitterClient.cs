@@ -46,6 +46,10 @@ namespace ktwt.Twitter
 		const string UserFriendsURL = "https://api.twitter.com/1/statuses/friends.json";
 		const string UserFollowersURL = "https://api.twitter.com/1/statuses/followers.json";
 		static readonly Uri AccountVerifyCredentialsURL = new Uri ("https://api.twitter.com/1/account/verify_credentials.json");
+		const string FavoritesURL = "https://api.twitter.com/1/favorites.json";
+		const string FavoritesUserURL = "https://api.twitter.com/1/favorites/{0}.json";
+		const string FavoritesCreateURL = "https://api.twitter.com/1/favorites/create/{0}.json";
+		const string FavoritesDestroyURL = "https://api.twitter.com/1/favorites/destroy/{0}.json";
 
 		const string X_RateLimit_Limit = "X-RateLimit-Limit";
 		const string X_RateLimit_Remaining = "X-RateLimit-Remaining";
@@ -289,7 +293,40 @@ namespace ktwt.Twitter
 		public User VerifyCredentials ()
 		{
 			string json = DownloadString (AccountVerifyCredentialsURL, HTTP_GET, null);
-			return (User)JsonDeserializer.Deserialize<User> ((JsonObject)new JsonValueReader (json).Read ());
+			return JsonDeserializer.Deserialize<User> ((JsonObject)new JsonValueReader (json).Read ());
+		}
+		#endregion
+
+		#region Favorite Methods
+		public Status[] GetFavorites (ulong? id, string screenName, int? page)
+		{
+			string url = FavoritesURL;
+			if (id.HasValue) url = string.Format (FavoritesUserURL, id.Value);
+			else if (screenName != null && screenName.Length > 0) url = string.Format (FavoritesUserURL, screenName);
+			if (page.HasValue) url += "?page=" + page.Value.ToString ();
+
+			string json = DownloadString (new Uri (url), HTTP_GET, null);
+			JsonArray array = (JsonArray)new JsonValueReader (json).Read ();
+			Status[] status = new Status[array.Length];
+			for (int i = 0; i < array.Length; i ++)
+				status[i] = JsonDeserializer.Deserialize<Status> ((JsonObject)array[i]);
+			return status;
+		}
+
+		Status FavoritesExec (string url, ulong id)
+		{
+			string json = DownloadString (new Uri (string.Format (url, id)), HTTP_POST, null);
+			return JsonDeserializer.Deserialize<Status> ((JsonObject)new JsonValueReader (json).Read ());
+		}
+
+		public Status FavoritesCreate (ulong id)
+		{
+			return FavoritesExec (FavoritesCreateURL, id);
+		}
+
+		public Status FavoritesDestroy (ulong id)
+		{
+			return FavoritesExec (FavoritesDestroyURL, id);
 		}
 		#endregion
 
