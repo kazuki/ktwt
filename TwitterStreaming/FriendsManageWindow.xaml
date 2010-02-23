@@ -1,0 +1,65 @@
+﻿<Window x:Class="TwitterStreaming.FriendsManageWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="clr-namespace:TwitterStreaming"
+    Title="Following / Followers" Height="640" Width="480" ShowInTaskbar="False">
+    <Window.Resources>
+        <c:UserArrayConverter x:Key="userArrayConverter" />
+        <c:RemoveCrLfConverter x:Key="removeCrLfConverter" />
+        <DataTemplate x:Key="UserViewTemplate">
+            <Grid Margin="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Image Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Width="32" Height="32" Margin="0 0 5 0" VerticalAlignment="Top" Source="{Binding ProfileImageUrl}" />
+                <TextBlock Grid.Column="1" Grid.Row="0" FontWeight="Bold">
+                    <TextBlock Text="{Binding ScreenName}" />
+                    <TextBlock> :: </TextBlock>
+                    <TextBlock Text="{Binding Name}" />
+                </TextBlock>
+                <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding Description, Converter={StaticResource removeCrLfConverter}}" TextWrapping="Wrap" />
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+    <TabControl ItemsSource="{Binding Accounts}" SelectedIndex="0">
+        <TabControl.ItemTemplate>
+            <DataTemplate>
+                <TextBlock Text="{Binding ScreenName}" />
+            </DataTemplate>
+        </TabControl.ItemTemplate>
+        <TabControl.ContentTemplate>
+            <DataTemplate>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center">検索:</TextBlock>
+                            <TextBox Grid.Column="1" VerticalAlignment="Center" TextChanged="TextBox_TextChanged" />
+                        </Grid>
+                    </Grid>
+                    <TextBlock Grid.Column="0" Grid.Row="1">Following</TextBlock>
+                    <TextBlock Grid.Column="1" Grid.Row="1">Followers</TextBlock>
+                    <ListBox Grid.Column="0" Grid.Row="2" ItemsSource="{Binding TwitterClient.Friends}" ItemTemplate="{StaticResource UserViewTemplate}" HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
+                    <ListBox Grid.Column="1" Grid.Row="2" ItemsSource="{Binding TwitterClient.Followers}" ItemTemplate="{StaticResource UserViewTemplate}" HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
+                </Grid>
+            </DataTemplate>
+        </TabControl.ContentTemplate>
+    </TabControl>
+</Window>

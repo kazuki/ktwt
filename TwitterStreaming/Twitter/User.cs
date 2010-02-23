@@ -34,6 +34,9 @@ namespace ktwt.Twitter
 		[JsonObjectMapping ("screen_name", JsonValueType.String)]
 		public string ScreenName { get; set; }
 
+		[JsonObjectMapping ("description", JsonValueType.String)]
+		public string Description { get; set; }
+
 		[JsonObjectMapping ("profile_image_url", JsonValueType.String)]
 		public string ProfileImageUrl { get; set; }
 	}

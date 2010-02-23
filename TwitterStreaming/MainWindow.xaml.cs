@@ -50,6 +50,15 @@ namespace TwitterStreaming
 			postAccount.ItemsSource = _mgr.Accounts;
 			if (_mgr.Accounts.Length > 0)
 				postAccount.SelectedIndex = 0;
+
+			ThreadPool.QueueUserWorkItem (delegate (object o) {
+				// Background. Update UserInfo
+				TwitterAccount[] accounts = _mgr.Accounts;
+				for (int i = 0; i < accounts.Length; i ++) {
+					accounts[i].TwitterClient.UpdateFriends ();
+					accounts[i].TwitterClient.UpdateFollowers ();
+				}
+			});
 		}
 
 		void LoadConfig (JsonObject root)
@@ -177,6 +186,13 @@ namespace TwitterStreaming
 			}
 
 			SaveConfig ();
+		}
+
+		private void MenuItem_ShowFriendsFollowers_Click (object sender, RoutedEventArgs e)
+		{
+			FriendsManageWindow win = new FriendsManageWindow (_mgr);
+			win.Owner = this;
+			win.ShowDialog ();
 		}
 
 		public ObservableCollection<object> TimeLines {
