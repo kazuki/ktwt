@@ -27,8 +27,8 @@ namespace ktwt.Json
 	{
 		static readonly Type MappingAttributeType = typeof (JsonObjectMappingAttribute);
 		static Dictionary<Type, CacheEntry> _reflectionCache = new Dictionary<Type, CacheEntry> ();
-		const string DateTimeFormat = "ddd MMM dd HH:mm:ss zzzz yyyy";
-		static IFormatProvider InvariantCulture = CultureInfo.InvariantCulture;
+		public const string DateTimeFormat = "ddd MMM dd HH:mm:ss zzzz yyyy";
+		public static IFormatProvider InvariantCulture = CultureInfo.InvariantCulture;
 
 		public static T Deserialize<T> (JsonObject obj) where T : class, new ()
 		{
