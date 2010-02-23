@@ -17,6 +17,7 @@
 
 using System;
 using System.Net;
+using System.Threading;
 using System.Windows.Threading;
 using ktwt.OAuth;
 using ktwt.Twitter;
@@ -64,27 +65,39 @@ namespace TwitterStreaming
 
 		public void UpdateTimeLines ()
 		{
-			if (RestHome.IsEnabled && RestHome.NextExecTime < DateTime.Now) {
+			if (!RestHome.IsRunning && RestHome.IsEnabled && RestHome.NextExecTime < DateTime.Now) {
 				RestHome.LastExecTime = DateTime.Now;
-				try {
-					Status[] statuses = _client.GetHomeTimeline (_home_since_id, null, RestHome.Count, null);
-					_home_since_id = TwitterClient.GetMaxStatusID (_home_since_id, statuses);
-					_dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
-						for (int i = 0; i < statuses.Length; i ++)
-							_home.Add (statuses[i]);
-					}));
-				} catch {}
+				RestHome.IsRunning = true;
+				ThreadPool.QueueUserWorkItem (delegate (object o) {
+					try {
+						Status[] statuses = _client.GetHomeTimeline (_home_since_id, null, RestHome.Count, null);
+						_home_since_id = TwitterClient.GetMaxStatusID (_home_since_id, statuses);
+						_dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
+							for (int i = 0; i < statuses.Length; i ++)
+								_home.Add (statuses[i]);
+						}));
+					} catch {
+					} finally {
+						RestHome.IsRunning = false;
+					}
+				});
 			}
-			if (RestMentions.IsEnabled && RestMentions.NextExecTime < DateTime.Now) {
+			if (!RestMentions.IsRunning && RestMentions.IsEnabled && RestMentions.NextExecTime < DateTime.Now) {
 				RestMentions.LastExecTime = DateTime.Now;
-				try {
-					Status[] statuses = _client.GetMentions (_mentions_since_id, null, RestMentions.Count, null);
-					_mentions_since_id = TwitterClient.GetMaxStatusID (_mentions_since_id, statuses);
-					_dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
-						for (int i = 0; i < statuses.Length; i ++)
-							_mentions.Add (statuses[i]);
-					}));
-				} catch {}
+				RestMentions.IsRunning = true;
+				ThreadPool.QueueUserWorkItem (delegate (object o) {
+					try {
+						Status[] statuses = _client.GetMentions (_mentions_since_id, null, RestMentions.Count, null);
+						_mentions_since_id = TwitterClient.GetMaxStatusID (_mentions_since_id, statuses);
+						_dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
+							for (int i = 0; i < statuses.Length; i ++)
+								_mentions.Add (statuses[i]);
+						}));
+					} catch {
+					} finally {
+						RestMentions.IsRunning = false;
+					}
+				});
 			}
 		}
 
@@ -145,8 +158,15 @@ namespace TwitterStreaming
 
 		public class RestUsage
 		{
+			public RestUsage ()
+			{
+				IsRunning = false;
+				Count = 0;
+			}
+
 			public TimeSpan Interval { get; set; }
 			public bool IsEnabled { get; set; }
+			public bool IsRunning { get; set; }
 			public int Count { get; set; }
 			public DateTime LastExecTime { get; set; }
 			public DateTime NextExecTime {
