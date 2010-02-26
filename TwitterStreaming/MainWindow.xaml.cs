@@ -87,6 +87,12 @@ namespace TwitterStreaming
 				LoadConfigInternalHashTags ((JsonArray)root.Value["hashTags"]);
 			if (root.Value.ContainsKey ("footer"))
 				FooterText = (root.Value["footer"] as JsonString).Value;
+
+			if (root.Value.ContainsKey ("streaming")) {
+				JsonObject conf = (JsonObject)root.Value["streaming"];
+				if (conf.Value.ContainsKey ("include_other"))
+					IsIncludeOtherStatus = (conf.Value["include_other"] as JsonBoolean).Value;
+			}
 		}
 		void LoadConfigInternal (JsonArray array, TimelineBase timelines)
 		{
@@ -185,6 +191,12 @@ namespace TwitterStreaming
 				SaveConfigInternalHashTags (writer);
 				writer.WriteKey ("footer");
 				writer.WriteString (FooterText);
+
+				writer.WriteKey ("streaming");
+				writer.WriteStartObject ();
+				writer.WriteKey ("include_other");
+				writer.WriteBoolean (IsIncludeOtherStatus);
+				writer.WriteEndObject ();
 			});
 		}
 		void SaveConfigInternal (JsonTextWriter writer, TimelineBase timelines)
@@ -495,6 +507,22 @@ namespace TwitterStreaming
 			}
 			postButton.Content = "Post";
 		}
+
+		#region Streaming Filter
+		public static readonly DependencyProperty IsIncludeOtherStatusProperty =
+			DependencyProperty.Register ("IsIncludeOtherStatus", typeof (bool), typeof (MainWindow), new PropertyMetadata (false, IsIncludeOtherStatus_Changed));
+		public bool IsIncludeOtherStatus {
+			get { return (bool)GetValue (IsIncludeOtherStatusProperty); }
+			set { SetValue (IsIncludeOtherStatusProperty, value); }
+		}
+		static void IsIncludeOtherStatus_Changed (DependencyObject d, DependencyPropertyChangedEventArgs e)
+		{
+			MainWindow self = (MainWindow)d;
+			bool newValue = (bool)e.NewValue;
+			for (int i = 0; i < self._mgr.Accounts.Length; i ++)
+				self._mgr.Accounts[i].IsIncludeOtherStatus = newValue;
+		}
+		#endregion
 
 		#region Menu Handlers
 		private void MenuItem_AddNewTimeline_Click (object sender, RoutedEventArgs e)

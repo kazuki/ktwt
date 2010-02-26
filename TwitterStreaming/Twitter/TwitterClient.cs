@@ -68,6 +68,7 @@ namespace ktwt.Twitter
 
 		User[] _friends = null, _followers = null;
 		ulong[] _friendIDs = null;
+		HashSet<ulong> _friendSet = null;
 
 		public event EventHandler ApiLimitChanged;
 
@@ -213,7 +214,7 @@ namespace ktwt.Twitter
 			for (int i = 0; i < ids.Length; i ++)
 				ids[i] = friends[i].ID;
 			_friends = friends;
-			_friendIDs = ids;
+			SetFriendIDs (ids);
 		}
 
 		public User[] Friends {
@@ -282,7 +283,7 @@ namespace ktwt.Twitter
 			ulong[] friends = new ulong[array.Length];
 			for (int i = 0; i < array.Length; i ++)
 				friends[i] = (ulong)(array[i] as JsonNumber).Value;
-			_friendIDs = friends;
+			SetFriendIDs (friends);
 		}
 
 		public ulong[] FriendIDs {
@@ -291,6 +292,20 @@ namespace ktwt.Twitter
 					UpdateFriendIDs ();
 				return _friendIDs;
 			}
+		}
+
+		public HashSet<ulong> FriendSet {
+			get {
+				if (_friendSet == null)
+					UpdateFriendIDs ();
+				return _friendSet;
+			}
+		}
+
+		void SetFriendIDs (ulong[] ids)
+		{
+			_friendIDs = ids;
+			_friendSet = new HashSet<ulong> (ids);
 		}
 		#endregion
 

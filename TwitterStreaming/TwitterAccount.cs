@@ -123,6 +123,7 @@ namespace TwitterStreaming
 		public RestUsage RestMentions { get; private set; }
 		public RestUsage RestDirectMessages { get; private set; }
 		public string ScreenName { get; private set; }
+		public bool IsIncludeOtherStatus { get; set; }
 		public StreamingClient StreamingClient {
 			get { return _streamingClient; }
 			set {
@@ -140,6 +141,14 @@ namespace TwitterStreaming
 		{
 			StreamingClient c = sender as StreamingClient;
 			_dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
+				if (!IsIncludeOtherStatus) {
+					if (!_client.FriendSet.Contains (e.Status.User.ID))
+						return;
+					if (e.Status.InReplyToUserId > 0) {
+						if (!_client.FriendSet.Contains (e.Status.InReplyToUserId))
+							return;
+					}
+				}
 				_home.Add (e.Status);
 				if (ScreenName.Equals (e.Status.InReplyToScreenName) || e.Status.Text.Contains ("@" + ScreenName))
 					_mentions.Add (e.Status);

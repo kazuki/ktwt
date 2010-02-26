@@ -81,32 +81,37 @@
                 </ScrollViewer>
             </TabItem>
             <TabItem Header="Streaming">
-                <ItemsControl ItemsSource="{Binding}" Grid.IsSharedSizeScope="True">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition SharedSizeGroup="StreamingAccountNameHeight" />
-                                    </Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition SharedSizeGroup="StreamingAccountNameWidth" />
-                                        <ColumnDefinition />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Margin="5 5 10 5" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Path=Credential.UserName}" />
-                                        <TextBlock>: </TextBlock>
-                                    </TextBlock>
-                                    <ComboBox Grid.Row="0" Grid.Column="1" VerticalAlignment="Center"
-                                              SelectionChanged="ComboBox_SelectionChanged"
-                                              SelectedItem="{Binding Path=StreamingClient.Target, Mode=OneWay}"
-                                              ItemsSource="{Binding ElementName=win, Path=StreamingTargetList}"
-                                              ItemTemplateSelector="{DynamicResource targetTemplateSelector}"/>
-                                </Grid>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <StackPanel Orientation="Vertical">
+                    <ItemsControl ItemsSource="{Binding}" Grid.IsSharedSizeScope="True">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition SharedSizeGroup="StreamingAccountNameHeight" />
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition SharedSizeGroup="StreamingAccountNameWidth" />
+                                            <ColumnDefinition />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Margin="5 5 10 5" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Path=Credential.UserName}" />
+                                            <TextBlock>: </TextBlock>
+                                        </TextBlock>
+                                        <ComboBox Grid.Row="0" Grid.Column="1" VerticalAlignment="Center"
+                                                  SelectionChanged="ComboBox_SelectionChanged"
+                                                  SelectedItem="{Binding Path=StreamingClient.Target, Mode=OneWay}"
+                                                  ItemsSource="{Binding ElementName=win, Path=StreamingTargetList}"
+                                                  ItemTemplateSelector="{DynamicResource targetTemplateSelector}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <GroupBox Header="Streaming API の設定">
+                        <CheckBox IsChecked="{Binding ElementName=win, Path=MainWindow.IsIncludeOtherStatus}">フォローしていない人へのReplyやフォローしていない人によるRetweetを表示する</CheckBox>
+                    </GroupBox>
+                </StackPanel>
             </TabItem>
             <TabItem Header="Font/Color">
                 <StackPanel Orientation="Vertical">
