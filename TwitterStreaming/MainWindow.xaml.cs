@@ -65,7 +65,7 @@ namespace TwitterStreaming
 					TwitterAccount[] accounts = _mgr.Accounts;
 					for (int i = 0; i < accounts.Length; i++) {
 						try {
-							accounts[i].TwitterClient.UpdateFriends ();
+							accounts[i].TwitterClient.UpdateFriendIDs ();
 						} catch {}
 					}
 
@@ -76,6 +76,9 @@ namespace TwitterStreaming
 					}));
 
 					for (int i = 0; i < accounts.Length; i++) {
+						try {
+							accounts[i].TwitterClient.UpdateFriends ();
+						} catch {}
 						try {
 							accounts[i].TwitterClient.UpdateFollowers ();
 						} catch {}

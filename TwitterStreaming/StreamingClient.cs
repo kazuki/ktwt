@@ -33,7 +33,7 @@ namespace TwitterStreaming
 		bool _active = true;
 		InternalState[] _states;
 
-		StreamingClient (TwitterAccount[] accounts, IStreamingHandler target)
+		StreamingClient (TwitterAccount[] accounts, IStreamingHandler target, bool dummy)
 		{
 			Accounts = new TwitterAccount[accounts.Length];
 			_states = new InternalState[accounts.Length];
@@ -41,12 +41,14 @@ namespace TwitterStreaming
 				Accounts[i] = accounts[i];
 				Accounts[i].StreamingClient = this;
 				_states[i] = new InternalState (accounts[i]);
+				if (dummy)
+					_states[i].ConnectionState = StreamingState.UpdatingFriendList;
 			}
 			SearchKeywords = string.Empty;
 			Target = target;
 		}
 
-		public StreamingClient (TwitterAccount[] accounts, ulong[] friendIDs, IStreamingHandler target, bool dummy) : this (accounts, target)
+		public StreamingClient (TwitterAccount[] accounts, ulong[] friendIDs, IStreamingHandler target, bool dummy) : this (accounts, target, dummy)
 		{
 			StreamingUri = StreamingFilterUri;
 			if (dummy) return;
@@ -67,7 +69,7 @@ namespace TwitterStreaming
 			});
 		}
 
-		public StreamingClient (TwitterAccount[] accounts, string searchKeywords, IStreamingHandler target, bool dummy) : this (accounts, target)
+		public StreamingClient (TwitterAccount[] accounts, string searchKeywords, IStreamingHandler target, bool dummy) : this (accounts, target, dummy)
 		{
 			StreamingUri = StreamingFilterUri;
 			string postData = "track=" + OAuthBase.UrlEncode (searchKeywords);
@@ -246,7 +248,8 @@ namespace TwitterStreaming
 			Disconnected,
 			Connecting,
 			Connected,
-			Waiting
+			Waiting,
+			UpdatingFriendList
 		}
 	}
 
