@@ -70,18 +70,8 @@ namespace TwitterStreaming
 				});
 			}
 
-			ThreadPool.QueueUserWorkItem (delegate (object o) {
-				// Background. Update UserInfo
-				TwitterAccount[] accounts = _mgr.Accounts;
-				for (int i = 0; i < accounts.Length; i ++) {
-					try {
-						accounts[i].TwitterClient.UpdateFriends ();
-					} catch {}
-					try {
-						accounts[i].TwitterClient.UpdateFollowers ();
-					} catch {}
-				}
-			});
+			// Update Friends/Follower info
+			MenuItem_UpdateFriendsAndFollowers_Click (null, null);
 		}
 
 		#region Config Load/Save
@@ -567,6 +557,21 @@ namespace TwitterStreaming
 			AboutWindow win = new AboutWindow ();
 			win.Owner = this;
 			win.ShowDialog ();
+		}
+
+		private void MenuItem_UpdateFriendsAndFollowers_Click (object sender, RoutedEventArgs e)
+		{
+			for (int i = 0; i < _mgr.Accounts.Length; i ++) {
+				ThreadPool.QueueUserWorkItem (delegate (object o) {
+					TwitterAccount account = o as TwitterAccount;
+					try {
+						account.TwitterClient.UpdateFriends ();
+					} catch {}
+					try {
+						account.TwitterClient.UpdateFollowers ();
+					} catch {}
+				}, _mgr.Accounts[i]);
+			}
 		}
 
 		private void ReplyMenuItem_Click (object sender, RoutedEventArgs e)

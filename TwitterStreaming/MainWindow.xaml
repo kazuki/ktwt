@@ -131,6 +131,7 @@
                 <MenuItem Header="タイムラインを追加" Click="MenuItem_AddNewTimeline_Click" />
                 <MenuItem Header="Following / Followers を見る" Click="MenuItem_ShowFriendsFollowers_Click" />
                 <MenuItem Header="バージョン情報" Click="MenuItem_ShowAboutWindow_Click" />
+                <MenuItem Header="Following / Followers を更新" Click="MenuItem_UpdateFriendsAndFollowers_Click" />
             </MenuItem>
         </Menu>
         <Grid Grid.Row="1">
