@@ -137,8 +137,9 @@ namespace TwitterStreaming
 		public delegate void ConfigLoadDelegate (JsonObject root);
 		public delegate void ConfigSaveDelegate (JsonTextWriter writer);
 
-		public bool Load (ConfigLoadDelegate load)
+		public bool Load (ConfigLoadDelegate load, out IStreamingHandler[] targets)
 		{
+			targets = null;
 			if (!File.Exists (ConfigFilePath))
 				return false;
 			try {
@@ -157,10 +158,9 @@ namespace TwitterStreaming
 						searches[i] = LoadSearch ((JsonObject)array[i], accounts);
 					_searches = searches;
 
-					IStreamingHandler[] targets = new IStreamingHandler[accountsArray.Length];
+					targets = new IStreamingHandler[accountsArray.Length];
 					for (int i = 0; i < accountsArray.Length; i ++)
 						targets[i] = LoadStreamingTarget ((JsonObject)accountsArray[i], accounts, _searches);
-					ReconstructAllStreaming (targets);
 				}
 				load (root);
 				return true;

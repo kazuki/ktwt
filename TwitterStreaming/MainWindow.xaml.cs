@@ -52,11 +52,23 @@ namespace TwitterStreaming
 			InitializeComponent ();
 			itemsControl.DataContext = this;
 			_mgr = new TwitterAccountManager ();
-			_mgr.Load (LoadConfig);
+			IStreamingHandler[] targets;
+			_mgr.Load (LoadConfig, out targets);
 
 			postAccount.ItemsSource = _mgr.Accounts;
 			if (_mgr.Accounts.Length > 0)
 				postAccount.SelectedIndex = 0;
+
+			// Setup streaming
+			if (targets != null) {
+				ThreadPool.QueueUserWorkItem (delegate (object o) {
+					_mgr.ReconstructAllStreaming (targets);
+					Dispatcher.Invoke (new EmptyDelegate (delegate () {
+						foreach (TimelineInfo info in GetAllTimeLineInfo ())
+							info.UpdateStreamingConstruction ();
+					}));
+				});
+			}
 
 			ThreadPool.QueueUserWorkItem (delegate (object o) {
 				// Background. Update UserInfo
