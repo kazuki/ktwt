@@ -46,8 +46,11 @@ namespace TwitterStreaming
 			Target = target;
 		}
 
-		public StreamingClient (TwitterAccount[] accounts, ulong[] friendIDs, IStreamingHandler target) : this (accounts, target)
+		public StreamingClient (TwitterAccount[] accounts, ulong[] friendIDs, IStreamingHandler target, bool dummy) : this (accounts, target)
 		{
+			StreamingUri = StreamingFilterUri;
+			if (dummy) return;
+
 			ThreadPool.QueueUserWorkItem (delegate (object o) {
 				string[] postDatas = new string[accounts.Length];
 				for (int j = 0, p = 0; j < accounts.Length; j++, p = Math.Min (friendIDs.Length, p + MaxFollowCount) % friendIDs.Length) {
@@ -60,19 +63,19 @@ namespace TwitterStreaming
 						sb.Remove (sb.Length - 1, 1);
 					_states[j].StreamingPostData = "follow=" + OAuthBase.UrlEncode (sb.ToString ());
 				}
-				StreamingUri = StreamingFilterUri;
 				StreamingStart ();
 			});
 		}
 
-		public StreamingClient (TwitterAccount[] accounts, string searchKeywords, IStreamingHandler target) : this (accounts, target)
+		public StreamingClient (TwitterAccount[] accounts, string searchKeywords, IStreamingHandler target, bool dummy) : this (accounts, target)
 		{
 			StreamingUri = StreamingFilterUri;
 			string postData = "track=" + OAuthBase.UrlEncode (searchKeywords);
 			for (int i = 0; i < accounts.Length; i ++)
 				_states[i].StreamingPostData = postData;
 			SearchKeywords = searchKeywords;
-			StreamingStart ();
+			if (!dummy)
+				StreamingStart ();
 		}
 
 		static string ReadLineWithTimeout (Stream strm, ref byte[] buffer, ref int filled, TimeSpan timeout)

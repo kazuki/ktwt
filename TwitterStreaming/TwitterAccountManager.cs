@@ -95,7 +95,7 @@ namespace TwitterStreaming
 		}
 
 		#region Streaming Helpers
-		public void ReconstructAllStreaming (IStreamingHandler[] targets)
+		public void ReconstructAllStreaming (IStreamingHandler[] targets, bool dummy)
 		{
 			if (Accounts.Length != targets.Length)
 				throw new ArgumentException ();
@@ -117,10 +117,11 @@ namespace TwitterStreaming
 			foreach (KeyValuePair<IStreamingHandler, List<TwitterAccount>> pair in dic) {
 				TwitterAccount homeTarget = pair.Key as TwitterAccount;
 				SearchStatuses searchTarget = pair.Key as SearchStatuses;
-				if (homeTarget != null)
-					new StreamingClient (pair.Value.ToArray (), homeTarget.TwitterClient.FriendIDs, homeTarget);
-				else if (searchTarget != null)
-					searchTarget.StreamingClient = new StreamingClient (pair.Value.ToArray (), searchTarget.Keyword, searchTarget);
+				if (homeTarget != null) {
+					new StreamingClient (pair.Value.ToArray (), dummy ? null : homeTarget.TwitterClient.FriendIDs, homeTarget, dummy);
+				} else if (searchTarget != null) {
+					searchTarget.StreamingClient = new StreamingClient (pair.Value.ToArray (), searchTarget.Keyword, searchTarget, dummy);
+				}
 			}
 		}
 		public void CloseAllStreaming ()
@@ -161,6 +162,7 @@ namespace TwitterStreaming
 					targets = new IStreamingHandler[accountsArray.Length];
 					for (int i = 0; i < accountsArray.Length; i ++)
 						targets[i] = LoadStreamingTarget ((JsonObject)accountsArray[i], accounts, _searches);
+					ReconstructAllStreaming (targets, true);
 				}
 				load (root);
 				return true;

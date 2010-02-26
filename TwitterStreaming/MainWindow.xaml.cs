@@ -59,19 +59,29 @@ namespace TwitterStreaming
 			if (_mgr.Accounts.Length > 0)
 				postAccount.SelectedIndex = 0;
 
-			// Setup streaming
+			// Setup streaming & friends/followers list
 			if (targets != null) {
 				ThreadPool.QueueUserWorkItem (delegate (object o) {
-					_mgr.ReconstructAllStreaming (targets);
+					TwitterAccount[] accounts = _mgr.Accounts;
+					for (int i = 0; i < accounts.Length; i++) {
+						try {
+							accounts[i].TwitterClient.UpdateFriends ();
+						} catch {}
+					}
+
+					_mgr.ReconstructAllStreaming (targets, false);
 					Dispatcher.Invoke (new EmptyDelegate (delegate () {
 						foreach (TimelineInfo info in GetAllTimeLineInfo ())
 							info.UpdateStreamingConstruction ();
 					}));
+
+					for (int i = 0; i < accounts.Length; i++) {
+						try {
+							accounts[i].TwitterClient.UpdateFollowers ();
+						} catch {}
+					}
 				});
 			}
-
-			// Update Friends/Follower info
-			MenuItem_UpdateFriendsAndFollowers_Click (null, null);
 		}
 
 		#region Config Load/Save
@@ -540,7 +550,7 @@ namespace TwitterStreaming
 			} else if (win.IsCheckedNewSearch && win.SearchKeyword.Length > 0) {
 				SearchStatuses search = new SearchStatuses (account, win.SearchKeyword);
 				if (win.IsUseStreamingForSearch)
-					search.StreamingClient = new StreamingClient (new TwitterAccount[] {account}, search.Keyword, search);
+					search.StreamingClient = new StreamingClient (new TwitterAccount[] {account}, search.Keyword, search, false);
 				_mgr.AddSearchInfo (search);
 				info = new TimelineInfo (_rootTLs, search);
 			} else if (win.IsCheckedExistedSearch && win.SelectedExistedSearch != null) {
@@ -565,7 +575,7 @@ namespace TwitterStreaming
 			}
 
 			if (win.IsStreamingTargetsChanged) {
-				_mgr.ReconstructAllStreaming (win.StreamingTargets);
+				_mgr.ReconstructAllStreaming (win.StreamingTargets, false);
 				foreach (TimelineInfo info in GetAllTimeLineInfo ())
 					info.UpdateStreamingConstruction ();
 			}
