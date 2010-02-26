@@ -432,6 +432,12 @@ namespace TwitterStreaming
 			});
 		}
 
+		private void ClearButton_Click (object sender, RoutedEventArgs e)
+		{
+			ResetReplySetting (false);
+			ResetPostTextBox ();
+		}
+
 		void PostProcess (object o)
 		{
 			object[] items = (object[])o;
@@ -682,7 +688,7 @@ namespace TwitterStreaming
 			else if (footer.Length > 0)
 				footer = " " + footer;
 			string tag = cbHashTag.SelectedItem as string;
-			if (tag == null || tag.Length > 0)
+			if (tag != null && tag.Length > 0)
 				footer = " " + tag + footer;
 			return footer;
 		}

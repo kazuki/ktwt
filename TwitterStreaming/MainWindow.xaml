@@ -154,6 +154,8 @@
                 
                 <TextBlock Margin="10 0 2 0" VerticalAlignment="Center">HashTag:</TextBlock>
                 <ComboBox x:Name="cbHashTag" ItemsSource="{Binding ElementName=mw, Path=HashTagList}" SelectionChanged="cbHashTag_SelectionChanged" />
+                
+                <Button Click="ClearButton_Click" Margin="10 0 0 0" VerticalAlignment="Center">Clear</Button>
             </StackPanel>
             <TextBox Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" x:Name="postTextBox" KeyDown="postTextBox_KeyDown"
                      VerticalContentAlignment="Center" TextChanged="postTextBox_TextChanged"
