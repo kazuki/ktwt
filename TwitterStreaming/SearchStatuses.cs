@@ -22,8 +22,8 @@ namespace TwitterStreaming
 {
 	public class SearchStatuses : IUpdateChecker, IDisposable, IStreamingHandler
 	{
-		TwitterTimeLine _timeline = new TwitterTimeLine ();
 		ulong? _since_id = null;
+		TwitterAccount.RestUsage _rest;
 
 		public SearchStatuses (TwitterAccount account, string keyword) : base ()
 		{
@@ -31,49 +31,49 @@ namespace TwitterStreaming
 			Keyword = keyword;
 
 			// default
-			IsEnabled = true;
-			Interval = TimeSpan.FromSeconds (180);
-			LastExecTime = DateTime.MinValue;
-			Count = 100;
+			_rest = new TwitterAccount.RestUsage {Interval = TimeSpan.FromSeconds (180), Count = 100, IsEnabled = true, LastExecTime = DateTime.MinValue};
 		}
 
 		void IStreamingHandler.Streaming_StatusArrived (object sender, StatusArrivedEventArgs e)
 		{
 			StreamingClient c = sender as StreamingClient;
 			Account.Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
-				_timeline.Add (e.Status);
+				Statuses.Add (e.Status);
 			}));
 		}
 
 		public TwitterAccount Account { get; private set; }
 		public string Keyword { get; private set; }
 		public TwitterTimeLine Statuses {
-			get {
-				return _timeline;
-			}
+			get { return _rest.TimeLine; }
+		}
+		public TwitterAccount.RestUsage RestInfo {
+			get { return _rest; }
 		}
 
-		public TimeSpan Interval { get; set; }
-		public bool IsEnabled { get; set; }
-		public int Count { get; set; }
-		public DateTime LastExecTime { get; private set; }
-		public DateTime NextExecTime {
-			get { return LastExecTime + Interval; }
-		}
 		public StreamingClient StreamingClient { get; set; }
 
 		public void UpdateTimeLines ()
 		{
-			if (IsEnabled && NextExecTime < DateTime.Now) {
-				LastExecTime = DateTime.Now;
-				try {
-					Status[] statuses = Account.TwitterClient.Search (Keyword, null, null, Count, null, _since_id, null, null);
-					_since_id = TwitterClient.GetMaxStatusID (_since_id, statuses);
-					Account.Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
-						for (int i = 0; i < statuses.Length; i++)
-							_timeline.Add (statuses[i]);
-					}));
-				} catch {}
+			if (!_rest.IsRunning && _rest.IsEnabled) {
+				if (_rest.NextExecTime < DateTime.Now) {
+					_rest.LastExecTime = DateTime.Now;
+					_rest.IsRunning = true;
+					try {
+						Status[] statuses = Account.TwitterClient.Search (Keyword, null, null, _rest.Count, null, _since_id, null, null);
+						_since_id = TwitterClient.GetMaxStatusID (_since_id, statuses);
+						Account.Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
+							for (int i = 0; i < statuses.Length; i++)
+								Statuses.Add (statuses[i]);
+						}));
+					} catch {
+					} finally {
+						_rest.IsRunning = false;
+						_rest.LastExecTime = DateTime.Now;
+						_rest.UpdateNextExecTimeRemaining ();
+					}
+				}
+				_rest.UpdateNextExecTimeRemaining ();
 			}
 		}
 

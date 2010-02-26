@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.ComponentModel;
 using System.Net;
 using System.Threading;
 using System.Windows.Threading;
@@ -30,13 +31,11 @@ namespace TwitterStreaming
 		TwitterClient _client;
 		ICredentials _credential;
 
-		TwitterTimeLine _home = new TwitterTimeLine ();
-		TwitterTimeLine _mentions = new TwitterTimeLine ();
-		TwitterTimeLine _dms = new TwitterTimeLine ();
 		StreamingClient _streamingClient = null;
 		Dispatcher _dispatcher;
 
-		ulong? _home_since_id = null, _mentions_since_id = null, _dms_since_id = null;
+		RestUsage[] _restInfoList;
+		ulong?[] _restSinceList;
 
 		public TwitterAccount ()
 		{
@@ -49,6 +48,8 @@ namespace TwitterStreaming
 			RestHome = new RestUsage {Interval = TimeSpan.FromSeconds (30), Count = 200, IsEnabled = true, LastExecTime = DateTime.MinValue};
 			RestMentions = new RestUsage {Interval = TimeSpan.FromSeconds (600), Count = 20, IsEnabled = true, LastExecTime = DateTime.MinValue};
 			RestDirectMessages = new RestUsage {Interval = TimeSpan.FromSeconds (600), Count = 20, IsEnabled = true, LastExecTime = DateTime.MinValue};
+			_restInfoList = new RestUsage[] {RestHome, RestMentions, RestDirectMessages};
+			_restSinceList = new ulong?[] {null, null, null};
 		}
 
 		public void UpdateOAuthAccessToken ()
@@ -63,41 +64,36 @@ namespace TwitterStreaming
 			ScreenName = ((OAuthPasswordCache)_credential).UserName;
 		}
 
+		delegate Status[] RestUpdateDelegate (ulong? since_id, ulong? max_id, int? count, int? page);
 		public void UpdateTimeLines ()
 		{
-			if (!RestHome.IsRunning && RestHome.IsEnabled && RestHome.NextExecTime < DateTime.Now) {
-				RestHome.LastExecTime = DateTime.Now;
-				RestHome.IsRunning = true;
-				ThreadPool.QueueUserWorkItem (delegate (object o) {
-					try {
-						Status[] statuses = _client.GetHomeTimeline (_home_since_id, null, RestHome.Count, null);
-						_home_since_id = TwitterClient.GetMaxStatusID (_home_since_id, statuses);
-						_dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
-							for (int i = 0; i < statuses.Length; i ++)
-								_home.Add (statuses[i]);
-						}));
-					} catch {
-					} finally {
-						RestHome.IsRunning = false;
+			RestUpdateDelegate[] funcs = new RestUpdateDelegate[] {_client.GetHomeTimeline, _client.GetMentions};
+			for (int i = 0; i < funcs.Length; i ++) {
+				RestUsage r = _restInfoList[i];
+
+				if (!r.IsRunning && r.IsEnabled) {
+					if (r.NextExecTime < DateTime.Now) {
+						r.LastExecTime = DateTime.Now;
+						r.IsRunning = true;
+						ThreadPool.QueueUserWorkItem (delegate (object o) {
+							int idx = (int)o;
+							try {
+								Status[] statuses = funcs[idx] (_restSinceList[idx], null, r.Count, null);
+								_restSinceList[idx] = TwitterClient.GetMaxStatusID (_restSinceList[idx], statuses);
+								_dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
+									for (int j = 0; j < statuses.Length; j++)
+										_restInfoList[idx].TimeLine.Add (statuses[j]);
+								}));
+							} catch {
+							} finally {
+								r.IsRunning = false;
+								r.LastExecTime = DateTime.Now;
+								r.UpdateNextExecTimeRemaining ();
+							}
+						}, i);
 					}
-				});
-			}
-			if (!RestMentions.IsRunning && RestMentions.IsEnabled && RestMentions.NextExecTime < DateTime.Now) {
-				RestMentions.LastExecTime = DateTime.Now;
-				RestMentions.IsRunning = true;
-				ThreadPool.QueueUserWorkItem (delegate (object o) {
-					try {
-						Status[] statuses = _client.GetMentions (_mentions_since_id, null, RestMentions.Count, null);
-						_mentions_since_id = TwitterClient.GetMaxStatusID (_mentions_since_id, statuses);
-						_dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
-							for (int i = 0; i < statuses.Length; i ++)
-								_mentions.Add (statuses[i]);
-						}));
-					} catch {
-					} finally {
-						RestMentions.IsRunning = false;
-					}
-				});
+					r.UpdateNextExecTimeRemaining ();
+				}
 			}
 		}
 
@@ -149,30 +145,34 @@ namespace TwitterStreaming
 							return;
 					}
 				}
-				_home.Add (e.Status);
+				HomeTimeline.Add (e.Status);
 				if (ScreenName.Equals (e.Status.InReplyToScreenName) || e.Status.Text.Contains ("@" + ScreenName))
-					_mentions.Add (e.Status);
+					Mentions.Add (e.Status);
 			}));
 		}
 
 		public TwitterTimeLine HomeTimeline {
-			get { return _home; }
+			get { return RestHome.TimeLine; }
 		}
 		public TwitterTimeLine Mentions {
-			get { return _mentions; }
+			get { return RestMentions.TimeLine; }
 		}
 		public TwitterTimeLine DirectMessages {
-			get { return _dms; }
+			get { return RestDirectMessages.TimeLine; }
 		}
 
-		public class RestUsage
+		public class RestUsage : INotifyPropertyChanged
 		{
+			public event PropertyChangedEventHandler PropertyChanged;
+
 			public RestUsage ()
 			{
 				IsRunning = false;
 				Count = 0;
+				TimeLine = new TwitterTimeLine ();
 			}
 
+			public TwitterTimeLine TimeLine { get; private set; }
 			public TimeSpan Interval { get; set; }
 			public bool IsEnabled { get; set; }
 			public bool IsRunning { get; set; }
@@ -180,6 +180,23 @@ namespace TwitterStreaming
 			public DateTime LastExecTime { get; set; }
 			public DateTime NextExecTime {
 				get { return LastExecTime + Interval; }
+			}
+			public TimeSpan NextExecTimeRemaining { get; private set; }
+
+			public void UpdateNextExecTimeRemaining ()
+			{
+				NextExecTimeRemaining = NextExecTime - DateTime.Now;
+				InvokePropertyChanged ("NextExecTimeRemaining");
+			}
+
+			void InvokePropertyChanged (string name)
+			{
+				if (PropertyChanged == null)
+					return;
+
+				try {
+					PropertyChanged (this, new PropertyChangedEventArgs (name));
+				} catch {}
 			}
 		}
 	}

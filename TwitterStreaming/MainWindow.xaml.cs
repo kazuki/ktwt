@@ -24,6 +24,7 @@ using System.Net;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -800,17 +801,21 @@ namespace TwitterStreaming
 			Title = account.ScreenName + "'s " +
 				(timeline == account.HomeTimeline ? "home" :
 				(timeline == account.Mentions ? "mentions" : "dm"));
+			RestUsage = (timeline == account.HomeTimeline ? account.RestHome :
+				(timeline == account.Mentions ? account.RestMentions : account.RestDirectMessages));
 		}
 
 		public TimelineInfo (TimelineBase owner, SearchStatuses search) : this (owner, search.Statuses)
 		{
 			Search = search;
 			RestAccount = search.Account;
+			RestUsage = search.RestInfo;
 			Title = "Search \"" + search.Keyword + "\"";
 		}
 
 		public string Title { get; set; }
 		public TwitterAccount RestAccount { get; private set; }
+		public TwitterAccount.RestUsage RestUsage { get; private set; }
 		public TwitterTimeLine Statuses { get; private set; }
 		public SearchStatuses Search { get; private set; }
 		public StreamingClient StreamingClient {
@@ -864,6 +869,22 @@ namespace TwitterStreaming
 			if (item is TabInfo)
 				return TabTemplate;
 			return base.SelectTemplate (item, container);
+		}
+	}
+
+	public class TimeSpanToSecConverter : IValueConverter
+	{
+		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			TimeSpan span = (TimeSpan)value;
+			if (span == null)
+				return value;
+			return (int)span.TotalSeconds;
+		}
+
+		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			throw new NotSupportedException ();
 		}
 	}
 }
