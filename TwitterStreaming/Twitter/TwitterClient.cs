@@ -208,7 +208,12 @@ namespace ktwt.Twitter
 
 		public void UpdateFriends ()
 		{
-			_friends = GetFriends (null, null);
+			User[] friends = GetFriends (null, null);
+			ulong[] ids = new ulong[friends.Length];
+			for (int i = 0; i < ids.Length; i ++)
+				ids[i] = friends[i].ID;
+			_friends = friends;
+			_friendIDs = ids;
 		}
 
 		public User[] Friends {
