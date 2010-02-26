@@ -259,61 +259,6 @@ namespace TwitterStreaming
 		}
 		#endregion
 
-		private void MenuItem_AddNewTimeline_Click (object sender, RoutedEventArgs e)
-		{
-			NewTimelineWindow win = new NewTimelineWindow (_mgr);
-			win.Owner = this;
-			bool? ret = win.ShowDialog ();
-			if (!ret.HasValue || !ret.Value)
-				return;
-
-			TimelineBase info = null;
-			TwitterAccount account = win.SelectedAccount;
-			if (win.IsCheckedAccountTimeline) {
-				info = new TimelineInfo (_rootTLs, account, win.SelectedAccountTimeline);
-			} else if (win.IsCheckedNewSearch && win.SearchKeyword.Length > 0) {
-				SearchStatuses search = new SearchStatuses (account, win.SearchKeyword);
-				if (win.IsUseStreamingForSearch)
-					search.StreamingClient = new StreamingClient (new TwitterAccount[] {account}, search.Keyword, search);
-				_mgr.AddSearchInfo (search);
-				info = new TimelineInfo (_rootTLs, search);
-			} else if (win.IsCheckedExistedSearch && win.SelectedExistedSearch != null) {
-				info = new TimelineInfo (_rootTLs, win.SelectedExistedSearch);
-			} else if (win.IsCheckedNewTab && win.NewTabTitle.Length > 0) {
-				info = new TabInfo (_rootTLs, win.NewTabTitle);
-			}
-			if (info != null) {
-				_rootTLs.TimeLines.Add (info);
-				SaveConfig ();
-			}
-		}
-
-		private void MenuItem_ShowPreference_Click (object sender, RoutedEventArgs e)
-		{
-			PreferenceWindow win = new PreferenceWindow (_mgr, this);
-			win.Owner = this;
-			win.ShowDialog ();
-			if (win.IsAccountArrayChanged) {
-				_mgr.UpdateAccounts (win.Accounts);
-				postAccount.ItemsSource = _mgr.Accounts;
-			}
-
-			if (win.IsStreamingTargetsChanged) {
-				_mgr.ReconstructAllStreaming (win.StreamingTargets);
-				foreach (TimelineInfo info in GetAllTimeLineInfo ())
-					info.UpdateStreamingConstruction ();
-			}
-
-			SaveConfig ();
-		}
-
-		private void MenuItem_ShowFriendsFollowers_Click (object sender, RoutedEventArgs e)
-		{
-			FriendsManageWindow win = new FriendsManageWindow (_mgr);
-			win.Owner = this;
-			win.ShowDialog ();
-		}
-
 		public TextBox PostTextBox {
 			get { return postTextBox; }
 		}
@@ -544,6 +489,68 @@ namespace TwitterStreaming
 		}
 
 		#region Menu Handlers
+		private void MenuItem_AddNewTimeline_Click (object sender, RoutedEventArgs e)
+		{
+			NewTimelineWindow win = new NewTimelineWindow (_mgr);
+			win.Owner = this;
+			bool? ret = win.ShowDialog ();
+			if (!ret.HasValue || !ret.Value)
+				return;
+
+			TimelineBase info = null;
+			TwitterAccount account = win.SelectedAccount;
+			if (win.IsCheckedAccountTimeline) {
+				info = new TimelineInfo (_rootTLs, account, win.SelectedAccountTimeline);
+			} else if (win.IsCheckedNewSearch && win.SearchKeyword.Length > 0) {
+				SearchStatuses search = new SearchStatuses (account, win.SearchKeyword);
+				if (win.IsUseStreamingForSearch)
+					search.StreamingClient = new StreamingClient (new TwitterAccount[] {account}, search.Keyword, search);
+				_mgr.AddSearchInfo (search);
+				info = new TimelineInfo (_rootTLs, search);
+			} else if (win.IsCheckedExistedSearch && win.SelectedExistedSearch != null) {
+				info = new TimelineInfo (_rootTLs, win.SelectedExistedSearch);
+			} else if (win.IsCheckedNewTab && win.NewTabTitle.Length > 0) {
+				info = new TabInfo (_rootTLs, win.NewTabTitle);
+			}
+			if (info != null) {
+				_rootTLs.TimeLines.Add (info);
+				SaveConfig ();
+			}
+		}
+
+		private void MenuItem_ShowPreference_Click (object sender, RoutedEventArgs e)
+		{
+			PreferenceWindow win = new PreferenceWindow (_mgr, this);
+			win.Owner = this;
+			win.ShowDialog ();
+			if (win.IsAccountArrayChanged) {
+				_mgr.UpdateAccounts (win.Accounts);
+				postAccount.ItemsSource = _mgr.Accounts;
+			}
+
+			if (win.IsStreamingTargetsChanged) {
+				_mgr.ReconstructAllStreaming (win.StreamingTargets);
+				foreach (TimelineInfo info in GetAllTimeLineInfo ())
+					info.UpdateStreamingConstruction ();
+			}
+
+			SaveConfig ();
+		}
+
+		private void MenuItem_ShowFriendsFollowers_Click (object sender, RoutedEventArgs e)
+		{
+			FriendsManageWindow win = new FriendsManageWindow (_mgr);
+			win.Owner = this;
+			win.ShowDialog ();
+		}
+
+		private void MenuItem_ShowAboutWindow_Click (object sender, RoutedEventArgs e)
+		{
+			AboutWindow win = new AboutWindow ();
+			win.Owner = this;
+			win.ShowDialog ();
+		}
+
 		private void ReplyMenuItem_Click (object sender, RoutedEventArgs e)
 		{
 			ListBox lb = (ListBox)((ContextMenu)((MenuItem)sender).Parent).PlacementTarget;

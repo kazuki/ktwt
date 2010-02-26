@@ -53,6 +53,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="AboutWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="FriendsManageWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -87,6 +91,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AboutWindow.xaml.cs">
+      <DependentUpon>AboutWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ConsumerKeyStore.cs" />
     <Compile Include="EmptyDelegate.cs" />
     <Compile Include="FriendsManageWindow.xaml.cs">
@@ -167,6 +174,15 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="apple.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Json\LitJSON\COPYING.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="COPYING.APACHE_LICENSE-2.0.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="COPYING.GPL.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
