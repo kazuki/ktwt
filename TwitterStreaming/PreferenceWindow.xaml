@@ -121,20 +121,29 @@
                     <GroupBox Header="Colors">
                         <StackPanel Orientation="Horizontal">
                             <UniformGrid Columns="2">
-                                <TextBlock>Bg</TextBlock>
+                                <TextBlock>Bg:</TextBlock>
                                 <TextBox Text="{Binding ElementName=win, Path=MainWindow.Background, Converter={StaticResource colorCodeBrushConverter}, ValidatesOnExceptions=True}" />
-                                
-                                <TextBlock>PostBg</TextBlock>
+
+                                <TextBlock>Fg:</TextBlock>
+                                <TextBox Text="{Binding ElementName=win, Path=MainWindow.Foreground, Converter={StaticResource colorCodeBrushConverter}, ValidatesOnExceptions=True}" />
+
+                                <TextBlock>PostBg:</TextBlock>
                                 <TextBox Text="{Binding ElementName=win, Path=MainWindow.PostBackground, Converter={StaticResource colorCodeBrushConverter}, ValidatesOnExceptions=True}" />
 
-                                <TextBlock>Fg</TextBlock>
-                                <TextBox Text="{Binding ElementName=win, Path=MainWindow.Foreground, Converter={StaticResource colorCodeBrushConverter}, ValidatesOnExceptions=True}" />
+                                <TextBlock>PostFg:</TextBlock>
+                                <TextBox Text="{Binding ElementName=win, Path=MainWindow.PostForeground, Converter={StaticResource colorCodeBrushConverter}, ValidatesOnExceptions=True}" />
                                 
-                                <TextBlock>NameFg</TextBlock>
+                                <TextBlock>NameFg:</TextBlock>
                                 <TextBox Text="{Binding ElementName=win, Path=MainWindow.NameForeground, Converter={StaticResource colorCodeBrushConverter}, ValidatesOnExceptions=True}" />
                                 
-                                <TextBlock>LinkFg</TextBlock>
+                                <TextBlock>LinkFg:</TextBlock>
                                 <TextBox Text="{Binding ElementName=win, Path=MainWindow.LinkForeground, Converter={StaticResource colorCodeBrushConverter}, ValidatesOnExceptions=True}" />
+                                
+                                <TextBlock>PostTextBoxBg: </TextBlock>
+                                <TextBox Text="{Binding ElementName=win, Path=MainWindow.PostTextBox.Background, Converter={StaticResource colorCodeBrushConverter}, ValidatesOnExceptions=True}" />
+                                
+                                <TextBlock>PostTextBoxFg:</TextBlock>
+                                <TextBox Text="{Binding ElementName=win, Path=MainWindow.PostTextBox.Foreground, Converter={StaticResource colorCodeBrushConverter}, ValidatesOnExceptions=True}" />
                             </UniformGrid>
                         </StackPanel>
                     </GroupBox>

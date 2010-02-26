@@ -44,6 +44,7 @@ namespace TwitterStreaming
 		{
 			NameForeground = new SolidColorBrush (Color.FromRgb (0x77, 0x77, 0xff));
 			LinkForeground = Brushes.White;
+			PostForeground = Brushes.White;
 			PostBackground = new SolidColorBrush (Color.FromRgb (0x33, 0x33, 0x33));
 			InitializeComponent ();
 			itemsControl.DataContext = this;
@@ -196,6 +197,10 @@ namespace TwitterStreaming
 			FriendsManageWindow win = new FriendsManageWindow (_mgr);
 			win.Owner = this;
 			win.ShowDialog ();
+		}
+
+		public TextBox PostTextBox {
+			get { return postTextBox; }
 		}
 
 		public ObservableCollection<object> TimeLines {
@@ -456,6 +461,13 @@ namespace TwitterStreaming
 		public Brush PostBackground {
 			get { return (Brush)GetValue (PostBackgroundProperty); }
 			set { SetValue (PostBackgroundProperty, value); }
+		}
+
+		public static readonly DependencyProperty PostForegroundProperty =
+			DependencyProperty.Register ("PostForeground", typeof (Brush), typeof (MainWindow));
+		public Brush PostForeground {
+			get { return (Brush)GetValue (PostForegroundProperty); }
+			set { SetValue (PostForegroundProperty, value); }
 		}
 
 		public static readonly DependencyProperty NameForegroundProperty =

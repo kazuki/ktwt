@@ -13,10 +13,7 @@
                 </Grid.RowDefinitions>
                 <Grid Grid.Row="0">
                     <Grid.Resources>
-                        <Style TargetType="{x:Type TextBlock}" x:Key="colorStyle">
-                            <Setter Property="Foreground" Value="White" />
-                        </Style>
-                        <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource colorStyle}" x:Key="smallStyle">
+                        <Style TargetType="{x:Type TextBlock}" x:Key="smallStyle">
                             <Setter Property="FontSize" Value="9" />
                         </Style>
                     </Grid.Resources>
@@ -25,7 +22,7 @@
                         <ColumnDefinition />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Padding="5" Text="{Binding Path=Title}" Style="{StaticResource colorStyle}" />
+                    <TextBlock Grid.Column="0" Padding="5" Text="{Binding Path=Title}" />
                     <StackPanel Orientation="Vertical" Grid.Column="1" VerticalAlignment="Center" Margin="5 0 5 0">
                         <TextBlock VerticalAlignment="Center" Style="{StaticResource smallStyle}">
                             <TextBlock>RestAPI: </TextBlock>
@@ -85,7 +82,7 @@
                         <DataTemplate>
                             <c:TwitterStatusViewer Status="{Binding}" LinkClick="TwitterStatusViewer_LinkClick" MouseDoubleClick="TwitterStatusViewer_MouseDoubleClick"
                                                    NameForeground="{Binding ElementName=mw, Path=NameForeground}" LinkForeground="{Binding ElementName=mw, Path=LinkForeground}"
-                                                   Foreground="{Binding ElementName=mw, Path=Foreground}" Background="{Binding ElementName=mw, Path=PostBackground}"
+                                                   Foreground="{Binding ElementName=mw, Path=PostForeground}" Background="{Binding ElementName=mw, Path=PostBackground}"
                                                    Margin="0 1 0 1" />
                         </DataTemplate>
                     </ListBox.ItemTemplate>
