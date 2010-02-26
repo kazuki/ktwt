@@ -149,6 +149,26 @@
                     </GroupBox>
                 </StackPanel>
             </TabItem>
+            <TabItem Header="HashTag / Footer">
+                <StackPanel Orientation="Vertical">
+                    <GroupBox Header="HashTag">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ListBox x:Name="hashTagList" Grid.Column="0" ItemsSource="{Binding ElementName=win, Path=MainWindow.HashTagList}" Height="100" />
+                            <StackPanel Grid.Column="1" Orientation="Vertical">
+                                <Button Click="HashTag_AddButton_Click">追加</Button>
+                                <Button Click="HashTag_DelButton_Click">削除</Button>
+                            </StackPanel>
+                        </Grid>
+                    </GroupBox>
+                    <GroupBox Header="Footer">
+                        <TextBox Text="{Binding ElementName=win, Path=MainWindow.FooterText}" />
+                    </GroupBox>
+                </StackPanel>
+            </TabItem>
         </TabControl>
     </Grid>
 </Window>

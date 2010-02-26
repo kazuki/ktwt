@@ -56,6 +56,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="HashTagInputWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="LoginWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -86,6 +90,9 @@
     <Compile Include="EmptyDelegate.cs" />
     <Compile Include="FriendsManageWindow.xaml.cs">
       <DependentUpon>FriendsManageWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="HashTagInputWindow.xaml.cs">
+      <DependentUpon>HashTagInputWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Json\JsonTextWriter.cs" />
     <Compile Include="StreamingClient.cs" />

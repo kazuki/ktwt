@@ -47,6 +47,7 @@ namespace TwitterStreaming
 		static void StatusPropertyChanged (DependencyObject d, DependencyPropertyChangedEventArgs e) {
 			TwitterStatusViewer self = (TwitterStatusViewer)d;
 			Status s = (Status)e.NewValue;
+			if (s == null) return;
 			Status s1 = s;
 			if (s.RetweetedStatus != null)
 				s = s.RetweetedStatus;

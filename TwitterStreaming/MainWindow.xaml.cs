@@ -36,6 +36,7 @@ namespace TwitterStreaming
 	{
 		TwitterAccountManager _mgr;
 		ObservableCollection<object> _timelines = new ObservableCollection<object> ();
+		ObservableCollection<string> _hashTags = new ObservableCollection<string> ();
 
 		Status _replyInfo;
 		string _replyName;
@@ -46,6 +47,8 @@ namespace TwitterStreaming
 			LinkForeground = Brushes.White;
 			PostForeground = Brushes.White;
 			PostBackground = new SolidColorBrush (Color.FromRgb (0x33, 0x33, 0x33));
+			FooterText = string.Empty;
+			_hashTags.Add (string.Empty);
 			InitializeComponent ();
 			itemsControl.DataContext = this;
 			_mgr = new TwitterAccountManager ();
@@ -65,6 +68,7 @@ namespace TwitterStreaming
 			});
 		}
 
+		#region Config Load/Save
 		void LoadConfig (JsonObject root)
 		{
 			if (root.Value.ContainsKey ("windows"))
@@ -73,6 +77,10 @@ namespace TwitterStreaming
 				LoadConfigInternalColors ((JsonObject)root.Value["colors"]);
 			if (root.Value.ContainsKey ("fonts"))
 				LoadConfigInternalFonts ((JsonObject)root.Value["fonts"]);
+			if (root.Value.ContainsKey ("hashTags"))
+				LoadConfigInternalHashTags ((JsonArray)root.Value["hashTags"]);
+			if (root.Value.ContainsKey ("footer"))
+				FooterText = (root.Value["footer"] as JsonString).Value;
 		}
 		void LoadConfigInternal (JsonArray array, ObservableCollection<object> timelines)
 		{
@@ -138,6 +146,11 @@ namespace TwitterStreaming
 			} catch {}
 			FontSize = (o.Value["main-size"] as JsonNumber).Value;
 		}
+		void LoadConfigInternalHashTags (JsonArray array)
+		{
+			for (int i = 0; i < array.Length; i ++)
+				_hashTags.Add ((array[i] as JsonString).Value);
+		}
 
 		void SaveConfig ()
 		{
@@ -154,6 +167,10 @@ namespace TwitterStreaming
 				writer.WriteStartObject ();
 				SaveConfigInternalFonts (writer);
 				writer.WriteEndObject ();
+				writer.WriteKey ("hashTags");
+				SaveConfigInternalHashTags (writer);
+				writer.WriteKey ("footer");
+				writer.WriteString (FooterText);
 			});
 		}
 		void SaveConfigInternal (JsonTextWriter writer, ObservableCollection<object> timelines)
@@ -210,6 +227,14 @@ namespace TwitterStreaming
 			writer.WriteKey ("main-size");
 			writer.WriteNumber (FontSize);
 		}
+		void SaveConfigInternalHashTags (JsonTextWriter writer)
+		{
+			writer.WriteStartArray ();
+			for (int i = 1; i < _hashTags.Count; i ++)
+				writer.WriteString (_hashTags[i]);
+			writer.WriteEndArray ();
+		}
+		#endregion
 
 		private void MenuItem_AddNewTimeline_Click (object sender, RoutedEventArgs e)
 		{
@@ -407,8 +432,7 @@ namespace TwitterStreaming
 				postButton.IsEnabled = true;
 				if (status != null) {
 					ResetReplySetting (false);
-					postTextBox.Text = "";
-					postTextBox.Focus ();
+					ResetPostTextBox ();
 					account.HomeTimeline.Add (status);
 				}
 			}));
@@ -427,6 +451,13 @@ namespace TwitterStreaming
 			return false;
 		}
 
+		void ResetPostTextBox ()
+		{
+			postTextBox.Text = GenerateFooter ();
+			postTextBox.SelectionStart = 0;
+			postTextBox.Focus ();
+		}
+
 		void SetReplySetting ()
 		{
 			postButton.Content = (_replyName[0] == '@' ? "Reply" :
@@ -442,6 +473,7 @@ namespace TwitterStreaming
 			postButton.Content = "Post";
 		}
 
+		#region Menu Handlers
 		private void ReplyMenuItem_Click (object sender, RoutedEventArgs e)
 		{
 			ListBox lb = (ListBox)((ContextMenu)((MenuItem)sender).Parent).PlacementTarget;
@@ -522,6 +554,7 @@ namespace TwitterStreaming
 				Process.Start (url);
 			} catch {}
 		}
+		#endregion
 
 		#region Colors
 		public static readonly DependencyProperty PostBackgroundProperty =
@@ -550,6 +583,45 @@ namespace TwitterStreaming
 		public Brush LinkForeground {
 			get { return (Brush)GetValue (LinkForegroundProperty); }
 			set { SetValue (LinkForegroundProperty, value); }
+		}
+		#endregion
+
+		#region Hashtag / footer
+		public ObservableCollection<string> HashTagList {
+			get { return _hashTags; }
+		}
+
+		public static readonly DependencyProperty FooterTextProperty = DependencyProperty.Register ("FooterText", typeof (string), typeof (MainWindow));
+		public string FooterText {
+			get { return (string)GetValue (FooterTextProperty); }
+			set { SetValue (FooterTextProperty, value); }
+		}
+
+		string GenerateFooter ()
+		{
+			string footer = FooterText;
+			if (footer == null)
+				footer = string.Empty;
+			else if (footer.Length > 0)
+				footer = " " + footer;
+			string tag = cbHashTag.SelectedItem as string;
+			if (tag == null || tag.Length > 0)
+				footer = " " + tag + footer;
+			return footer;
+		}
+
+		private void cbHashTag_SelectionChanged (object sender, SelectionChangedEventArgs e)
+		{
+			string txt = postTextBox.Text;
+			if (txt.IndexOf (" #") >= 0)
+				txt = txt.Substring (0, txt.IndexOf (" #")).TrimEnd ();
+			else if (FooterText != null && txt.EndsWith (FooterText))
+				txt = txt.Substring (0, txt.Length - FooterText.Length).TrimEnd ();
+			postTextBox.Text = txt + GenerateFooter ();
+			postTextBox.SelectionStart = txt.Length;
+			Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
+				postTextBox.Focus ();
+			}), null);
 		}
 		#endregion
 	}

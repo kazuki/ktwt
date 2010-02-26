@@ -196,6 +196,28 @@ namespace TwitterStreaming
 				}
 			}
 		}
+
+		private void HashTag_AddButton_Click (object sender, RoutedEventArgs e)
+		{
+			HashTagInputWindow win = new HashTagInputWindow ();
+			win.Owner = this;
+			bool? ret = win.ShowDialog ();
+			if (!ret.HasValue || !ret.Value)
+				return;
+			string hashTag = win.HashTagText;
+			for (int i = 0; i < _mwin.HashTagList.Count; i ++)
+				if (hashTag.Equals (_mwin.HashTagList[i], StringComparison.InvariantCultureIgnoreCase)) {
+					MessageBox.Show ("すでに同じハッシュタグが登録されています");
+					return;
+				}
+			_mwin.HashTagList.Add (hashTag);
+		}
+
+		private void HashTag_DelButton_Click (object sender, RoutedEventArgs e)
+		{
+			if (hashTagList.SelectedIndex <= 0) return;
+			_mwin.HashTagList.RemoveAt (hashTagList.SelectedIndex);
+		}
 	}
 
 	[ValueConversion (typeof (SolidColorBrush), typeof (string))]
