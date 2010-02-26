@@ -60,9 +60,17 @@
                                     <TextBlock Margin="0 0 5 0">Apache License 2.0</TextBlock>
                                     <Hyperlink>http://www.apache.org/licenses/LICENSE-2.0</Hyperlink>
                                 </TextBlock>
-                                <!--<TextBlock TextWrapping="Wrap" x:Name="licenseOAuthBase" />-->
                                 <TextBox x:Name="licenseOAuthBase" IsReadOnly="True" BorderThickness="0" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled" />
                             </StackPanel>
+                        </StackPanel>
+                        <TextBlock FontWeight="Bold" Margin="0 10 0 0">Apple Icon</TextBlock>
+                        <StackPanel Orientation="Vertical" Margin="10 0 0 0">
+                            <TextBlock><Hyperlink>http://www.openclipart.org/detail/zeimusu_Apple.svg</Hyperlink></TextBlock>
+                            <TextBlock>Base: <Hyperlink>http://en.wikipedia.org/wiki/File:Sacred-Chao.svg</Hyperlink></TextBlock>
+                            <TextBlock FontWeight="Bold">Authors:</TextBlock>
+                            <TextBlock Margin="10 0 0 5">Zeimusu, AnonMoos, Trent Buck</TextBlock>
+                            <TextBlock FontWeight="Bold">License:</TextBlock>
+                            <TextBlock Margin="10 0 0 10">Public Domain</TextBlock>
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
