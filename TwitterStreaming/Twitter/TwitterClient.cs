@@ -423,11 +423,16 @@ namespace ktwt.Twitter
 		#endregion
 
 		#region Misc
-		public static ulong GetMaxStatusID (ulong? current, Status[] status)
+		public static ulong? GetMaxStatusID (ulong? current, Status[] status)
 		{
+			if (status == null || status.Length == 0)
+				return current;
 			if (!current.HasValue)
 				current = 0;
-			return GetMaxStatusID (current.Value, status);
+			ulong ret = GetMaxStatusID (current.Value, status);
+			if (ret == 0)
+				return null;
+			return ret;
 		}
 
 		public static ulong GetMaxStatusID (ulong current, Status[] status)
