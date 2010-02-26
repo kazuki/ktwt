@@ -36,6 +36,7 @@ namespace TwitterStreaming
 
 		RestUsage[] _restInfoList;
 		ulong?[] _restSinceList;
+		ulong _selfUserId = 0;
 
 		public TwitterAccount ()
 		{
@@ -50,6 +51,11 @@ namespace TwitterStreaming
 			RestDirectMessages = new RestUsage {Interval = TimeSpan.FromSeconds (600), Count = 20, IsEnabled = true, LastExecTime = DateTime.MinValue};
 			_restInfoList = new RestUsage[] {RestHome, RestMentions, RestDirectMessages};
 			_restSinceList = new ulong?[] {null, null, null};
+
+			ThreadPool.QueueUserWorkItem (delegate (object o) {
+				Self = _client.VerifyCredentials ();
+				_selfUserId = Self.ID;
+			});
 		}
 
 		public void UpdateOAuthAccessToken ()
@@ -119,6 +125,7 @@ namespace TwitterStreaming
 		public RestUsage RestMentions { get; private set; }
 		public RestUsage RestDirectMessages { get; private set; }
 		public string ScreenName { get; private set; }
+		public User Self { get; private set; }
 		public bool IsIncludeOtherStatus { get; set; }
 		public StreamingClient StreamingClient {
 			get { return _streamingClient; }
@@ -142,6 +149,10 @@ namespace TwitterStreaming
 						return;
 					if (e.Status.InReplyToUserId > 0) {
 						if (!_client.FriendSet.Contains (e.Status.InReplyToUserId))
+							return;
+					}
+					if (e.Status.RetweetedStatus != null && e.Status.RetweetedStatus.User != null) {
+						if (e.Status.RetweetedStatus.User.ID == _selfUserId)
 							return;
 					}
 				}
