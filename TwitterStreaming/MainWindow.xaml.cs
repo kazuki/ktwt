@@ -35,7 +35,7 @@ namespace TwitterStreaming
 	public partial class MainWindow : Window
 	{
 		TwitterAccountManager _mgr;
-		ObservableCollection<object> _timelines = new ObservableCollection<object> ();
+		RootTimeLines _rootTLs = new RootTimeLines ();
 		ObservableCollection<string> _hashTags = new ObservableCollection<string> ();
 
 		Status _replyInfo;
@@ -62,8 +62,12 @@ namespace TwitterStreaming
 				// Background. Update UserInfo
 				TwitterAccount[] accounts = _mgr.Accounts;
 				for (int i = 0; i < accounts.Length; i ++) {
-					accounts[i].TwitterClient.UpdateFriends ();
-					accounts[i].TwitterClient.UpdateFollowers ();
+					try {
+						accounts[i].TwitterClient.UpdateFriends ();
+					} catch {}
+					try {
+						accounts[i].TwitterClient.UpdateFollowers ();
+					} catch {}
 				}
 			});
 		}
@@ -72,7 +76,7 @@ namespace TwitterStreaming
 		void LoadConfig (JsonObject root)
 		{
 			if (root.Value.ContainsKey ("windows"))
-				LoadConfigInternal ((JsonArray)root.Value["windows"], _timelines);
+				LoadConfigInternal ((JsonArray)root.Value["windows"], _rootTLs);
 			if (root.Value.ContainsKey ("colors"))
 				LoadConfigInternalColors ((JsonObject)root.Value["colors"]);
 			if (root.Value.ContainsKey ("fonts"))
@@ -82,38 +86,46 @@ namespace TwitterStreaming
 			if (root.Value.ContainsKey ("footer"))
 				FooterText = (root.Value["footer"] as JsonString).Value;
 		}
-		void LoadConfigInternal (JsonArray array, ObservableCollection<object> timelines)
+		void LoadConfigInternal (JsonArray array, TimelineBase timelines)
 		{
 			for (int i = 0; i < array.Length; i ++) {
 				JsonObject obj = array[i] as JsonObject;
 				if (obj != null) {
-					TimelineInfo info = null;
-					string type = (obj.Value["type"] as JsonString).Value;
-					if (type == "account") {
-						string subtype = (obj.Value["subtype"] as JsonString).Value;
-						string name = (obj.Value["name"] as JsonString).Value;
-						TwitterAccount account = null;
-						foreach (TwitterAccount item in _mgr.Accounts)
-							if (name.Equals (item.ScreenName)) {
-								account = item;
-								break;
+					TimelineBase info = null;
+					switch ((obj.Value["type"] as JsonString).Value) {
+						case "account":
+							string subtype = (obj.Value["subtype"] as JsonString).Value;
+							string name = (obj.Value["name"] as JsonString).Value;
+							TwitterAccount account = null;
+							foreach (TwitterAccount item in _mgr.Accounts)
+								if (name.Equals (item.ScreenName)) {
+									account = item;
+									break;
+								}
+							if (account == null) continue;
+							switch (subtype) {
+								case "home": info = new TimelineInfo (timelines, account, account.HomeTimeline); break;
+								case "mentions": info = new TimelineInfo (timelines, account, account.Mentions); break;
+								case "directmessages": info = new TimelineInfo (timelines, account, account.DirectMessages); break;
 							}
-						if (account == null) continue;
-						switch (subtype) {
-							case "home": info = new TimelineInfo (account, account.HomeTimeline); break;
-							case "mentions": info = new TimelineInfo (account, account.Mentions); break;
-							case "directmessages": info = new TimelineInfo (account, account.DirectMessages); break;
-						}
-					} else if (type == "search") {
-						string keywords = (obj.Value["keywords"] as JsonString).Value;
-						foreach (SearchStatuses search in _mgr.Searches)
-							if (keywords.Equals (search.Keyword)) {
-								info = new TimelineInfo (search);
-								break;
-							}
+							break;
+						case "search":
+							string keywords = (obj.Value["keywords"] as JsonString).Value;
+							foreach (SearchStatuses search in _mgr.Searches)
+								if (keywords.Equals (search.Keyword)) {
+									info = new TimelineInfo (timelines, search);
+									break;
+								}
+							break;
+						case "tab":
+							string title = (obj.Value["title"] as JsonString).Value;
+							TabInfo tb = new TabInfo (timelines, title);
+							LoadConfigInternal ((JsonArray)obj.Value["windows"], tb);
+							info = tb;
+							break;
 					}
 					if (info != null)
-						timelines.Add (info);
+						timelines.TimeLines.Add (info);
 				}
 			}
 		}
@@ -157,7 +169,7 @@ namespace TwitterStreaming
 			_mgr.Save (delegate (JsonTextWriter writer) {
 				writer.WriteKey ("windows");
 				writer.WriteStartArray ();
-				SaveConfigInternal (writer, _timelines);
+				SaveConfigInternal (writer, _rootTLs);
 				writer.WriteEndArray ();
 				writer.WriteKey ("colors");
 				writer.WriteStartObject ();
@@ -173,13 +185,14 @@ namespace TwitterStreaming
 				writer.WriteString (FooterText);
 			});
 		}
-		void SaveConfigInternal (JsonTextWriter writer, ObservableCollection<object> timelines)
+		void SaveConfigInternal (JsonTextWriter writer, TimelineBase timelines)
 		{
-			foreach (object item in timelines) {
+			foreach (object item in timelines.TimeLines) {
+				writer.WriteStartObject ();
+				writer.WriteKey ("type");
 				TimelineInfo tl = item as TimelineInfo;
+				TabInfo tb = item as TabInfo;
 				if (tl != null) {
-					writer.WriteStartObject ();
-					writer.WriteKey ("type");
 					if (tl.Search == null) {
 						writer.WriteString ("account");
 						writer.WriteKey ("subtype");
@@ -196,8 +209,18 @@ namespace TwitterStreaming
 						writer.WriteKey ("keywords");
 						writer.WriteString (tl.Search.Keyword);
 					}
-					writer.WriteEndObject ();
+				} else if (tb != null) {
+					writer.WriteString ("tab");
+					writer.WriteKey ("title");
+					writer.WriteString (tb.Title);
+					writer.WriteKey ("windows");
+					writer.WriteStartArray ();
+					SaveConfigInternal (writer, tb);
+					writer.WriteEndArray ();
+				} else {
+					writer.WriteNull ();
 				}
+				writer.WriteEndObject ();
 			}
 		}
 		void SaveConfigInternalColors (JsonTextWriter writer)
@@ -244,23 +267,23 @@ namespace TwitterStreaming
 			if (!ret.HasValue || !ret.Value)
 				return;
 
-			object info = null;
+			TimelineBase info = null;
 			TwitterAccount account = win.SelectedAccount;
 			if (win.IsCheckedAccountTimeline) {
-				info = new TimelineInfo (account, win.SelectedAccountTimeline);
+				info = new TimelineInfo (_rootTLs, account, win.SelectedAccountTimeline);
 			} else if (win.IsCheckedNewSearch && win.SearchKeyword.Length > 0) {
 				SearchStatuses search = new SearchStatuses (account, win.SearchKeyword);
 				if (win.IsUseStreamingForSearch)
 					search.StreamingClient = new StreamingClient (new TwitterAccount[] {account}, search.Keyword, search);
 				_mgr.AddSearchInfo (search);
-				info = new TimelineInfo (search);
+				info = new TimelineInfo (_rootTLs, search);
 			} else if (win.IsCheckedExistedSearch && win.SelectedExistedSearch != null) {
-				info = new TimelineInfo (win.SelectedExistedSearch);
+				info = new TimelineInfo (_rootTLs, win.SelectedExistedSearch);
 			} else if (win.IsCheckedNewTab && win.NewTabTitle.Length > 0) {
-				info = new TabInfo (win.NewTabTitle);
+				info = new TabInfo (_rootTLs, win.NewTabTitle);
 			}
 			if (info != null) {
-				_timelines.Add (info);
+				_rootTLs.TimeLines.Add (info);
 				SaveConfig ();
 			}
 		}
@@ -277,9 +300,8 @@ namespace TwitterStreaming
 
 			if (win.IsStreamingTargetsChanged) {
 				_mgr.ReconstructAllStreaming (win.StreamingTargets);
-				for (int i = 0; i < _timelines.Count; i ++)
-					if (_timelines[i] is TimelineInfo)
-						(_timelines[i] as TimelineInfo).UpdateStreamingConstruction ();
+				foreach (TimelineInfo info in GetAllTimeLineInfo ())
+					info.UpdateStreamingConstruction ();
 			}
 
 			SaveConfig ();
@@ -296,14 +318,30 @@ namespace TwitterStreaming
 			get { return postTextBox; }
 		}
 
-		public ObservableCollection<object> TimeLines {
-			get { return _timelines; }
+		public ObservableCollection<TimelineBase> TimeLines {
+			get { return _rootTLs.TimeLines; }
+		}
+
+		List<TimelineInfo> GetAllTimeLineInfo ()
+		{
+			Queue<TimelineBase> queue = new Queue<TimelineBase> ();
+			List<TimelineInfo> list = new List<TimelineInfo> ();
+			queue.Enqueue (_rootTLs);
+			while (queue.Count > 0) {
+				TimelineBase tl = queue.Dequeue ();
+				if (tl.TimeLines != null) {
+					for (int i = 0; i < tl.TimeLines.Count; i++)
+						queue.Enqueue (tl.TimeLines[i]);
+				}
+				if (tl is TimelineInfo)
+					list.Add ((TimelineInfo)tl);
+			}
+			return list;
 		}
 
 		bool UseTimeline (TwitterTimeLine tl)
 		{
-			for (int i = 0; i < _timelines.Count; i ++) {
-				TimelineInfo info = _timelines[i] as TimelineInfo;
+			foreach (TimelineInfo info in GetAllTimeLineInfo ()) {
 				if (info != null) {
 					if (info.Statuses == tl)
 						return true;
@@ -316,30 +354,62 @@ namespace TwitterStreaming
 		{
 			TimelineInfo info = (sender as Button).DataContext as TimelineInfo;
 			if (MessageBox.Show (info.Title + " を閉じてもよろしいですか?", string.Empty, MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
-				_timelines.Remove (info);
-				if (!UseTimeline (info.Statuses)) {
+				info.Owner.TimeLines.Remove (info);
+				if (!UseTimeline (info.Statuses))
 					_mgr.CloseTimeLine (info.Statuses);
-					SaveConfig ();
-				}
 			}
+			SaveConfig ();
 		}
 
 		private void TimeLineMoveLeftButton_Click (object sender, RoutedEventArgs e)
 		{
-			if (_timelines.Count <= 1)
+			TimelineBase sel = (sender as Button).DataContext as TimelineBase;
+			if (sel == null || sel.Owner == null || sel.Owner.TimeLines == null)
 				return;
-			int idx = _timelines.IndexOf ((sender as Button).DataContext);
-			if (idx > 0)
-				_timelines.Move (idx, idx - 1);
+			int idx = sel.Owner.TimeLines.IndexOf (sel);
+			if (sel.Owner.TimeLines.Count > 1 && idx > 0) {
+				TabInfo tabInfo = sel.Owner.TimeLines[idx - 1] as TabInfo;
+				if (tabInfo != null) {
+					tabInfo.Add (sel.Owner.TimeLines[idx]);
+				} else {
+					sel.Owner.TimeLines.Move (idx, idx - 1);
+				}
+			} else {
+				TabInfo tabInfo = sel.Owner as TabInfo;
+				if (tabInfo != null) {
+					tabInfo.TimeLines.Remove (sel);
+					idx = tabInfo.Owner.TimeLines.IndexOf (tabInfo);
+					tabInfo.Owner.TimeLines.Insert (idx, sel);
+					sel.Owner = tabInfo.Owner;
+				}
+			}
+			SaveConfig ();
 		}
 
 		private void TimeLineMoveRightButton_Click (object sender, RoutedEventArgs e)
 		{
-			if (_timelines.Count <= 1)
+			TimelineBase sel = (sender as Button).DataContext as TimelineBase;
+			if (sel == null || sel.Owner == null || sel.Owner.TimeLines == null)
 				return;
-			int idx = _timelines.IndexOf ((sender as Button).DataContext);
-			if (idx >= 0 && idx < _timelines.Count - 1)
-				_timelines.Move (idx, idx + 1);
+			int idx = sel.Owner.TimeLines.IndexOf (sel);
+			if (idx < 0) return;
+			if (sel.Owner.TimeLines.Count > 1 && idx < sel.Owner.TimeLines.Count - 1) {
+				TabInfo tabInfo = sel.Owner.TimeLines[idx + 1] as TabInfo;
+				if (tabInfo != null) {
+					tabInfo.Insert (0, sel);
+				} else {
+					sel.Owner.TimeLines.Move (idx, idx + 1);
+				}
+			} else {
+				TabInfo tabInfo = sel.Owner as TabInfo;
+				if (tabInfo != null) {
+					tabInfo.TimeLines.Remove (sel);
+					idx = tabInfo.Owner.TimeLines.IndexOf (tabInfo);
+					tabInfo.Owner.TimeLines.Insert (idx + 1, sel);
+					sel.Owner = tabInfo.Owner;
+				}
+			}
+			SaveConfig ();
 		}
 
 		private void TwitterStatusViewer_LinkClick (object sender, LinkClickEventArgs e)
@@ -626,14 +696,34 @@ namespace TwitterStreaming
 		#endregion
 	}
 
-	public class TimelineInfo : INotifyPropertyChanged
+	public abstract class TimelineBase
 	{
-		TimelineInfo (TwitterTimeLine timeline)
+		protected TimelineBase (TimelineBase owner)
+		{
+			Owner = owner;
+			TimeLines = null;
+		}
+
+		public TimelineBase Owner { get; set; }
+		public ObservableCollection<TimelineBase> TimeLines { get; protected set; }
+	}
+
+	public class RootTimeLines : TimelineBase
+	{
+		public RootTimeLines () : base (null)
+		{
+			TimeLines = new ObservableCollection<TimelineBase> ();
+		}
+	}
+
+	public class TimelineInfo : TimelineBase, INotifyPropertyChanged
+	{
+		TimelineInfo (TimelineBase owner, TwitterTimeLine timeline) : base (owner)
 		{
 			Statuses = timeline;
 		}
 
-		public TimelineInfo (TwitterAccount account, TwitterTimeLine timeline) : this (timeline)
+		public TimelineInfo (TimelineBase owner, TwitterAccount account, TwitterTimeLine timeline) : this (owner, timeline)
 		{
 			RestAccount = account;
 			Title = account.ScreenName + "'s " +
@@ -641,7 +731,7 @@ namespace TwitterStreaming
 				(timeline == account.Mentions ? "mentions" : "dm"));
 		}
 
-		public TimelineInfo (SearchStatuses search) : this (search.Statuses)
+		public TimelineInfo (TimelineBase owner, SearchStatuses search) : this (owner, search.Statuses)
 		{
 			Search = search;
 			RestAccount = search.Account;
@@ -668,18 +758,26 @@ namespace TwitterStreaming
 		}
 	}
 
-	public class TabInfo
+	public class TabInfo : TimelineBase
 	{
-		ObservableCollection<object> _timelines = new ObservableCollection<object> ();
-
-		public TabInfo (string title)
+		public TabInfo (TimelineBase owner, string title) : base (owner)
 		{
 			Title = title;
+			TimeLines = new ObservableCollection<TimelineBase> ();
 		}
 
-		public ObservableCollection<object> TimeLines {
-			get { return _timelines; }
+		public void Add (TimelineBase tl)
+		{
+			Insert (TimeLines.Count, tl);
 		}
+
+		public void Insert (int idx, TimelineBase tl)
+		{
+			if (tl.Owner != null && tl.Owner.TimeLines != null) tl.Owner.TimeLines.Remove (tl);
+			tl.Owner = this;
+			TimeLines.Insert (idx, tl);
+		}
+
 		public string Title { get; set; }
 	}
 

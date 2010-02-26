@@ -77,7 +77,7 @@
                 </ComboBox>
             </Grid>
         </GroupBox>
-        <GroupBox Visibility="Collapsed">
+        <GroupBox>
             <GroupBox.Header>
                 <RadioButton GroupName="DataType" x:Name="chk3" Checked="RadioButton_Checked">新しいタブコンテナ</RadioButton>
             </GroupBox.Header>
