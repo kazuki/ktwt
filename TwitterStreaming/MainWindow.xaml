@@ -3,7 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:c="clr-namespace:TwitterStreaming"
     Title="ktwt (Simple Twitter Client with OAuth-REST/Streaming API)" Width="640" Height="480"
-    x:Name="mw" Foreground="White" Background="#222">
+    x:Name="mw" Foreground="White" Background="#222" Icon="/TwitterStreaming;component/apple.ico">
     <Window.Resources>
         <DataTemplate x:Key="timelineTemplate">
             <Grid>
