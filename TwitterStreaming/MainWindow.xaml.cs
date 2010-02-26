@@ -67,8 +67,12 @@ namespace TwitterStreaming
 
 		void LoadConfig (JsonObject root)
 		{
-			if (!root.Value.ContainsKey ("windows")) return;
-			LoadConfigInternal ((JsonArray)root.Value["windows"], _timelines);
+			if (root.Value.ContainsKey ("windows"))
+				LoadConfigInternal ((JsonArray)root.Value["windows"], _timelines);
+			if (root.Value.ContainsKey ("colors"))
+				LoadConfigInternalColors ((JsonObject)root.Value["colors"]);
+			if (root.Value.ContainsKey ("fonts"))
+				LoadConfigInternalFonts ((JsonObject)root.Value["fonts"]);
 		}
 		void LoadConfigInternal (JsonArray array, ObservableCollection<object> timelines)
 		{
@@ -105,6 +109,35 @@ namespace TwitterStreaming
 				}
 			}
 		}
+		void LoadConfigInternalColors (JsonObject o)
+		{
+			ColorCodeNameConverter conv = new ColorCodeNameConverter ();
+			Background = LoadConfigInternalColors (o, "bg", conv, Background);
+			Foreground = LoadConfigInternalColors (o, "fg", conv, Foreground);
+			PostTextBox.Background = LoadConfigInternalColors (o, "postTextBoxBg", conv, PostTextBox.Background);
+			PostTextBox.Foreground = LoadConfigInternalColors (o, "postTextBoxFg", conv, PostTextBox.Foreground);
+			PostBackground = LoadConfigInternalColors (o, "postBg", conv, PostBackground);
+			PostForeground = LoadConfigInternalColors (o, "postFg", conv, PostForeground);
+			NameForeground = LoadConfigInternalColors (o, "postNameFg", conv, NameForeground);
+			LinkForeground = LoadConfigInternalColors (o, "postLinkFg", conv, LinkForeground);
+		}
+		Brush LoadConfigInternalColors (JsonObject o, string key, ColorCodeNameConverter conv, Brush def)
+		{
+			try {
+				if (!o.Value.ContainsKey (key))
+					return def;
+				return (Brush)conv.ConvertBack ((o.Value[key] as JsonString).Value, null, null, null);
+			} catch {
+				return def;
+			}
+		}
+		void LoadConfigInternalFonts (JsonObject o)
+		{
+			try {
+				FontFamily = new FontFamily ((o.Value["main-family"] as JsonString).Value);
+			} catch {}
+			FontSize = (o.Value["main-size"] as JsonNumber).Value;
+		}
 
 		void SaveConfig ()
 		{
@@ -113,6 +146,14 @@ namespace TwitterStreaming
 				writer.WriteStartArray ();
 				SaveConfigInternal (writer, _timelines);
 				writer.WriteEndArray ();
+				writer.WriteKey ("colors");
+				writer.WriteStartObject ();
+				SaveConfigInternalColors (writer);
+				writer.WriteEndObject ();
+				writer.WriteKey ("fonts");
+				writer.WriteStartObject ();
+				SaveConfigInternalFonts (writer);
+				writer.WriteEndObject ();
 			});
 		}
 		void SaveConfigInternal (JsonTextWriter writer, ObservableCollection<object> timelines)
@@ -141,6 +182,33 @@ namespace TwitterStreaming
 					writer.WriteEndObject ();
 				}
 			}
+		}
+		void SaveConfigInternalColors (JsonTextWriter writer)
+		{
+			ColorCodeNameConverter conv = new ColorCodeNameConverter ();
+			writer.WriteKey ("bg");
+			writer.WriteString ((string)conv.Convert (Background, null, null, null));
+			writer.WriteKey ("fg");
+			writer.WriteString ((string)conv.Convert (Foreground, null, null, null));
+			writer.WriteKey ("postTextBoxBg");
+			writer.WriteString ((string)conv.Convert (PostTextBox.Background, null, null, null));
+			writer.WriteKey ("postTextBoxFg");
+			writer.WriteString ((string)conv.Convert (PostTextBox.Foreground, null, null, null));
+			writer.WriteKey ("postBg");
+			writer.WriteString ((string)conv.Convert (PostBackground, null, null, null));
+			writer.WriteKey ("postFg");
+			writer.WriteString ((string)conv.Convert (PostForeground, null, null, null));
+			writer.WriteKey ("postNameFg");
+			writer.WriteString ((string)conv.Convert (NameForeground, null, null, null));
+			writer.WriteKey ("postLinkFg");
+			writer.WriteString ((string)conv.Convert (LinkForeground, null, null, null));
+		}
+		void SaveConfigInternalFonts (JsonTextWriter writer)
+		{
+			writer.WriteKey ("main-family");
+			writer.WriteString (FontFamily.ToString ());
+			writer.WriteKey ("main-size");
+			writer.WriteNumber (FontSize);
 		}
 
 		private void MenuItem_AddNewTimeline_Click (object sender, RoutedEventArgs e)
