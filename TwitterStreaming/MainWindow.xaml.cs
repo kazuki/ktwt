@@ -42,6 +42,9 @@ namespace TwitterStreaming
 
 		public MainWindow ()
 		{
+			NameForeground = new SolidColorBrush (Color.FromRgb (0x77, 0x77, 0xff));
+			LinkForeground = Brushes.White;
+			PostBackground = new SolidColorBrush (Color.FromRgb (0x33, 0x33, 0x33));
 			InitializeComponent ();
 			itemsControl.DataContext = this;
 			_mgr = new TwitterAccountManager ();
@@ -170,7 +173,7 @@ namespace TwitterStreaming
 
 		private void MenuItem_ShowPreference_Click (object sender, RoutedEventArgs e)
 		{
-			PreferenceWindow win = new PreferenceWindow (_mgr);
+			PreferenceWindow win = new PreferenceWindow (_mgr, this);
 			win.Owner = this;
 			win.ShowDialog ();
 			if (win.IsAccountArrayChanged) {
@@ -446,6 +449,29 @@ namespace TwitterStreaming
 				Process.Start (url);
 			} catch {}
 		}
+
+		#region Colors
+		public static readonly DependencyProperty PostBackgroundProperty =
+			DependencyProperty.Register ("PostBackground", typeof (Brush), typeof (MainWindow));
+		public Brush PostBackground {
+			get { return (Brush)GetValue (PostBackgroundProperty); }
+			set { SetValue (PostBackgroundProperty, value); }
+		}
+
+		public static readonly DependencyProperty NameForegroundProperty =
+			DependencyProperty.Register ("NameForeground", typeof (Brush), typeof (MainWindow));
+		public Brush NameForeground {
+			get { return (Brush)GetValue (NameForegroundProperty); }
+			set { SetValue (NameForegroundProperty, value); }
+		}
+
+		public static readonly DependencyProperty LinkForegroundProperty =
+			DependencyProperty.Register ("LinkForeground", typeof (Brush), typeof (MainWindow));
+		public Brush LinkForeground {
+			get { return (Brush)GetValue (LinkForegroundProperty); }
+			set { SetValue (LinkForegroundProperty, value); }
+		}
+		#endregion
 	}
 
 	public class TimelineInfo : INotifyPropertyChanged

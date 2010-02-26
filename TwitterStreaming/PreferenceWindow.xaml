@@ -5,6 +5,7 @@
     Title="Preference" Height="480" Width="640" WindowStyle="ToolWindow" x:Name="win" WindowStartupLocation="CenterOwner">
     <Window.Resources>
         <c:TimeSpanToSecondsConverter x:Key="intervalConverter" />
+        <c:ColorCodeNameConverter x:Key="colorCodeBrushConverter" />
         <DataTemplate x:Key="nullTemplate">
             <TextBlock>
                 <TextBlock>利用しない</TextBlock>
@@ -106,6 +107,38 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+            </TabItem>
+            <TabItem Header="Font/Color">
+                <StackPanel Orientation="Vertical">
+                    <GroupBox Header="Font">
+                        <StackPanel Orientation="Horizontal">
+                            <ComboBox ItemsSource="{Binding ElementName=win, Path=FontFamilies}"
+                                      SelectedItem="{Binding ElementName=win, Path=MainWindow.FontFamily}" />
+                            <ComboBox ItemsSource="{Binding ElementName=win, Path=FontSizes}"
+                                      SelectedItem="{Binding ElementName=win, Path=MainWindow.FontSize}" />
+                        </StackPanel>
+                    </GroupBox>
+                    <GroupBox Header="Colors">
+                        <StackPanel Orientation="Horizontal">
+                            <UniformGrid Columns="2">
+                                <TextBlock>Bg</TextBlock>
+                                <TextBox Text="{Binding ElementName=win, Path=MainWindow.Background, Converter={StaticResource colorCodeBrushConverter}, ValidatesOnExceptions=True}" />
+                                
+                                <TextBlock>PostBg</TextBlock>
+                                <TextBox Text="{Binding ElementName=win, Path=MainWindow.PostBackground, Converter={StaticResource colorCodeBrushConverter}, ValidatesOnExceptions=True}" />
+
+                                <TextBlock>Fg</TextBlock>
+                                <TextBox Text="{Binding ElementName=win, Path=MainWindow.Foreground, Converter={StaticResource colorCodeBrushConverter}, ValidatesOnExceptions=True}" />
+                                
+                                <TextBlock>NameFg</TextBlock>
+                                <TextBox Text="{Binding ElementName=win, Path=MainWindow.NameForeground, Converter={StaticResource colorCodeBrushConverter}, ValidatesOnExceptions=True}" />
+                                
+                                <TextBlock>LinkFg</TextBlock>
+                                <TextBox Text="{Binding ElementName=win, Path=MainWindow.LinkForeground, Converter={StaticResource colorCodeBrushConverter}, ValidatesOnExceptions=True}" />
+                            </UniformGrid>
+                        </StackPanel>
+                    </GroupBox>
+                </StackPanel>
             </TabItem>
         </TabControl>
     </Grid>

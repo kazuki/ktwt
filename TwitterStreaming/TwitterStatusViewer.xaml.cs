@@ -19,6 +19,7 @@ using System;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -35,13 +36,12 @@ namespace TwitterStreaming
 
 		public event EventHandler<LinkClickEventArgs> LinkClick;
 
+		public static readonly DependencyProperty StatusProperty =
+			DependencyProperty.Register ("Status", typeof (Status), typeof (TwitterStatusViewer), new PropertyMetadata (new Status (), StatusPropertyChanged));
 		public Status Status {
 			get { return (Status)GetValue (StatusProperty); }
 			set { SetValue (StatusProperty, value); }
 		}
-
-		public static readonly DependencyProperty StatusProperty =
-			DependencyProperty.Register ("Status", typeof (Status), typeof (TwitterStatusViewer), new PropertyMetadata (new Status (), StatusPropertyChanged));
 
 		static Regex _urlRegex = new Regex (@"(?<url>https?://[a-zA-Z0-9!#$%&'()=\-~^@`;\+:\*,\./\\?_]+)|(?<username>@[a-zA-Z0-9_]+)|(?<hashtag>#[\w]+)", RegexOptions.Compiled);
 		static void StatusPropertyChanged (DependencyObject d, DependencyPropertyChangedEventArgs e) {
@@ -54,18 +54,17 @@ namespace TwitterStreaming
 			if (s.User.ProfileImageUrl != null)
 				self.userImage.Source = new BitmapImage (new Uri (s.User.ProfileImageUrl));
 
-			Brush defFg = self.nameTextBlock.Foreground;
 			FontWeight defWeight = self.nameTextBlock.FontWeight;
 			RoutedEventHandler defLinkHandler = new RoutedEventHandler (self.Hyperlink_Click);
 			InlineCollection nameInlines = self.nameTextBlock.Inlines;
-			nameInlines.Add (CreateHyperlink (s.User.ScreenName + " [" + s.User.Name + "]", "/" + s.User.ScreenName, defFg, defWeight, defLinkHandler));
+			nameInlines.Add (self.CreateHyperlink (s.User.ScreenName + " [" + s.User.Name + "]", "/" + s.User.ScreenName, NameForegroundProperty, defWeight, defLinkHandler));
 			if (!string.IsNullOrEmpty (s.InReplyToScreenName)) {
-				nameInlines.Add (CreateTextBlock (" in reply to ", defFg, FontWeights.Normal));
-				nameInlines.Add (CreateHyperlink ("@" + s.InReplyToScreenName, "/" + s.InReplyToScreenName + (s.InReplyToStatusId == 0 ? string.Empty : "/status/" + s.InReplyToStatusId.ToString ()), defFg, defWeight, defLinkHandler));
+				nameInlines.Add (CreateTextBlock (" in reply to ", FontWeights.Normal));
+				nameInlines.Add (self.CreateHyperlink ("@" + s.InReplyToScreenName, "/" + s.InReplyToScreenName + (s.InReplyToStatusId == 0 ? string.Empty : "/status/" + s.InReplyToStatusId.ToString ()), NameForegroundProperty, defWeight, defLinkHandler));
 			}
 			if (s != s1) {
-				nameInlines.Add (CreateTextBlock (" retweeted by ", defFg, FontWeights.Normal));
-				nameInlines.Add (CreateHyperlink ("@" + s1.User.ScreenName, "/" + s1.User.ScreenName, defFg, defWeight, defLinkHandler));
+				nameInlines.Add (CreateTextBlock (" retweeted by ", FontWeights.Normal));
+				nameInlines.Add (self.CreateHyperlink ("@" + s1.User.ScreenName, "/" + s1.User.ScreenName, NameForegroundProperty, defWeight, defLinkHandler));
 			}
 			if (s.Source != null) {
 				int p1 = s.Source.IndexOf ('>');
@@ -75,14 +74,14 @@ namespace TwitterStreaming
 					appName = s.Source.Substring (p1 + 1, p2 - p1 - 1);
 				p1 = s.Source.IndexOf ('\"');
 				p2 = s.Source.IndexOf ('\"', Math.Max (0, p1 + 1));
-				nameInlines.Add (CreateTextBlock (" from ", defFg, FontWeights.Normal));
+				nameInlines.Add (CreateTextBlock (" from ", FontWeights.Normal));
 				if (p1 >= 0 && p2 > 0) {
-					nameInlines.Add (CreateHyperlink (appName, s.Source.Substring (p1 + 1, p2 - p1 - 1), defFg, defWeight, defLinkHandler));
+					nameInlines.Add (self.CreateHyperlink (appName, s.Source.Substring (p1 + 1, p2 - p1 - 1), NameForegroundProperty, defWeight, defLinkHandler));
 				} else {
 					nameInlines.Add (appName);
 				}
 			}
-			nameInlines.Add (CreateTextBlock (" (" + s.CreatedAt.ToString ("MM/dd HH:mm:ss") + ")", defFg, FontWeights.Normal));
+			nameInlines.Add (CreateTextBlock (" (" + s.CreatedAt.ToString ("MM/dd HH:mm:ss") + ")", FontWeights.Normal));
 
 			InlineCollection inlines = self.postTextBlock.Inlines;
 			Match m = _urlRegex.Match (s.Text);
@@ -90,18 +89,15 @@ namespace TwitterStreaming
 			while (m.Success) {
 				self.postTextBlock.Inlines.Add (s.Text.Substring (last, m.Index - last));
 				if (m.Success) {
-					Hyperlink link = new Hyperlink ();
-					link.Inlines.Add (m.Value);
-					link.Tag = m.Value;
-					link.Click += new RoutedEventHandler (self.Hyperlink_Click);
+					Hyperlink link = self.CreateHyperlink (m.Value, m.Value, LinkForegroundProperty, self.postTextBlock.FontWeight, self.Hyperlink_Click);
 					inlines.Add (link);
-					if (m.Groups["url"].Success) {
-						link.Foreground = Brushes.White;
+					/*if (m.Groups["url"].Success) {
+						link.Foreground = self.LinkForeground;
 					} else if (m.Groups["username"].Success) {
-						link.Foreground = Brushes.White;
+						link.Foreground = self.LinkForeground;
 					} else if (m.Groups["hashtag"].Success) {
-						link.Foreground = Brushes.White;
-					}
+						link.Foreground = self.LinkForeground;
+					}*/
 				}
 
 				last = m.Index + m.Length;
@@ -110,19 +106,20 @@ namespace TwitterStreaming
 			inlines.Add (s.Text.Substring (last));
 		}
 
-		static TextBlock CreateTextBlock (string text, Brush foreground, FontWeight weight)
+		static TextBlock CreateTextBlock (string text, FontWeight weight)
 		{
 			TextBlock bx = new TextBlock ();
-			bx.Foreground = foreground;
 			bx.FontWeight = weight;
 			bx.Inlines.Add (text);
 			return bx;
 		}
 
-		static Hyperlink CreateHyperlink (string text, string url, Brush foreground, FontWeight weight, RoutedEventHandler handler)
+		Hyperlink CreateHyperlink (string text, string url, DependencyProperty foreground, FontWeight weight, RoutedEventHandler handler)
 		{
 			Hyperlink link = new Hyperlink ();
-			link.Foreground = foreground;
+			Binding binding = new Binding (foreground.Name);
+			binding.Source = this;
+			link.SetBinding (Hyperlink.ForegroundProperty, binding);
 			link.Inlines.Add (text);
 			link.Tag = url;
 			link.Click += handler;
@@ -134,5 +131,21 @@ namespace TwitterStreaming
 			if (LinkClick != null)
 				LinkClick (this, new LinkClickEventArgs ((sender as Hyperlink).Tag as string));
 		}
+
+		#region Colors
+		public static readonly DependencyProperty NameForegroundProperty =
+			DependencyProperty.Register ("NameForeground", typeof (Brush), typeof (TwitterStatusViewer), new FrameworkPropertyMetadata (Brushes.Black, FrameworkPropertyMetadataOptions.AffectsRender, null));
+		public Brush NameForeground {
+			get { return (Brush)GetValue (NameForegroundProperty); }
+			set { SetValue (NameForegroundProperty, value); }
+		}
+
+		public static readonly DependencyProperty LinkForegroundProperty =
+			DependencyProperty.Register ("LinkForeground", typeof (Brush), typeof (TwitterStatusViewer), new FrameworkPropertyMetadata (Brushes.Black, FrameworkPropertyMetadataOptions.AffectsRender, null));
+		public Brush LinkForeground {
+			get { return (Brush)GetValue (LinkForegroundProperty); }
+			set { SetValue (LinkForegroundProperty, value); }
+		}
+		#endregion
 	}
 }
