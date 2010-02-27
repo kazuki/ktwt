@@ -58,12 +58,12 @@
                                             <CheckBox Grid.Column="0" Grid.Row="1" IsChecked="{Binding Path=RestHome.IsEnabled}">Home:</CheckBox>
                                             <CheckBox Grid.Column="0" Grid.Row="2" IsChecked="{Binding Path=RestMentions.IsEnabled}">Mentions:</CheckBox>
                                             <CheckBox Grid.Column="0" Grid.Row="3" IsChecked="{Binding Path=RestDirectMessages.IsEnabled}">DM:</CheckBox>
-                                            <TextBox Grid.Column="1" Grid.Row="1" Text="{Binding Path=RestHome.Interval, Converter={StaticResource intervalConverter}}" />
-                                            <TextBox Grid.Column="1" Grid.Row="2" Text="{Binding Path=RestMentions.Interval, Converter={StaticResource intervalConverter}}" />
-                                            <TextBox Grid.Column="1" Grid.Row="3" Text="{Binding Path=RestDirectMessages.Interval, Converter={StaticResource intervalConverter}}" />
-                                            <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding Path=RestHome.Count}" />
-                                            <TextBox Grid.Column="2" Grid.Row="2" Text="{Binding Path=RestMentions.Count}" />
-                                            <TextBox Grid.Column="2" Grid.Row="3" Text="{Binding Path=RestDirectMessages.Count}" />
+                                            <TextBox Grid.Column="1" Grid.Row="1" Text="{Binding Path=RestHome.Interval, Converter={StaticResource intervalConverter}, ValidatesOnExceptions=True}" />
+                                            <TextBox Grid.Column="1" Grid.Row="2" Text="{Binding Path=RestMentions.Interval, Converter={StaticResource intervalConverter}, ValidatesOnExceptions=True}" />
+                                            <TextBox Grid.Column="1" Grid.Row="3" Text="{Binding Path=RestDirectMessages.Interval, Converter={StaticResource intervalConverter}, ValidatesOnExceptions=True}" />
+                                            <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding Path=RestHome.Count, ValidatesOnExceptions=True}" />
+                                            <TextBox Grid.Column="2" Grid.Row="2" Text="{Binding Path=RestMentions.Count, ValidatesOnExceptions=True}" />
+                                            <TextBox Grid.Column="2" Grid.Row="3" Text="{Binding Path=RestDirectMessages.Count, ValidatesOnExceptions=True}" />
                                             <StackPanel Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
                                                 <Button Click="DeleteButton_Click">削除</Button>
                                             </StackPanel>

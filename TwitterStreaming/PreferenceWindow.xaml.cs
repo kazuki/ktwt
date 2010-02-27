@@ -258,7 +258,11 @@ namespace TwitterStreaming
 
 		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{
-			return TimeSpan.FromSeconds (int.Parse ((string)value));
+			try {
+				return TimeSpan.FromSeconds (int.Parse ((string)value));
+			} catch {
+				return value;
+			}
 		}
 	}
 }
