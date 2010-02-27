@@ -296,9 +296,14 @@ namespace TwitterStreaming
 
 		List<TimelineInfo> GetAllTimeLineInfo ()
 		{
+			return GetAllChildrenTimeLineInfo (_rootTLs);
+		}
+
+		List<TimelineInfo> GetAllChildrenTimeLineInfo (TimelineBase root)
+		{
 			Queue<TimelineBase> queue = new Queue<TimelineBase> ();
 			List<TimelineInfo> list = new List<TimelineInfo> ();
-			queue.Enqueue (_rootTLs);
+			queue.Enqueue (root);
 			while (queue.Count > 0) {
 				TimelineBase tl = queue.Dequeue ();
 				if (tl.TimeLines != null) {
@@ -313,7 +318,12 @@ namespace TwitterStreaming
 
 		bool UseTimeline (TwitterTimeLine tl)
 		{
-			foreach (TimelineInfo info in GetAllTimeLineInfo ()) {
+			return UseTimeline (tl, GetAllTimeLineInfo ());
+		}
+
+		bool UseTimeline (TwitterTimeLine tl, List<TimelineInfo> list)
+		{
+			foreach (TimelineInfo info in list) {
 				if (info != null) {
 					if (info.Statuses == tl)
 						return true;
@@ -324,11 +334,20 @@ namespace TwitterStreaming
 
 		private void TimeLineCloseButton_Click (object sender, RoutedEventArgs e)
 		{
-			TimelineInfo info = (sender as Button).DataContext as TimelineInfo;
-			if (MessageBox.Show (info.Title + " を閉じてもよろしいですか?", string.Empty, MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
-				info.Owner.TimeLines.Remove (info);
-				if (!UseTimeline (info.Statuses))
-					_mgr.CloseTimeLine (info.Statuses);
+			TimelineInfo tl = (sender as Button).DataContext as TimelineInfo;
+			TabInfo tb = (sender as Button).DataContext as TabInfo;
+			if (tl != null && MessageBox.Show (tl.Title + " を閉じてもよろしいですか?", string.Empty, MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
+				tl.Owner.TimeLines.Remove (tl);
+				if (!UseTimeline (tl.Statuses))
+					_mgr.CloseTimeLine (tl.Statuses);
+			} else if (tb != null && MessageBox.Show ("タブコンテナ " + tb.Title + " を閉じてもよろしいですか?", string.Empty, MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
+				tb.Owner.TimeLines.Remove (tb);
+				List<TimelineInfo> list = GetAllChildrenTimeLineInfo (tb);
+				List<TimelineInfo> all = GetAllTimeLineInfo ();
+				for (int i = 0; i < list.Count; i ++) {
+					if (!UseTimeline (list[i].Statuses, all))
+						_mgr.CloseTimeLine (list[i].Statuses);
+				}
 			}
 			SaveConfig ();
 		}
