@@ -209,6 +209,18 @@ namespace TwitterStreaming
 
 			TwitterAccount account = new TwitterAccount ();
 			account.Credential = credential;
+			if (obj.Value.ContainsKey ("rest")) {
+				JsonObject restRoot = (obj.Value["rest"] as JsonObject);
+				string[] rest_keys = new string[] {"home", "mentions", "dm"};
+				TwitterAccount.RestUsage[] rests = new TwitterAccount.RestUsage[] {account.RestHome, account.RestMentions, account.RestDirectMessages};
+				for (int i = 0; i < rest_keys.Length; i ++) {
+					if (!restRoot.Value.ContainsKey (rest_keys[i])) continue;
+					JsonObject restInfoRoot = (restRoot.Value[rest_keys[i]] as JsonObject);
+					rests[i].IsEnabled = (restInfoRoot.Value["enable"] as JsonBoolean).Value;
+					rests[i].Count = (int)(restInfoRoot.Value["count"] as JsonNumber).Value;
+					rests[i].Interval = TimeSpan.FromSeconds ((restInfoRoot.Value["interval"] as JsonNumber).Value);
+				}
+			}
 			return account;
 		}
 
@@ -232,6 +244,22 @@ namespace TwitterStreaming
 				writer.WriteKey ("secret");
 				writer.WriteString (pc.AccessSecret);
 			}
+			writer.WriteKey ("rest");
+			writer.WriteStartObject ();
+			string[] rest_keys = new string[] {"home", "mentions", "dm"};
+			TwitterAccount.RestUsage[] rests = new TwitterAccount.RestUsage[] {account.RestHome, account.RestMentions, account.RestDirectMessages};
+			for (int i = 0; i < rest_keys.Length; i ++) {
+				writer.WriteKey (rest_keys[i]);
+				writer.WriteStartObject ();
+				writer.WriteKey ("enable");
+				writer.WriteBoolean (rests[i].IsEnabled);
+				writer.WriteKey ("count");
+				writer.WriteNumber (rests[i].Count);
+				writer.WriteKey ("interval");
+				writer.WriteNumber ((int)rests[i].Interval.TotalSeconds);
+				writer.WriteEndObject ();
+			}
+			writer.WriteEndObject ();
 			writer.WriteKey ("streaming");
 			if (account.StreamingClient == null) {
 				writer.WriteNull ();
