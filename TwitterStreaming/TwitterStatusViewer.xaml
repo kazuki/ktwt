@@ -28,7 +28,7 @@
         <Image Grid.Column="0" x:Name="userImage" Width="32" Height="32" Margin="5 0 5 0" VerticalAlignment="Top" />
         <StackPanel Grid.Column="1" Orientation="Vertical" Margin="0 0 0 2">
             <StackPanel Orientation="Horizontal">
-                <ToggleButton x:Name="isFav" Style="{StaticResource favoriteButton}" Height="{Binding ElementName=uc, Path=FontSize}" Width="{Binding ElementName=uc, Path=FontSize}" Margin="0 0 3 0" VerticalAlignment="Center" Click="isFav_Click" />
+                <ToggleButton x:Name="isFav" IsChecked="{Binding ElementName=uc, Path=Status.IsFavorited, Mode=OneWay}" Style="{StaticResource favoriteButton}" Height="{Binding ElementName=uc, Path=FontSize}" Width="{Binding ElementName=uc, Path=FontSize}" Margin="0 0 3 0" VerticalAlignment="Center" Click="isFav_Click" />
                 <TextBlock FontWeight="Bold" Foreground="{Binding ElementName=uc, Path=NameForeground}" x:Name="nameTextBlock" VerticalAlignment="Center" />
             </StackPanel>
             <TextBlock x:Name="postTextBlock" TextWrapping="Wrap" Foreground="{Binding ElementName=uc, Path=Foreground}" />

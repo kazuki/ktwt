@@ -39,7 +39,7 @@ namespace TwitterStreaming
 		public event EventHandler<RoutedEventArgs> FavoriteIconClick;
 
 		public static readonly DependencyProperty StatusProperty =
-			DependencyProperty.Register ("Status", typeof (Status), typeof (TwitterStatusViewer), new PropertyMetadata (new Status (), StatusPropertyChanged));
+			DependencyProperty.Register ("Status", typeof (Status), typeof (TwitterStatusViewer), new PropertyMetadata (null, StatusPropertyChanged));
 		public Status Status {
 			get { return (Status)GetValue (StatusProperty); }
 			set { SetValue (StatusProperty, value); }
@@ -53,6 +53,11 @@ namespace TwitterStreaming
 			Status s1 = s;
 			if (s.RetweetedStatus != null)
 				s = s.RetweetedStatus;
+
+			// Reset
+			self.userImage.Source = null;
+			self.nameTextBlock.Inlines.Clear ();
+			self.postTextBlock.Inlines.Clear ();
 
 			if (s.User.ProfileImageUrl != null)
 				self.userImage.Source = new BitmapImage (new Uri (s.User.ProfileImageUrl));
@@ -90,7 +95,7 @@ namespace TwitterStreaming
 			Match m = _urlRegex.Match (s.Text);
 			int last = 0;
 			while (m.Success) {
-				self.postTextBlock.Inlines.Add (s.Text.Substring (last, m.Index - last));
+				inlines.Add (s.Text.Substring (last, m.Index - last));
 				if (m.Success) {
 					Hyperlink link = self.CreateHyperlink (m.Value, m.Value, LinkForegroundProperty, self.postTextBlock.FontWeight, self.Hyperlink_Click);
 					inlines.Add (link);
@@ -107,29 +112,14 @@ namespace TwitterStreaming
 				m = m.NextMatch ();
 			}
 			inlines.Add (s.Text.Substring (last));
-
-			self.isFav.IsChecked = s.IsFavorited;
-
-			Status old_status = e.OldValue as Status;
-			if (old_status != null) {
-				old_status.PropertyChanged -= self.Status_PropertyChanged;
-				if (old_status.RetweetedStatus != null)
-					old_status.RetweetedStatus.PropertyChanged -= self.Status_PropertyChanged;
-			}
-			s.PropertyChanged += self.Status_PropertyChanged;
 		}
 
-		void Status_PropertyChanged (object sender, PropertyChangedEventArgs e)
+		static Run CreateTextBlock (string text, FontWeight weight)
 		{
-			isFav.IsChecked = (DataContext as Status).IsFavorited;
-		}
-
-		static TextBlock CreateTextBlock (string text, FontWeight weight)
-		{
-			TextBlock bx = new TextBlock ();
-			bx.FontWeight = weight;
-			bx.Inlines.Add (text);
-			return bx;
+			Run x = new Run (text);
+			if (x.FontWeight != weight)
+				x.FontWeight = weight;
+			return x;
 		}
 
 		Hyperlink CreateHyperlink (string text, string url, DependencyProperty foreground, FontWeight weight, RoutedEventHandler handler)
