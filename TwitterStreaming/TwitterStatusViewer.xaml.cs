@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.ComponentModel;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -35,6 +36,7 @@ namespace TwitterStreaming
 		}
 
 		public event EventHandler<LinkClickEventArgs> LinkClick;
+		public event EventHandler<RoutedEventArgs> FavoriteIconClick;
 
 		public static readonly DependencyProperty StatusProperty =
 			DependencyProperty.Register ("Status", typeof (Status), typeof (TwitterStatusViewer), new PropertyMetadata (new Status (), StatusPropertyChanged));
@@ -105,6 +107,21 @@ namespace TwitterStreaming
 				m = m.NextMatch ();
 			}
 			inlines.Add (s.Text.Substring (last));
+
+			self.isFav.IsChecked = s.IsFavorited;
+
+			Status old_status = e.OldValue as Status;
+			if (old_status != null) {
+				old_status.PropertyChanged -= self.Status_PropertyChanged;
+				if (old_status.RetweetedStatus != null)
+					old_status.RetweetedStatus.PropertyChanged -= self.Status_PropertyChanged;
+			}
+			s.PropertyChanged += self.Status_PropertyChanged;
+		}
+
+		void Status_PropertyChanged (object sender, PropertyChangedEventArgs e)
+		{
+			isFav.IsChecked = (DataContext as Status).IsFavorited;
 		}
 
 		static TextBlock CreateTextBlock (string text, FontWeight weight)
@@ -131,6 +148,15 @@ namespace TwitterStreaming
 		{
 			if (LinkClick != null)
 				LinkClick (this, new LinkClickEventArgs ((sender as Hyperlink).Tag as string));
+		}
+
+		private void isFav_Click (object sender, RoutedEventArgs e)
+		{
+			if (FavoriteIconClick == null)
+				return;
+			try {
+				FavoriteIconClick (DataContext, e);
+			} catch {}
 		}
 
 		#region Colors

@@ -16,11 +16,12 @@
  */
 
 using System;
+using System.ComponentModel;
 using ktwt.Json;
 
 namespace ktwt.Twitter
 {
-	public class Status
+	public class Status : INotifyPropertyChanged
 	{
 		string _text = string.Empty;
 
@@ -55,13 +56,28 @@ namespace ktwt.Twitter
 		[JsonObjectMapping ("in_reply_to_screen_name", JsonValueType.String)]
 		public string InReplyToScreenName { get; set; }
 
+		bool _isFav;
 		[JsonObjectMapping ("favorited", JsonValueType.Boolean)]
-		public bool IsFavorited { get; set; }
+		public bool IsFavorited {
+			get { return _isFav; }
+			set {
+				_isFav = value;
+				if (PropertyChanged != null) {
+					try {
+						PropertyChanged (this, new PropertyChangedEventArgs ("IsFavorited"));
+					} catch {}
+				}
+			}
+		}
 
 		[JsonObjectMapping ("user", JsonValueType.Object)]
 		public User User { get; set; }
 
 		[JsonObjectMapping ("retweeted_status", JsonValueType.Object)]
 		public Status RetweetedStatus { get; set; }
+
+		public object AccountInfo { get; set; }
+
+		public event PropertyChangedEventHandler PropertyChanged;
 	}
 }

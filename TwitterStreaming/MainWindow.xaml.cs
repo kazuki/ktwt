@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Net;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,8 +27,8 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using ktwt.Twitter;
 using ktwt.Json;
+using ktwt.Twitter;
 
 namespace TwitterStreaming
 {
@@ -424,6 +423,40 @@ namespace TwitterStreaming
 				postTextBox.SelectionStart = postTextBox.Text.Length;
 				postTextBox.Focus ();
 			}));
+		}
+
+		private void TwitterStatusViewer_FavoriteIconClick (object sender, RoutedEventArgs e)
+		{
+			Status selected = sender as Status;
+			TwitterAccount account = selected.AccountInfo as TwitterAccount;
+			if (account == null) {
+				selected.IsFavorited = selected.IsFavorited;
+				return;
+			}
+			Favorite (account, selected, !selected.IsFavorited);
+		}
+
+		void Favorite (TwitterAccount account, Status status, bool isFavorite)
+		{
+			ThreadPool.QueueUserWorkItem (delegate (object o) {
+				bool new_fav = isFavorite;
+				try {
+					if (isFavorite) {
+						new_fav = !account.TwitterClient.FavoritesCreate (status.ID).IsFavorited;
+					} else {
+						new_fav = !account.TwitterClient.FavoritesDestroy (status.ID).IsFavorited;
+					}
+				} catch {
+					try {
+						new_fav = account.TwitterClient.Show (status.ID).IsFavorited;
+					} catch {
+						new_fav = !isFavorite;
+					}
+				}
+				Dispatcher.Invoke (new EmptyDelegate (delegate () {
+					status.IsFavorited = new_fav;
+				}));
+			});
 		}
 
 		private void postTextBox_KeyDown (object sender, KeyEventArgs e)

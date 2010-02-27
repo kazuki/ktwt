@@ -38,6 +38,7 @@ namespace ktwt.Twitter
 
 		const string StatusesHomeTimelineURL = "https://api.twitter.com/1/statuses/home_timeline.json";
 		const string StatusesMentionsURL = "https://twitter.com/statuses/mentions.json";
+		const string StatusesShowURL = "https://api.twitter.com/1/statuses/show/{0}.json";
 		const string StatusesUpdateURL = "https://twitter.com/statuses/update.json";
 		const string StatusesRetweetURL = "https://api.twitter.com/1/statuses/retweet/{0}.json";
 		const string SearchURL = "http://search.twitter.com/search.json";
@@ -137,6 +138,12 @@ namespace ktwt.Twitter
 		#endregion
 
 		#region Status Methods
+		public Status Show (ulong id)
+		{
+			string json = DownloadString (new Uri (string.Format (StatusesShowURL, id)), HTTP_GET, null);
+			return JsonDeserializer.Deserialize<Status> ((JsonObject)new JsonValueReader (json).Read ());
+		}
+
 		public Status Update (string status, ulong? in_reply_to_status_id, string geo_lat, string geo_long)
 		{
 			if (status == null || status.Length == 0 || status.Length > MaxStatusLength)

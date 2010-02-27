@@ -53,8 +53,14 @@ namespace TwitterStreaming
 			_restSinceList = new ulong?[] {null, null, null};
 
 			ThreadPool.QueueUserWorkItem (delegate (object o) {
-				Self = _client.VerifyCredentials ();
-				_selfUserId = Self.ID;
+				while (true) {
+					try {
+						Self = _client.VerifyCredentials ();
+						_selfUserId = Self.ID;
+						break;
+					} catch {}
+					Thread.Sleep (5 * 1000);
+				}
 			});
 		}
 
@@ -87,8 +93,14 @@ namespace TwitterStreaming
 								Status[] statuses = funcs[idx] (_restSinceList[idx], null, r.Count, null);
 								_restSinceList[idx] = TwitterClient.GetMaxStatusID (_restSinceList[idx], statuses);
 								_dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
-									for (int j = 0; j < statuses.Length; j++)
+									for (int j = 0; j < statuses.Length; j++) {
+										statuses[j].AccountInfo = this;
+										if (idx == 0 && _selfUserId != 0 && statuses[j].InReplyToUserId == _selfUserId)
+											Mentions.Add (statuses[j]);
+										else if (idx == 1)
+											HomeTimeline.Add (statuses[j]);
 										_restInfoList[idx].TimeLine.Add (statuses[j]);
+									}
 								}));
 							} catch {
 							} finally {
@@ -156,6 +168,7 @@ namespace TwitterStreaming
 							return;
 					}
 				}
+				e.Status.AccountInfo = this;
 				HomeTimeline.Add (e.Status);
 				if (ScreenName.Equals (e.Status.InReplyToScreenName) || e.Status.Text.Contains ("@" + ScreenName))
 					Mentions.Add (e.Status);

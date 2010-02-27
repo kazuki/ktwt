@@ -83,6 +83,7 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <c:TwitterStatusViewer Status="{Binding}" LinkClick="TwitterStatusViewer_LinkClick" MouseDoubleClick="TwitterStatusViewer_MouseDoubleClick"
+                                                   FavoriteIconClick="TwitterStatusViewer_FavoriteIconClick"
                                                    NameForeground="{Binding ElementName=mw, Path=NameForeground}" LinkForeground="{Binding ElementName=mw, Path=LinkForeground}"
                                                    Foreground="{Binding ElementName=mw, Path=PostForeground}" Background="{Binding ElementName=mw, Path=PostBackground}"
                                                    Margin="0 1 0 1" />
