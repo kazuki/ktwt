@@ -442,17 +442,16 @@ namespace TwitterStreaming
 				bool new_fav = isFavorite;
 				try {
 					if (isFavorite) {
-						new_fav = !account.TwitterClient.FavoritesCreate (status.ID).IsFavorited;
+						account.TwitterClient.FavoritesCreate (status.ID);
 					} else {
-						new_fav = !account.TwitterClient.FavoritesDestroy (status.ID).IsFavorited;
+						account.TwitterClient.FavoritesDestroy (status.ID);
 					}
 				} catch {
-					try {
-						new_fav = account.TwitterClient.Show (status.ID).IsFavorited;
-					} catch {
-						new_fav = !isFavorite;
-					}
+					new_fav = !isFavorite;
 				}
+				try {
+					new_fav = account.TwitterClient.Show (status.ID).IsFavorited;
+				} catch {}
 				Dispatcher.Invoke (new EmptyDelegate (delegate () {
 					status.IsFavorited = new_fav;
 				}));
