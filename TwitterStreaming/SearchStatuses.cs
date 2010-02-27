@@ -29,9 +29,10 @@ namespace TwitterStreaming
 		{
 			Account = account;
 			Keyword = keyword;
+			KeywordForRestAPI = keyword.Replace (",", " OR ").Replace ("  ", " ");
 
 			// default
-			_rest = new TwitterAccount.RestUsage {Interval = TimeSpan.FromSeconds (180), Count = 100, IsEnabled = true, LastExecTime = DateTime.MinValue};
+			_rest = new TwitterAccount.RestUsage {Interval = TimeSpan.FromSeconds (30), Count = 100, IsEnabled = true, LastExecTime = DateTime.MinValue};
 		}
 
 		void IStreamingHandler.Streaming_StatusArrived (object sender, StatusArrivedEventArgs e)
@@ -44,6 +45,7 @@ namespace TwitterStreaming
 
 		public TwitterAccount Account { get; private set; }
 		public string Keyword { get; private set; }
+		public string KeywordForRestAPI { get; private set; }
 		public TwitterTimeLine Statuses {
 			get { return _rest.TimeLine; }
 		}
@@ -60,7 +62,7 @@ namespace TwitterStreaming
 					_rest.LastExecTime = DateTime.Now;
 					_rest.IsRunning = true;
 					try {
-						Status[] statuses = Account.TwitterClient.Search (Keyword, null, null, _rest.Count, null, _since_id, null, null);
+						Status[] statuses = Account.TwitterClient.Search (KeywordForRestAPI, null, null, _rest.Count, null, _since_id, null, null);
 						_since_id = TwitterClient.GetMaxStatusID (_since_id, statuses);
 						Account.Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
 							for (int i = 0; i < statuses.Length; i++)
