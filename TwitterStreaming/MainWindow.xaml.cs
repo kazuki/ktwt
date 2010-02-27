@@ -43,11 +43,6 @@ namespace TwitterStreaming
 
 		public MainWindow ()
 		{
-			NameForeground = new SolidColorBrush (Color.FromRgb (0x77, 0x77, 0xff));
-			LinkForeground = Brushes.White;
-			PostForeground = Brushes.White;
-			PostBackground = new SolidColorBrush (Color.FromRgb (0x33, 0x33, 0x33));
-			FooterText = string.Empty;
 			_hashTags.Add (string.Empty);
 			InitializeComponent ();
 			itemsControl.DataContext = this;
@@ -751,28 +746,28 @@ namespace TwitterStreaming
 
 		#region Colors
 		public static readonly DependencyProperty PostBackgroundProperty =
-			DependencyProperty.Register ("PostBackground", typeof (Brush), typeof (MainWindow));
+			DependencyProperty.Register ("PostBackground", typeof (Brush), typeof (MainWindow), new FrameworkPropertyMetadata (new SolidColorBrush (Color.FromRgb (0x33, 0x33, 0x33)), FrameworkPropertyMetadataOptions.AffectsRender));
 		public Brush PostBackground {
 			get { return (Brush)GetValue (PostBackgroundProperty); }
 			set { SetValue (PostBackgroundProperty, value); }
 		}
 
 		public static readonly DependencyProperty PostForegroundProperty =
-			DependencyProperty.Register ("PostForeground", typeof (Brush), typeof (MainWindow));
+			DependencyProperty.Register ("PostForeground", typeof (Brush), typeof (MainWindow), new FrameworkPropertyMetadata (Brushes.White, FrameworkPropertyMetadataOptions.AffectsRender));
 		public Brush PostForeground {
 			get { return (Brush)GetValue (PostForegroundProperty); }
 			set { SetValue (PostForegroundProperty, value); }
 		}
 
 		public static readonly DependencyProperty NameForegroundProperty =
-			DependencyProperty.Register ("NameForeground", typeof (Brush), typeof (MainWindow));
+			DependencyProperty.Register ("NameForeground", typeof (Brush), typeof (MainWindow), new FrameworkPropertyMetadata (new SolidColorBrush (Color.FromRgb (0x77, 0x77, 0xff)), FrameworkPropertyMetadataOptions.AffectsRender));
 		public Brush NameForeground {
 			get { return (Brush)GetValue (NameForegroundProperty); }
 			set { SetValue (NameForegroundProperty, value); }
 		}
 
 		public static readonly DependencyProperty LinkForegroundProperty =
-			DependencyProperty.Register ("LinkForeground", typeof (Brush), typeof (MainWindow));
+			DependencyProperty.Register ("LinkForeground", typeof (Brush), typeof (MainWindow), new FrameworkPropertyMetadata (Brushes.White, FrameworkPropertyMetadataOptions.AffectsRender));
 		public Brush LinkForeground {
 			get { return (Brush)GetValue (LinkForegroundProperty); }
 			set { SetValue (LinkForegroundProperty, value); }
@@ -784,7 +779,7 @@ namespace TwitterStreaming
 			get { return _hashTags; }
 		}
 
-		public static readonly DependencyProperty FooterTextProperty = DependencyProperty.Register ("FooterText", typeof (string), typeof (MainWindow));
+		public static readonly DependencyProperty FooterTextProperty = DependencyProperty.Register ("FooterText", typeof (string), typeof (MainWindow), new FrameworkPropertyMetadata (string.Empty, FrameworkPropertyMetadataOptions.None));
 		public string FooterText {
 			get { return (string)GetValue (FooterTextProperty); }
 			set { SetValue (FooterTextProperty, value); }
