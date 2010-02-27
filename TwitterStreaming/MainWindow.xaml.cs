@@ -677,8 +677,22 @@ namespace TwitterStreaming
 			if (MessageBox.Show (string.Format ("以下の投稿をRetweetしますか？\r\n{0}: {1}", status.User.ScreenName, status.Text), string.Empty, MessageBoxButton.YesNo) != MessageBoxResult.Yes)
 				return;
 			TwitterAccount account = (lb.DataContext as TimelineInfo).RestAccount;
-			Status retweeted = account.TwitterClient.Retweet (status.ID);
-			account.HomeTimeline.Add (retweeted);
+			ThreadPool.QueueUserWorkItem (delegate (object o) {
+				bool retry = true;
+				while (retry) {
+					try {
+						Status retweeted = account.TwitterClient.Retweet (status.ID);
+						Dispatcher.Invoke (new EmptyDelegate (delegate () {
+							account.HomeTimeline.Add (retweeted);
+						}));
+					} catch {
+						Dispatcher.Invoke (new EmptyDelegate (delegate () {
+							if (MessageBox.Show (string.Format ("以下の投稿のRetweetに失敗しました。再試行しますか？\r\n{0}: {1}", status.User.ScreenName, status.Text), string.Empty, MessageBoxButton.YesNo) != MessageBoxResult.Yes)
+								retry = false;
+						}));
+					}
+				}
+			});
 		}
 
 		private void QuotedTweetMenuItem_Click (object sender, RoutedEventArgs e)
