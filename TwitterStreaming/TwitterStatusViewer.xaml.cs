@@ -117,8 +117,7 @@ namespace TwitterStreaming
 		static Run CreateTextBlock (string text, FontWeight weight)
 		{
 			Run x = new Run (text);
-			if (x.FontWeight != weight)
-				x.FontWeight = weight;
+			x.FontWeight = weight;
 			return x;
 		}
 
