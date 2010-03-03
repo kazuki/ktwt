@@ -356,17 +356,15 @@ namespace TwitterStreaming
 			if (sel.Owner.TimeLines.Count > 1 && idx > 0) {
 				TabInfo tabInfo = sel.Owner.TimeLines[idx - 1] as TabInfo;
 				if (tabInfo != null) {
-					tabInfo.Add (sel.Owner.TimeLines[idx]);
+					tabInfo.Add (sel);
 				} else {
-					sel.Owner.TimeLines.Move (idx, idx - 1);
+					sel.Owner.Move (idx, idx - 1);
 				}
 			} else {
 				TabInfo tabInfo = sel.Owner as TabInfo;
 				if (tabInfo != null) {
-					tabInfo.TimeLines.Remove (sel);
 					idx = tabInfo.Owner.TimeLines.IndexOf (tabInfo);
-					tabInfo.Owner.TimeLines.Insert (idx, sel);
-					sel.Owner = tabInfo.Owner;
+					tabInfo.Owner.Insert (idx, sel);
 				}
 			}
 			SaveConfig ();
@@ -384,15 +382,13 @@ namespace TwitterStreaming
 				if (tabInfo != null) {
 					tabInfo.Insert (0, sel);
 				} else {
-					sel.Owner.TimeLines.Move (idx, idx + 1);
+					sel.Owner.Move (idx, idx + 1);
 				}
 			} else {
 				TabInfo tabInfo = sel.Owner as TabInfo;
 				if (tabInfo != null) {
-					tabInfo.TimeLines.Remove (sel);
 					idx = tabInfo.Owner.TimeLines.IndexOf (tabInfo);
-					tabInfo.Owner.TimeLines.Insert (idx + 1, sel);
-					sel.Owner = tabInfo.Owner;
+					tabInfo.Owner.Insert (idx + 1, sel);
 				}
 			}
 			SaveConfig ();
@@ -836,6 +832,30 @@ namespace TwitterStreaming
 			TimeLines = null;
 		}
 
+		public virtual void Add (TimelineBase tl)
+		{
+			Insert (TimeLines.Count, tl);
+		}
+		public virtual void Insert (int idx, TimelineBase tl)
+		{
+			if (tl.Owner != null && tl.Owner.TimeLines != null)
+				tl.Owner.Remove (tl);
+			tl.Owner = this;
+			TimeLines.Insert (idx, tl);
+		}
+		public virtual void Move (int oldIndex, int newIndex)
+		{
+			TimeLines.Move (oldIndex, newIndex);
+		}
+		public virtual void Remove (TimelineBase tl)
+		{
+			TimeLines.Remove (tl);
+		}
+		public virtual void RemoveAt (int idx)
+		{
+			TimeLines.RemoveAt (idx);
+		}
+
 		public TimelineBase Owner { get; set; }
 		public ObservableCollection<TimelineBase> TimeLines { get; protected set; }
 	}
@@ -894,7 +914,7 @@ namespace TwitterStreaming
 		}
 	}
 
-	public class TabInfo : TimelineBase
+	public class TabInfo : TimelineBase, INotifyPropertyChanged
 	{
 		public TabInfo (TimelineBase owner, string title) : base (owner)
 		{
@@ -902,19 +922,25 @@ namespace TwitterStreaming
 			TimeLines = new ObservableCollection<TimelineBase> ();
 		}
 
-		public void Add (TimelineBase tl)
+		public override void Insert (int idx, TimelineBase tl)
 		{
-			Insert (TimeLines.Count, tl);
-		}
-
-		public void Insert (int idx, TimelineBase tl)
-		{
-			if (tl.Owner != null && tl.Owner.TimeLines != null) tl.Owner.TimeLines.Remove (tl);
-			tl.Owner = this;
-			TimeLines.Insert (idx, tl);
+			base.Insert (idx, tl);
+			SelectedItem = tl;
 		}
 
 		public string Title { get; set; }
+
+		TimelineBase _selectedItem = null;
+		public TimelineBase SelectedItem {
+			get { return _selectedItem; }
+			set {
+				_selectedItem = value;
+				if (PropertyChanged != null)
+					PropertyChanged (this, new PropertyChangedEventArgs ("SelectedItem"));
+			}
+		}
+
+		public event PropertyChangedEventHandler PropertyChanged;
 	}
 
 	public class HogeTemplateSelector : DataTemplateSelector

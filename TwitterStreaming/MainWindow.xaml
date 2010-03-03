@@ -110,7 +110,8 @@
                     <Button Click="TimeLineCloseButton_Click">×</Button>
                 </StackPanel>
                 
-                <TabControl Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" ItemsSource="{Binding Path=TimeLines}" ContentTemplateSelector="{DynamicResource hogeTemplateSelector}">
+                <TabControl Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" ItemsSource="{Binding Path=TimeLines}"
+                            SelectedItem="{Binding Path=SelectedItem}" ContentTemplateSelector="{DynamicResource hogeTemplateSelector}">
                     <TabControl.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Path=Title}" />
