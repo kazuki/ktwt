@@ -19,45 +19,50 @@
                         </Style>
                     </Grid.Resources>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Padding="5" Text="{Binding Path=Title}" />
-                    <StackPanel Orientation="Vertical" Grid.Column="1" VerticalAlignment="Center" Margin="5 0 5 0">
-                        <TextBlock VerticalAlignment="Center" Style="{StaticResource smallStyle}">
-                            <TextBlock>RestAPI: </TextBlock>
-                            <TextBlock Text="{Binding RestAccount.TwitterClient.ApiLimitRemaining}" />
-                            <TextBlock>/</TextBlock>
-                            <TextBlock Text="{Binding RestAccount.TwitterClient.ApiLimitMax}" />
-                            <TextBlock> (@</TextBlock>
-                            <TextBlock Text="{Binding RestAccount.ScreenName}" />
-                            <TextBlock>), NextUpdate: </TextBlock>
-                            <TextBlock Text="{Binding RestUsage.NextExecTimeRemaining, Converter={StaticResource timeSpanToSecConverter}}" />
-                        </TextBlock>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Style="{StaticResource smallStyle}">Streaming: </TextBlock>
-                            <ItemsControl ItemsSource="{Binding StreamingClient.States}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Style="{StaticResource smallStyle}">
-                                            <TextBlock>@</TextBlock>
-                                            <TextBlock Text="{Binding Account.ScreenName}" />
-                                            <TextBlock>(</TextBlock>
-                                            <TextBlock Text="{Binding ConnectionState}" />
-                                            <TextBlock>), </TextBlock>
-                                        </TextBlock>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Horizontal" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                            </ItemsControl>
+                    <Grid Grid.Column="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Padding="5" Text="{Binding Path=Title}" />
+                        <StackPanel Orientation="Vertical" Grid.Column="1" VerticalAlignment="Center" Margin="5 0 5 0">
+                            <TextBlock VerticalAlignment="Center" Style="{StaticResource smallStyle}">
+                                <TextBlock>RestAPI: </TextBlock>
+                                <TextBlock Text="{Binding RestAccount.TwitterClient.ApiLimitRemaining}" />
+                                <TextBlock>/</TextBlock>
+                                <TextBlock Text="{Binding RestAccount.TwitterClient.ApiLimitMax}" />
+                                <TextBlock> (@</TextBlock>
+                                <TextBlock Text="{Binding RestAccount.ScreenName}" />
+                                <TextBlock>), Next: </TextBlock>
+                                <TextBlock Text="{Binding RestUsage.NextExecTimeRemaining, Converter={StaticResource timeSpanToSecConverter}}" />
+                            </TextBlock>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource smallStyle}">Streaming:</TextBlock>
+                                <ItemsControl ItemsSource="{Binding StreamingClient.States}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Style="{StaticResource smallStyle}">
+                                                <TextBlock>@</TextBlock>
+                                                <TextBlock Text="{Binding Account.ScreenName}" />
+                                                <TextBlock>(</TextBlock>
+                                                <TextBlock Text="{Binding ConnectionState}" />
+                                                <TextBlock>), </TextBlock>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                    </Grid>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Click="TimeLineMoveLeftButton_Click">&lt;</Button>
                         <Button Click="TimeLineMoveRightButton_Click">&gt;</Button>
                         <Button Click="TimeLineCloseButton_Click">×</Button>
@@ -100,8 +105,8 @@
                     <RowDefinition />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Row="0" Grid.Column="0" Padding="5" Text="{Binding Path=Title}" />
                 <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
