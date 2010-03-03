@@ -759,7 +759,14 @@ namespace TwitterStreaming
 				case "Text": txt = status.Text; break;
 			}
 			if (txt == null) return;
-			Clipboard.SetText (txt);
+			for (int i = 0; i < 3; i ++) {
+				try {
+					Clipboard.SetText (txt);
+					return;
+				} catch {}
+				Thread.Sleep (0);
+			}
+			MessageBox.Show ("クリップボードにアクセスできなかったため，コピーできませんでした．");
 		}
 
 		private void OpenLinkMenuItem_Click (object sender, RoutedEventArgs e)
