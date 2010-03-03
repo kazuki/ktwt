@@ -90,7 +90,7 @@
             </TabItem>
         </TabControl>
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Padding="3" Click="Button_Click">Close</Button>
+            <Button Padding="3" Click="Button_Click" IsCancel="True" IsDefault="True">Close</Button>
         </StackPanel>
     </Grid>
 </Window>
