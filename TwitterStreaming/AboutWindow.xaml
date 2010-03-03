@@ -1,7 +1,8 @@
 ﻿<Window x:Class="TwitterStreaming.AboutWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="About" WindowStartupLocation="CenterOwner" WindowStyle="ToolWindow" ShowInTaskbar="False" Width="580" Height="360">
+    Title="About" WindowStartupLocation="CenterOwner" WindowStyle="ToolWindow"
+    ShowInTaskbar="False" Width="580" Height="360" x:Name="win">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -19,10 +20,22 @@
             </Grid.ColumnDefinitions>
             <Image Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Width="32" Height="32" Source="/TwitterStreaming;component/apple.ico" Margin="5" />
             <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Bottom">
-                <TextBlock FontWeight="Bold">ktwt</TextBlock>
-                <TextBlock>(Simple Twitter Client with OAuth-REST/Streaming API)</TextBlock>
+                <TextBlock FontWeight="Bold" Text="{Binding ElementName=win, Path=AssemblyTitle}" />
+                <Run>(</Run>
+                <TextBlock Text="{Binding ElementName=win, Path=Description}" />
+                <Run>)</Run>
             </TextBlock>
-            <TextBlock Grid.Row="1" Grid.Column="1" VerticalAlignment="Top" HorizontalAlignment="Right">Copyright(C) 2010 Kazuki Oikawa</TextBlock>
+            <Grid Grid.Row="1" Grid.Column="1" VerticalAlignment="Top">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" HorizontalAlignment="Left">
+                    <Run>Version: </Run>
+                    <TextBlock Text="{Binding ElementName=win, Path=Version}" />
+                </TextBlock>
+                <TextBlock Grid.Column="1" HorizontalAlignment="Right" Text="{Binding ElementName=win, Path=Copyright}" />
+            </Grid>
         </Grid>
         <TabControl Grid.Row="1">
             <TabItem Header="License">

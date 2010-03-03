@@ -36,13 +36,21 @@ namespace TwitterStreaming
 	{
 		public AboutWindow ()
 		{
-			InitializeComponent ();
-
 			Assembly asm = Assembly.GetExecutingAssembly ();
+			AssemblyTitle = ((AssemblyTitleAttribute)Attribute.GetCustomAttribute (asm, typeof (AssemblyTitleAttribute))).Title;
+			Copyright = ((AssemblyCopyrightAttribute)Attribute.GetCustomAttribute (asm, typeof (AssemblyCopyrightAttribute))).Copyright;
+			Description = ((AssemblyDescriptionAttribute)Attribute.GetCustomAttribute (asm, typeof (AssemblyDescriptionAttribute))).Description;
+			Version = asm.GetName ().Version;
+			InitializeComponent ();
 			LoadLicense (licenseLitJSON, asm, "TwitterStreaming.Json.LitJSON.COPYING.txt");
 			LoadLicense (licenseOAuthBase, asm, "TwitterStreaming.COPYING.APACHE_LICENSE-2.0.txt");
 			LoadLicense (licenseGPL, asm, "TwitterStreaming.COPYING.GPL.txt");
 		}
+
+		public string AssemblyTitle { get; set; }
+		public string Copyright { get; set; }
+		public string Description { get; set; }
+		public Version Version { get; set; }
 
 		static void LoadLicense (TextBox block, Assembly asm, string name)
 		{
