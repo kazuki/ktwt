@@ -40,8 +40,8 @@ namespace TwitterStreaming
 
 		public TwitterAccount ()
 		{
-			_oauthClient = new OAuthClient (ConsumerKeyStore.Key, ConsumerKeyStore.Secret,
-				TwitterClient.RequestTokenURL, TwitterClient.AccessTokenURL, TwitterClient.AuthorizeURL);
+			_oauthClient = new OAuthClient (ConsumerKeyStore.Key, ConsumerKeyStore.Secret, TwitterClient.RequestTokenURL,
+				TwitterClient.AccessTokenURL, TwitterClient.AuthorizeURL, TwitterClient.XAuthURL);
 			_client = new TwitterClient (_oauthClient);
 			_dispatcher = Dispatcher.CurrentDispatcher;
 
@@ -54,11 +54,13 @@ namespace TwitterStreaming
 
 			ThreadPool.QueueUserWorkItem (delegate (object o) {
 				while (true) {
-					try {
-						Self = _client.VerifyCredentials ();
-						_selfUserId = Self.ID;
-						break;
-					} catch {}
+					if (_oauthClient.Credentials != null) {
+						try {
+							Self = _client.VerifyCredentials ();
+							_selfUserId = Self.ID;
+							break;
+						} catch {}
+					}
 					Thread.Sleep (5 * 1000);
 				}
 			});

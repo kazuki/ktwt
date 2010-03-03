@@ -35,6 +35,7 @@ namespace ktwt.Twitter
 		public static Uri RequestTokenURL = new Uri ("https://twitter.com/oauth/request_token");
 		public static Uri AccessTokenURL = new Uri ("https://twitter.com/oauth/access_token");
 		public static Uri AuthorizeURL = new Uri ("https://twitter.com/oauth/authorize");
+		public static Uri XAuthURL = new Uri ("https://api.twitter.com/oauth/access_token");
 
 		const string StatusesHomeTimelineURL = "https://api.twitter.com/1/statuses/home_timeline.json";
 		const string StatusesMentionsURL = "https://twitter.com/statuses/mentions.json";

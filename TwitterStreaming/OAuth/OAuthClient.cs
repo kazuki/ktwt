@@ -26,17 +26,18 @@ namespace ktwt.OAuth
 	public class OAuthClient : OAuthBase, ISimpleWebClient
 	{
 		string _consumerKey, _consumerSecret, _requestToken, _requestTokenSecret;
-		Uri _requestTokenUri, _accessTokenUri, _authorizeUri;
+		Uri _requestTokenUri, _accessTokenUri, _authorizeUri, _xauthUri;
 		OAuthCredentialCache _credential;
 		const string UrlEncodedMime = "application/x-www-form-urlencoded";
 
-		public OAuthClient (string consumerKey, string consumerSecret, Uri requestTokenUri, Uri accessTokenUri, Uri authorizeUri)
+		public OAuthClient (string consumerKey, string consumerSecret, Uri requestTokenUri, Uri accessTokenUri, Uri authorizeUri, Uri xauthUri)
 		{
 			_consumerKey = consumerKey;
 			_consumerSecret = consumerSecret;
 			_requestTokenUri = requestTokenUri;
 			_accessTokenUri = accessTokenUri;
 			_authorizeUri = authorizeUri;
+			_xauthUri = xauthUri;
 		}
 
 		public void UpdateRequestToken ()
@@ -98,7 +99,7 @@ namespace ktwt.OAuth
 		public void PasswordAuth (string username, string password, out Dictionary<string, string> contents, out WebHeaderCollection headers)
 		{
 			string xAuthQuery = "x_auth_mode=client_auth&x_auth_username=" + UrlEncode (username) + "&x_auth_password=" + UrlEncode (password);
-			using (HttpWebResponse response = GetResponse (_accessTokenUri, HTTP_GET, null, null, null, xAuthQuery, null)) {
+			using (HttpWebResponse response = GetResponse (_xauthUri, HTTP_POST, null, null, null, xAuthQuery, null)) {
 				using (StreamReader reader = new StreamReader (response.GetResponseStream (), Encoding.ASCII)) {
 					contents = ParseSimple (reader.ReadToEnd ());
 				}
