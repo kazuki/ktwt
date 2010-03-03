@@ -708,6 +708,7 @@ namespace TwitterStreaming
 						Dispatcher.Invoke (new EmptyDelegate (delegate () {
 							account.HomeTimeline.Add (retweeted);
 						}));
+						return;
 					} catch {
 						Dispatcher.Invoke (new EmptyDelegate (delegate () {
 							if (MessageBox.Show (string.Format ("以下の投稿のRetweetに失敗しました。再試行しますか？\r\n{0}: {1}", status.User.ScreenName, status.Text), string.Empty, MessageBoxButton.YesNo) != MessageBoxResult.Yes)
