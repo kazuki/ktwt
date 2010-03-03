@@ -81,7 +81,7 @@ namespace TwitterStreaming
 		delegate Status[] RestUpdateDelegate (ulong? since_id, ulong? max_id, int? count, int? page);
 		public void UpdateTimeLines ()
 		{
-			RestUpdateDelegate[] funcs = new RestUpdateDelegate[] {_client.GetHomeTimeline, _client.GetMentions};
+			RestUpdateDelegate[] funcs = new RestUpdateDelegate[] {_client.GetHomeTimeline, _client.GetMentions, _client.GetDirectMessagesAll};
 			for (int i = 0; i < funcs.Length; i ++) {
 				RestUsage r = _restInfoList[i];
 

@@ -78,6 +78,12 @@ namespace TwitterStreaming
 							accounts[i].TwitterClient.UpdateFollowers ();
 						} catch {}
 					}
+
+					Dispatcher.Invoke (new EmptyDelegate (delegate () {
+						Binding binding = new Binding ("SelectedItem.TwitterClient.Friends");
+						binding.ElementName = "postAccount";
+						BindingOperations.SetBinding (cbDMto, ComboBox.ItemsSourceProperty, binding);
+					}));
 				});
 			}
 		}
@@ -479,11 +485,13 @@ namespace TwitterStreaming
 			int diff = TwitterClient.MaxStatusLength - postTextBox.Text.Length;
 			postLengthText.Text = diff.ToString ();
 			postLengthText.Foreground = (diff < 0 ? Brushes.Red : Brushes.White);
-			if (_replyInfo != null) {
-				if (CheckReplyText (postTextBox.Text))
-					SetReplySetting ();
-				else
-					ResetReplySetting (true);
+			if (cbDMto.SelectedIndex < 0) {
+				if (_replyInfo != null) {
+					if (CheckReplyText (postTextBox.Text))
+						SetReplySetting ();
+					else
+						ResetReplySetting (true);
+				}
 			}
 		}
 
@@ -494,11 +502,14 @@ namespace TwitterStreaming
 			postTextBox.IsReadOnly = true;
 			postTextBox.Foreground = Brushes.DimGray;
 			postButton.IsEnabled = false;
-			if (!CheckReplyText (txt) || (_replyName != null && _replyName[1] == 'R'))
-				ResetReplySetting (false);
+			if (cbDMto.SelectedIndex < 0) {
+				if (!CheckReplyText (txt) || (_replyName != null && _replyName[1] == 'R'))
+					ResetReplySetting (false);
+			}
 			ThreadPool.QueueUserWorkItem (PostProcess, new object[] {
 				txt,
-				postAccount.SelectedItem
+				postAccount.SelectedItem,
+				cbDMto.SelectedItem
 			});
 		}
 
@@ -513,9 +524,14 @@ namespace TwitterStreaming
 			object[] items = (object[])o;
 			string txt = (string)items[0];
 			TwitterAccount account = (TwitterAccount)items[1];
+			User dmTo = items[2] as User;
 			Status status = null;
 			try {
-				status = account.TwitterClient.Update (txt, (_replyInfo == null ? (ulong?)null : _replyInfo.ID), null, null);
+				if (dmTo == null) {
+					status = account.TwitterClient.Update (txt, (_replyInfo == null ? (ulong?)null : _replyInfo.ID), null, null);
+				} else {
+					status = account.TwitterClient.SendDirectMessage (null, dmTo.ID, txt);
+				}
 			} catch {}
 			Dispatcher.Invoke (new EmptyDelegate (delegate () {
 				postTextBox.IsReadOnly = false;
@@ -524,7 +540,11 @@ namespace TwitterStreaming
 				if (status != null) {
 					ResetReplySetting (false);
 					ResetPostTextBox ();
-					account.HomeTimeline.Add (status);
+					if (dmTo == null) {
+						account.HomeTimeline.Add (status);
+					} else {
+						account.DirectMessages.Add (status);
+					}
 				}
 			}));
 		}
@@ -544,6 +564,7 @@ namespace TwitterStreaming
 
 		void ResetPostTextBox ()
 		{
+			cbDMto.SelectedIndex = -1;
 			postTextBox.Text = GenerateFooter ();
 			postTextBox.SelectionStart = 0;
 			postTextBox.Focus ();
@@ -562,6 +583,12 @@ namespace TwitterStreaming
 				_replyName = null;
 			}
 			postButton.Content = "Post";
+		}
+
+		private void cbDMto_SelectionChanged (object sender, SelectionChangedEventArgs e)
+		{
+			if (cbDMto.SelectedIndex >= 0)
+				postButton.Content = "Send DirectMessage";
 		}
 
 		#region Streaming Filter
@@ -902,6 +929,8 @@ namespace TwitterStreaming
 			get {
 				if (Search != null)
 					return Search.StreamingClient;
+				if (RestUsage == RestAccount.RestDirectMessages)
+					return null;
 				return RestAccount.StreamingClient;
 			}
 		}

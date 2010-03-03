@@ -43,6 +43,9 @@ namespace ktwt.Twitter
 		const string StatusesUpdateURL = "https://twitter.com/statuses/update.json";
 		const string StatusesRetweetURL = "https://api.twitter.com/1/statuses/retweet/{0}.json";
 		const string SearchURL = "http://search.twitter.com/search.json";
+		const string DirectMessagesURL = "http://api.twitter.com/1/direct_messages.json";
+		const string DirectMessagesSentURL = "http://api.twitter.com/1/direct_messages/sent.json";
+		const string DirectMessageNewURL = "http://api.twitter.com/1/direct_messages/new.json";
 		static readonly Uri FriendIDsURL = new Uri ("https://twitter.com/friends/ids.json");
 		const string UsersShowURL = "https://twitter.com/users/show.json";
 		const string UserFriendsURL = "https://api.twitter.com/1/statuses/friends.json";
@@ -109,15 +112,15 @@ namespace ktwt.Twitter
 		#region Timeline Methods
 		public Status[] GetHomeTimeline (ulong? since_id, ulong? max_id, int? count, int? page)
 		{
-			return GetStatus (StatusesHomeTimelineURL, since_id, max_id, count, page);
+			return GetStatus (StatusesHomeTimelineURL, false, since_id, max_id, count, page);
 		}
 
 		public Status[] GetMentions (ulong? since_id, ulong? max_id, int? count, int? page)
 		{
-			return GetStatus (StatusesMentionsURL, since_id, max_id, count, page);
+			return GetStatus (StatusesMentionsURL, false, since_id, max_id, count, page);
 		}
 
-		public Status[] GetStatus (string baseUrl, ulong? since_id, ulong? max_id, int? count, int? page)
+		public Status[] GetStatus (string baseUrl, bool isDmMode, ulong? since_id, ulong? max_id, int? count, int? page)
 		{
 			string query = "";
 			if (since_id.HasValue) query += "&since_id=" + since_id.Value.ToString ();
@@ -125,17 +128,29 @@ namespace ktwt.Twitter
 			if (count.HasValue) query += "&count=" + count.Value.ToString ();
 			if (page.HasValue) query += "&page=" + page.Value.ToString ();
 			if (query.Length > 0) query = "?" + query.Substring (1);
-			return GetStatus (new Uri (baseUrl + query));
+			return GetStatus (new Uri (baseUrl + query), isDmMode);
 		}
 
-		Status[] GetStatus (Uri url)
+		Status[] GetStatus (Uri url, bool isDmMode)
 		{
 			string json = DownloadString (url, HTTP_GET, null);
 			JsonArray array = (JsonArray)new JsonValueReader (json).Read ();
 			Status[] statuses = new Status[array.Length];
-			for (int i = 0; i < array.Length; i++)
-				statuses[i] = JsonDeserializer.Deserialize<Status> ((JsonObject)array[i]);
+			for (int i = 0; i < array.Length; i++) {
+				JsonObject obj = (JsonObject)array[i];
+				statuses[i] = JsonDeserializer.Deserialize<Status> (obj);
+				if (isDmMode && obj.Value.ContainsKey ("sender"))
+					SetDirectMessageInfo (statuses[i], obj);
+			}
 			return statuses;
+		}
+
+		void SetDirectMessageInfo (Status status, JsonObject dmRoot)
+		{
+			status.User = JsonDeserializer.Deserialize<User> ((JsonObject)dmRoot.Value["sender"]);
+			User recipient = JsonDeserializer.Deserialize<User> ((JsonObject)dmRoot.Value["recipient"]);
+			status.InReplyToScreenName = recipient.ScreenName;
+			status.InReplyToUserId = recipient.ID;
 		}
 		#endregion
 
@@ -234,6 +249,7 @@ namespace ktwt.Twitter
 				_friends = friends;
 				SetFriendIDs (ids);
 			}
+			InvokePropertyChanged ("Friends");
 		}
 
 		public User[] Friends {
@@ -256,6 +272,7 @@ namespace ktwt.Twitter
 					return;
 				_followers = GetFollowers (null, null);
 			}
+			InvokePropertyChanged ("Followers");
 		}
 
 		public User[] Followers {
@@ -300,6 +317,40 @@ namespace ktwt.Twitter
 				};
 			}
 			return statuses;
+		}
+		#endregion
+
+		#region Direct Message Methods
+		public Status[] GetDirectMessages (ulong? since_id, ulong? max_id, int? count, int? page)
+		{
+			return GetStatus (DirectMessagesURL, true, since_id, max_id, count, page);
+		}
+		public Status[] GetDirectSentMessages (ulong? since_id, ulong? max_id, int? count, int? page)
+		{
+			return GetStatus (DirectMessagesSentURL, true, since_id, max_id, count, page);
+		}
+		public Status[] GetDirectMessagesAll (ulong? since_id, ulong? max_id, int? count, int? page)
+		{
+			List<Status> list = new List<Status> ();
+			list.AddRange (GetDirectMessages (since_id, max_id, count, page));
+			list.AddRange (GetDirectSentMessages (since_id, max_id, count, page));
+			return list.ToArray ();
+		}
+		public Status SendDirectMessage (string screen_name, ulong? user_id, string text)
+		{
+			if (string.IsNullOrEmpty (screen_name) && (!user_id.HasValue || user_id.Value == 0))
+				throw new ArgumentNullException ();
+			string query;
+			if (!string.IsNullOrEmpty (screen_name))
+				query = "?screen_name=" + OAuthBase.UrlEncode (screen_name);
+			else
+				query = "?user_id=" + user_id.Value.ToString ();
+			query += "&text=" + OAuthBase.UrlEncode (text);
+			string json = DownloadString (new Uri (DirectMessageNewURL + query), HTTP_POST, null);
+			JsonObject obj = (JsonObject)new JsonValueReader (json).Read ();
+			Status status = JsonDeserializer.Deserialize<Status> (obj);
+			SetDirectMessageInfo (status, obj);
+			return status;
 		}
 		#endregion
 
