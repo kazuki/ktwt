@@ -41,7 +41,7 @@
                             </TextBlock>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource smallStyle}">Streaming:</TextBlock>
-                                <ItemsControl ItemsSource="{Binding StreamingClient.States}">
+                                <ItemsControl ItemsSource="{Binding StreamingClient.States}" IsTabStop="False">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <TextBlock Style="{StaticResource smallStyle}">
