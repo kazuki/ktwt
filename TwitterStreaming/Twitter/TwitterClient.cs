@@ -68,6 +68,7 @@ namespace ktwt.Twitter
 		int _apiLimitMax = -1, _apiLimitRemaining = -1;
 		DateTime _apiLimitResetTime = DateTime.MaxValue;
 
+		object _friendsLock = new object (), _followersLock = new object (), _friendsIDLock = new object ();
 		User[] _friends = null, _followers = null;
 		ulong[] _friendIDs = null;
 		HashSet<ulong> _friendSet = null;
@@ -217,31 +218,50 @@ namespace ktwt.Twitter
 
 		public void UpdateFriends ()
 		{
-			User[] friends = GetFriends (null, null);
-			ulong[] ids = new ulong[friends.Length];
-			for (int i = 0; i < ids.Length; i ++)
-				ids[i] = friends[i].ID;
-			_friends = friends;
-			SetFriendIDs (ids);
+			UpdateFriends (true);
+		}
+
+		void UpdateFriends (bool force)
+		{
+			lock (_friendsLock)
+			lock (_friendsIDLock) {
+				if (!force && _friends != null)
+					return;
+				User[] friends = GetFriends (null, null);
+				ulong[] ids = new ulong[friends.Length];
+				for (int i = 0; i < ids.Length; i ++)
+					ids[i] = friends[i].ID;
+				_friends = friends;
+				SetFriendIDs (ids);
+			}
 		}
 
 		public User[] Friends {
 			get {
 				if (_friends == null)
-					UpdateFriends ();
+					UpdateFriends (false);
 				return _friends;
 			}
 		}
 
 		public void UpdateFollowers ()
 		{
-			_followers = GetFollowers (null, null);
+			UpdateFollowers (true);
+		}
+
+		void UpdateFollowers (bool force)
+		{
+			lock (_followersLock) {
+				if (!force && _followers != null)
+					return;
+				_followers = GetFollowers (null, null);
+			}
 		}
 
 		public User[] Followers {
 			get {
 				if (_followers == null)
-					UpdateFollowers ();
+					UpdateFollowers (false);
 				return _followers;
 			}
 		}
@@ -286,18 +306,27 @@ namespace ktwt.Twitter
 		#region Social Graph Methods
 		public void UpdateFriendIDs ()
 		{
-			string json = DownloadString (FriendIDsURL, HTTP_GET, null);
-			JsonArray array = (JsonArray)new JsonValueReader (json).Read ();
-			ulong[] friends = new ulong[array.Length];
-			for (int i = 0; i < array.Length; i ++)
-				friends[i] = (ulong)(array[i] as JsonNumber).Value;
-			SetFriendIDs (friends);
+			UpdateFriendIDs (true);
+		}
+
+		void UpdateFriendIDs (bool force)
+		{
+			lock (_friendsIDLock) {
+				if (!force && _friendIDs != null)
+					return;
+				string json = DownloadString (FriendIDsURL, HTTP_GET, null);
+				JsonArray array = (JsonArray)new JsonValueReader (json).Read ();
+				ulong[] friends = new ulong[array.Length];
+				for (int i = 0; i < array.Length; i ++)
+					friends[i] = (ulong)(array[i] as JsonNumber).Value;
+				SetFriendIDs (friends);
+			}
 		}
 
 		public ulong[] FriendIDs {
 			get {
 				if (_friendIDs == null)
-					UpdateFriendIDs ();
+					UpdateFriendIDs (false);
 				return _friendIDs;
 			}
 		}
@@ -305,7 +334,7 @@ namespace ktwt.Twitter
 		public HashSet<ulong> FriendSet {
 			get {
 				if (_friendSet == null)
-					UpdateFriendIDs ();
+					UpdateFriendIDs (false);
 				return _friendSet;
 			}
 		}
