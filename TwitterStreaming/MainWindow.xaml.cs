@@ -685,6 +685,17 @@ namespace TwitterStreaming
 			}
 		}
 
+		private void MenuItem_OpenUrl_Click (object sender, RoutedEventArgs e)
+		{
+			MenuItem item = sender as MenuItem;
+			if (item == null || item.Tag == null || !(item.Tag is string))
+				return;
+			string url = (string)item.Tag;
+			try {
+				Process.Start (url);
+			} catch {}
+		}
+
 		private void ReplyMenuItem_Click (object sender, RoutedEventArgs e)
 		{
 			ListBox lb = (ListBox)((ContextMenu)((MenuItem)sender).Parent).PlacementTarget;

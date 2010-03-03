@@ -135,12 +135,20 @@
             <RowDefinition />
         </Grid.RowDefinitions>
         <Menu Grid.Row="0" VerticalAlignment="Top">
-            <MenuItem Header="メニュー">
+            <MenuItem Header="表示">
                 <MenuItem Header="設定" Click="MenuItem_ShowPreference_Click" />
+                <MenuItem Header="Following/Followers一覧" Click="MenuItem_ShowFriendsFollowers_Click" />
+            </MenuItem>
+            <MenuItem Header="操作">
                 <MenuItem Header="タイムラインを追加" Click="MenuItem_AddNewTimeline_Click" />
-                <MenuItem Header="Following / Followers を見る" Click="MenuItem_ShowFriendsFollowers_Click" />
+                <MenuItem Header="Following/Followers を更新" Click="MenuItem_UpdateFriendsAndFollowers_Click" />
+            </MenuItem>
+            <MenuItem Header="ヘルプ">
                 <MenuItem Header="バージョン情報" Click="MenuItem_ShowAboutWindow_Click" />
-                <MenuItem Header="Following / Followers を更新" Click="MenuItem_UpdateFriendsAndFollowers_Click" />
+                <Separator />
+                <MenuItem Header="最新版を確認 (ブラウザでサイトを開きます)" Tag="https://oikw.org/software/twitterstreaming" Click="MenuItem_OpenUrl_Click" />
+                <MenuItem Header="チケットの一覧を表示" Tag="https://oikw.org/bug/report/12" Click="MenuItem_OpenUrl_Click" />
+                <MenuItem Header="バグを報告する" Tag="https://oikw.org/bug/newticket" Click="MenuItem_OpenUrl_Click" />
             </MenuItem>
         </Menu>
         <Grid Grid.Row="1">
