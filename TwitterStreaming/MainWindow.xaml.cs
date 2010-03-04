@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading;
@@ -909,12 +910,14 @@ namespace TwitterStreaming
 		#endregion
 	}
 
-	public abstract class TimelineBase
+	public abstract class TimelineBase : INotifyPropertyChanged
 	{
-		protected TimelineBase (TimelineBase owner)
+		protected TimelineBase (TimelineBase owner, string title)
 		{
 			Owner = owner;
 			TimeLines = null;
+			Title = title;
+			BaseTitle = title;
 		}
 
 		public virtual void Add (TimelineBase tl)
@@ -941,44 +944,76 @@ namespace TwitterStreaming
 			TimeLines.RemoveAt (idx);
 		}
 
+		public abstract void NoticeNewPost (TimelineBase source);
+
+		string _title;
+		public string Title {
+			get { return _title; }
+			set {
+				_title = value;
+				InvokePropertyChanged ("Title");
+			}
+		}
+		public string BaseTitle { get; private set; }
 		public TimelineBase Owner { get; set; }
 		public ObservableCollection<TimelineBase> TimeLines { get; protected set; }
+
+		public event PropertyChangedEventHandler PropertyChanged;
+		protected void InvokePropertyChanged (string name)
+		{
+			if (PropertyChanged != null)
+				PropertyChanged (this, new PropertyChangedEventArgs (name));
+		}
 	}
 
 	public class RootTimeLines : TimelineBase
 	{
-		public RootTimeLines () : base (null)
+		public RootTimeLines () : base (null, string.Empty)
 		{
 			TimeLines = new ObservableCollection<TimelineBase> ();
 		}
+
+		public override void NoticeNewPost (TimelineBase source)
+		{
+		}
 	}
 
-	public class TimelineInfo : TimelineBase, INotifyPropertyChanged
+	public class TimelineInfo : TimelineBase
 	{
-		TimelineInfo (TimelineBase owner, TwitterTimeLine timeline) : base (owner)
+		TimelineInfo (TimelineBase owner, TwitterTimeLine timeline, string title) : base (owner, title)
 		{
 			Statuses = timeline;
+			timeline.CollectionChanged += new NotifyCollectionChangedEventHandler (Timeline_CollectionChanged);
 		}
 
-		public TimelineInfo (TimelineBase owner, TwitterAccount account, TwitterTimeLine timeline) : this (owner, timeline)
+		void Timeline_CollectionChanged (object sender, NotifyCollectionChangedEventArgs e)
+		{
+			if (e.Action == NotifyCollectionChangedAction.Add)
+				NoticeNewPost (this);
+		}
+
+		public TimelineInfo (TimelineBase owner, TwitterAccount account, TwitterTimeLine timeline)
+			: this (owner, timeline, CreateTitle (account, timeline))
 		{
 			RestAccount = account;
-			Title = account.ScreenName + "'s " +
-				(timeline == account.HomeTimeline ? "home" :
-				(timeline == account.Mentions ? "mentions" : "dm"));
 			RestUsage = (timeline == account.HomeTimeline ? account.RestHome :
 				(timeline == account.Mentions ? account.RestMentions : account.RestDirectMessages));
 		}
+		static string CreateTitle (TwitterAccount account, TwitterTimeLine timeline)
+		{
+			return account.ScreenName + "'s " +
+				(timeline == account.HomeTimeline ? "home" :
+				(timeline == account.Mentions ? "mentions" : "dm"));
+		}
 
-		public TimelineInfo (TimelineBase owner, SearchStatuses search) : this (owner, search.Statuses)
+		public TimelineInfo (TimelineBase owner, SearchStatuses search)
+			: this (owner, search.Statuses, "Search \"" + search.Keyword + "\"")
 		{
 			Search = search;
 			RestAccount = search.Account;
 			RestUsage = search.RestInfo;
-			Title = "Search \"" + search.Keyword + "\"";
 		}
 
-		public string Title { get; set; }
 		public TwitterAccount RestAccount { get; private set; }
 		public TwitterAccount.RestUsage RestUsage { get; private set; }
 		public TwitterTimeLine Statuses { get; private set; }
@@ -993,19 +1028,22 @@ namespace TwitterStreaming
 			}
 		}
 
-		public event PropertyChangedEventHandler PropertyChanged;
+		public override void NoticeNewPost (TimelineBase source)
+		{
+			if (Owner != null)
+				Owner.NoticeNewPost (source);
+		}
+
 		public void UpdateStreamingConstruction ()
 		{
-			if (PropertyChanged != null)
-				PropertyChanged (this, new PropertyChangedEventArgs ("StreamingClient"));
+			InvokePropertyChanged ("StreamingClient");
 		}
 	}
 
-	public class TabInfo : TimelineBase, INotifyPropertyChanged
+	public class TabInfo : TimelineBase
 	{
-		public TabInfo (TimelineBase owner, string title) : base (owner)
+		public TabInfo (TimelineBase owner, string title) : base (owner, title)
 		{
-			Title = title;
 			TimeLines = new ObservableCollection<TimelineBase> ();
 		}
 
@@ -1015,19 +1053,22 @@ namespace TwitterStreaming
 			SelectedItem = tl;
 		}
 
-		public string Title { get; set; }
-
 		TimelineBase _selectedItem = null;
 		public TimelineBase SelectedItem {
 			get { return _selectedItem; }
 			set {
 				_selectedItem = value;
-				if (PropertyChanged != null)
-					PropertyChanged (this, new PropertyChangedEventArgs ("SelectedItem"));
+				if (value.Title != value.BaseTitle)
+					value.Title = value.BaseTitle;
+				InvokePropertyChanged ("SelectedItem");
 			}
 		}
 
-		public event PropertyChangedEventHandler PropertyChanged;
+		public override void NoticeNewPost (TimelineBase source)
+		{
+			if (source != SelectedItem && source.Title.Length == source.BaseTitle.Length)
+				source.Title = source.BaseTitle + " (*)";
+		}
 	}
 
 	public class HogeTemplateSelector : DataTemplateSelector
