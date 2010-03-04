@@ -38,7 +38,6 @@ namespace TwitterStreaming
 
 		RestUsage[] _restInfoList;
 		ulong?[] _restSinceList;
-		ulong _selfUserId = 0;
 
 		public TwitterAccount (TwitterAccountManager mgr)
 		{
@@ -49,24 +48,12 @@ namespace TwitterStreaming
 			_dispatcher = Dispatcher.CurrentDispatcher;
 
 			// defaults
+			SelfUserID = 0;
 			RestHome = new RestUsage {Interval = TimeSpan.FromSeconds (30), Count = 200, IsEnabled = true, LastExecTime = DateTime.MinValue};
 			RestMentions = new RestUsage {Interval = TimeSpan.FromSeconds (600), Count = 20, IsEnabled = true, LastExecTime = DateTime.MinValue};
 			RestDirectMessages = new RestUsage {Interval = TimeSpan.FromSeconds (600), Count = 20, IsEnabled = true, LastExecTime = DateTime.MinValue};
 			_restInfoList = new RestUsage[] {RestHome, RestMentions, RestDirectMessages};
 			_restSinceList = new ulong?[] {null, null, null};
-
-			ThreadPool.QueueUserWorkItem (delegate (object o) {
-				while (true) {
-					if (_oauthClient.Credentials != null) {
-						try {
-							Self = _client.VerifyCredentials ();
-							_selfUserId = Self.ID;
-							break;
-						} catch {}
-					}
-					Thread.Sleep (5 * 1000);
-				}
-			});
 		}
 
 		public void UpdateOAuthAccessToken ()
@@ -153,7 +140,7 @@ namespace TwitterStreaming
 		public RestUsage RestMentions { get; private set; }
 		public RestUsage RestDirectMessages { get; private set; }
 		public string ScreenName { get; private set; }
-		public User Self { get; private set; }
+		public ulong SelfUserID { get; set; }
 		public bool IsIncludeOtherStatus { get; set; }
 		public StreamingClient StreamingClient {
 			get { return _streamingClient; }
@@ -170,7 +157,7 @@ namespace TwitterStreaming
 
 		bool IsMention (Status status)
 		{
-			if ((_selfUserId != 0 && status.InReplyToUserId == _selfUserId) || status.Text.Contains ("@" + ScreenName))
+			if ((SelfUserID != 0 && status.InReplyToUserId == SelfUserID) || status.Text.Contains ("@" + ScreenName))
 				return true;
 			return false;
 		}
@@ -187,7 +174,7 @@ namespace TwitterStreaming
 							return;
 					}
 					if (e.Status.RetweetedStatus != null && e.Status.RetweetedStatus.User != null) {
-						if (e.Status.RetweetedStatus.User.ID == _selfUserId)
+						if (e.Status.RetweetedStatus.User.ID == SelfUserID)
 							return;
 					}
 				}

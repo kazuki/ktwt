@@ -153,6 +153,7 @@ namespace TwitterStreaming
 			account.Credential = new NetworkCredential (win.UserName, win.Password);
 			try {
 				account.UpdateOAuthAccessToken ();
+				account.SelfUserID = account.TwitterClient.VerifyCredentials ().ID;
 				_observableAccountList.Add (account);
 				Array.Resize<IStreamingHandler> (ref _targets, _observableAccountList.Count);
 			} catch {

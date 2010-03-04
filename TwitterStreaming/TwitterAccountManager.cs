@@ -214,6 +214,22 @@ namespace TwitterStreaming
 
 			TwitterAccount account = new TwitterAccount (this);
 			account.Credential = credential;
+			if (obj.Value.ContainsKey ("id"))
+				account.SelfUserID = (ulong)(obj.Value["id"] as JsonNumber).Value;
+			if (account.SelfUserID == 0) {
+				// Backward compatibility (~0.0.5)
+				ThreadPool.QueueUserWorkItem (delegate (object o) {
+					if (credential as OAuthCredentialCache == null)
+						return;
+					for (int i = 0; i < 5; i ++) {
+						try {
+							account.SelfUserID = account.TwitterClient.VerifyCredentials ().ID;
+							break;
+						} catch {}
+						Thread.Sleep (5 * 1000);
+					}
+				});
+			}
 			if (obj.Value.ContainsKey ("rest")) {
 				JsonObject restRoot = (obj.Value["rest"] as JsonObject);
 				string[] rest_keys = new string[] {"home", "mentions", "dm"};
@@ -248,6 +264,10 @@ namespace TwitterStreaming
 				writer.WriteString (pc.AccessToken);
 				writer.WriteKey ("secret");
 				writer.WriteString (pc.AccessSecret);
+			}
+			if (account.SelfUserID > 0) {
+				writer.WriteKey ("id");
+				writer.WriteNumber (account.SelfUserID);
 			}
 			writer.WriteKey ("rest");
 			writer.WriteStartObject ();
