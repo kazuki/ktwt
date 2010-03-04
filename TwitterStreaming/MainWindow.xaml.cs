@@ -681,6 +681,9 @@ namespace TwitterStreaming
 			}
 
 			SaveConfig ();
+
+			if (postAccount.SelectedIndex < 0 && _mgr.Accounts.Length > 0)
+				postAccount.SelectedIndex = 0;
 		}
 
 		private void MenuItem_ShowFriendsFollowers_Click (object sender, RoutedEventArgs e)
