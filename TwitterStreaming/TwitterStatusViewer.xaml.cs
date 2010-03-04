@@ -45,7 +45,10 @@ namespace TwitterStreaming
 			set { SetValue (StatusProperty, value); }
 		}
 
-		static Regex _urlRegex = new Regex (@"(?<url>https?://[a-zA-Z0-9!#$%&'()=\-~^@`;\+:\*,\./\\?_]+)|(?<username>@[a-zA-Z0-9_]+)|(?<hashtag>#[\w]+)", RegexOptions.Compiled);
+		static Regex _urlRegex = new Regex (
+			@"(?<url>https?://[a-zA-Z0-9!#$%&'()=\-~^@`;\+:\*,\./\\?_]+)|" +
+			@"(?<username>(?<=^|[^a-zA-Z0-9_])@[a-zA-Z0-9_]+)|" +
+			@"(?<hashtag>(?<=^|[^a-zA-Z0-9\&\/])#[a-zA-Z0-9_]+)", RegexOptions.Compiled);
 		static void StatusPropertyChanged (DependencyObject d, DependencyPropertyChangedEventArgs e) {
 			TwitterStatusViewer self = (TwitterStatusViewer)d;
 			Status s = (Status)e.NewValue;
