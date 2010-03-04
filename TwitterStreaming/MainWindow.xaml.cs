@@ -118,6 +118,8 @@ namespace TwitterStreaming
 			}
 			if (root.Value.ContainsKey ("styles"))
 				LoadConfigInternalStyles ((JsonObject)root.Value["styles"]);
+			if (root.Value.ContainsKey ("misc"))
+				LoadConfigInternalMisc ((JsonObject)root.Value["misc"]);
 		}
 		void LoadConfigInternal (JsonArray array, TimelineBase timelines)
 		{
@@ -161,6 +163,11 @@ namespace TwitterStreaming
 						timelines.TimeLines.Add (info);
 				}
 			}
+		}
+		void LoadConfigInternalMisc (JsonObject o)
+		{
+			if (o.Value.ContainsKey ("include_mentions"))
+				_mgr.HomeIncludeMentions = (o.Value["include_mentions"] as JsonBoolean).Value;
 		}
 		void LoadConfigInternalStyles (JsonObject o)
 		{
@@ -228,6 +235,9 @@ namespace TwitterStreaming
 				writer.WriteKey ("include_other");
 				writer.WriteBoolean (IsIncludeOtherStatus);
 				writer.WriteEndObject ();
+
+				writer.WriteKey ("misc");
+				SaveConfigInternalMisc (writer);
 			});
 		}
 		void SaveConfigInternal (JsonTextWriter writer, TimelineBase timelines)
@@ -267,6 +277,15 @@ namespace TwitterStreaming
 				}
 				writer.WriteEndObject ();
 			}
+		}
+		void SaveConfigInternalMisc (JsonTextWriter writer)
+		{
+			writer.WriteStartObject ();
+
+			writer.WriteKey ("include_mentions");
+			writer.WriteBoolean (_mgr.HomeIncludeMentions);
+
+			writer.WriteEndObject ();
 		}
 		void SaveConfigInternalStyles (JsonTextWriter writer)
 		{

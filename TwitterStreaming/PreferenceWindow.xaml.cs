@@ -35,10 +35,12 @@ namespace TwitterStreaming
 		object[] _targetList;
 		IStreamingHandler[] _targets;
 		MainWindow _mwin;
+		TwitterAccountManager _mgr;
 
 		public PreferenceWindow (TwitterAccountManager mgr, MainWindow mwin)
 		{
 			_mwin = mwin;
+			_mgr = mgr;
 			InitializeComponent ();
 			_accounts = mgr.Accounts;
 			_oldAccounts = (TwitterAccount[])_accounts.Clone ();
@@ -110,6 +112,10 @@ namespace TwitterStreaming
 			get { return Fonts.SystemFontFamilies; }
 		}
 
+		public TwitterAccountManager AccountManager {
+			get { return _mgr; }
+		}
+
 		private static double[] StandardFontSizes = new double[] {
             3.0d,    4.0d,   5.0d,   6.0d,   6.5d,   7.0d,   7.5d,   8.0d,   8.5d,   9.0d,
             9.5d,   10.0d,  10.5d,  11.0d,  11.5d,  12.0d,  12.5d,  13.0d,  13.5d,  14.0d,
@@ -135,7 +141,7 @@ namespace TwitterStreaming
 			bool? ret = win.ShowDialog ();
 			if (!ret.HasValue || !ret.Value)
 				return;
-			TwitterAccount account = new TwitterAccount ();
+			TwitterAccount account = new TwitterAccount (_mgr);
 			for (int i = 0; i < _observableAccountList.Count; i ++) {
 				ICredentials c = _observableAccountList[i].Credential;
 				string userName = (c is NetworkCredential ? (c as NetworkCredential).UserName : (c as OAuthPasswordCache).UserName);

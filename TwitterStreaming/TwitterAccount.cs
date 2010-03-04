@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net;
 using System.Threading;
@@ -27,6 +28,7 @@ namespace TwitterStreaming
 {
 	public class TwitterAccount : IUpdateChecker, IStreamingHandler
 	{
+		TwitterAccountManager _mgr;
 		OAuthClient _oauthClient;
 		TwitterClient _client;
 		ICredentials _credential;
@@ -38,8 +40,9 @@ namespace TwitterStreaming
 		ulong?[] _restSinceList;
 		ulong _selfUserId = 0;
 
-		public TwitterAccount ()
+		public TwitterAccount (TwitterAccountManager mgr)
 		{
+			_mgr = mgr;
 			_oauthClient = new OAuthClient (ConsumerKeyStore.Key, ConsumerKeyStore.Secret, TwitterClient.RequestTokenURL,
 				TwitterClient.AccessTokenURL, TwitterClient.AuthorizeURL, TwitterClient.XAuthURL);
 			_client = new TwitterClient (_oauthClient);
@@ -86,35 +89,46 @@ namespace TwitterStreaming
 				RestUsage r = _restInfoList[i];
 
 				if (!r.IsRunning && r.IsEnabled) {
-					if (r.NextExecTime < DateTime.Now) {
-						r.LastExecTime = DateTime.Now;
-						r.IsRunning = true;
-						ThreadPool.QueueUserWorkItem (delegate (object o) {
-							int idx = (int)o;
-							try {
-								Status[] statuses = funcs[idx] (_restSinceList[idx], null, r.Count, null);
-								_restSinceList[idx] = TwitterClient.GetMaxStatusID (_restSinceList[idx], statuses);
-								_dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
-									for (int j = 0; j < statuses.Length; j++) {
-										statuses[j].AccountInfo = this;
-										if (idx == 0 && _selfUserId != 0 && statuses[j].InReplyToUserId == _selfUserId)
-											Mentions.Add (statuses[j]);
-										else if (idx == 1)
-											HomeTimeline.Add (statuses[j]);
-										_restInfoList[idx].TimeLine.Add (statuses[j]);
-									}
-								}));
-							} catch {
-							} finally {
-								r.IsRunning = false;
-								r.LastExecTime = DateTime.Now;
-								r.UpdateNextExecTimeRemaining ();
-							}
-						}, i);
-					}
+					if (r.NextExecTime < DateTime.Now)
+						UpdateTimeLine (r, funcs[i], (TimeLineType)i, i);
 					r.UpdateNextExecTimeRemaining ();
 				}
 			}
+		}
+		void UpdateTimeLine (RestUsage r, RestUpdateDelegate func, TimeLineType type, int sinceListIndex)
+		{
+			r.LastExecTime = DateTime.Now;
+			r.IsRunning = true;
+			ThreadPool.QueueUserWorkItem (delegate (object o) {
+				try {
+					Status[] statuses = func (_restSinceList[sinceListIndex], null, r.Count, null);
+					_restSinceList[sinceListIndex] = TwitterClient.GetMaxStatusID (_restSinceList[sinceListIndex], statuses);
+					_dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
+						for (int i = 0; i < statuses.Length; i++) {
+							statuses[i].AccountInfo = this;
+							if (type == TimeLineType.Home && IsMention (statuses[i])) {
+								Mentions.Add (statuses[i]);
+								if (!_mgr.HomeIncludeMentions)
+									continue;
+							} else if (type == TimeLineType.Mentions && _mgr.HomeIncludeMentions) {
+								HomeTimeline.Add (statuses[i]);
+							}
+							r.TimeLine.Add (statuses[i]);
+						}
+					}));
+				} catch {
+				} finally {
+					r.IsRunning = false;
+					r.LastExecTime = DateTime.Now;
+					r.UpdateNextExecTimeRemaining ();
+				}
+			});
+		}
+		enum TimeLineType
+		{
+			Home = 0,
+			Mentions = 1,
+			DirectMessage = 2
 		}
 
 		public TwitterClient TwitterClient {
@@ -154,6 +168,13 @@ namespace TwitterStreaming
 			}
 		}
 
+		bool IsMention (Status status)
+		{
+			if ((_selfUserId != 0 && status.InReplyToUserId == _selfUserId) || status.Text.Contains ("@" + ScreenName))
+				return true;
+			return false;
+		}
+
 		void IStreamingHandler.Streaming_StatusArrived (object sender, StatusArrivedEventArgs e)
 		{
 			StreamingClient c = sender as StreamingClient;
@@ -171,9 +192,12 @@ namespace TwitterStreaming
 					}
 				}
 				e.Status.AccountInfo = this;
-				HomeTimeline.Add (e.Status);
-				if (ScreenName.Equals (e.Status.InReplyToScreenName) || e.Status.Text.Contains ("@" + ScreenName))
+				if (IsMention (e.Status)) {
 					Mentions.Add (e.Status);
+					if (!_mgr.HomeIncludeMentions)
+						return;
+				}
+				HomeTimeline.Add (e.Status);
 			}));
 		}
 

@@ -185,6 +185,9 @@
                     </GroupBox>
                 </StackPanel>
             </TabItem>
+            <TabItem Header="Misc">
+                <CheckBox IsChecked="{Binding ElementName=win, Path=AccountManager.HomeIncludeMentions}">MentionをHomeタイムラインに含める</CheckBox>
+            </TabItem>
         </TabControl>
     </Grid>
 </Window>

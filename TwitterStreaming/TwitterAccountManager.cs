@@ -37,6 +37,9 @@ namespace TwitterStreaming
 			_restThread = new Thread (RestThread);
 			_restThread.IsBackground = true;
 			_restThread.Start ();
+
+			// defaults
+			HomeIncludeMentions = true;
 		}
 
 		public void UpdateAccounts (TwitterAccount[] accounts)
@@ -93,6 +96,8 @@ namespace TwitterStreaming
 				Thread.Sleep (1000);
 			}
 		}
+
+		public bool HomeIncludeMentions { get; set; }
 
 		#region Streaming Helpers
 		public void ReconstructAllStreaming (IStreamingHandler[] targets, bool dummy)
@@ -207,7 +212,7 @@ namespace TwitterStreaming
 				credential = new NetworkCredential (uname, password);
 			}
 
-			TwitterAccount account = new TwitterAccount ();
+			TwitterAccount account = new TwitterAccount (this);
 			account.Credential = credential;
 			if (obj.Value.ContainsKey ("rest")) {
 				JsonObject restRoot = (obj.Value["rest"] as JsonObject);
