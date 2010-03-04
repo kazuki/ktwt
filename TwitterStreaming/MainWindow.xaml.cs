@@ -87,6 +87,14 @@ namespace TwitterStreaming
 					}));
 				});
 			}
+			
+			this.PreviewKeyDown += delegate (object sender, KeyEventArgs e) {
+				if (postTextBox.IsFocused || (Keyboard.Modifiers != ModifierKeys.None && Keyboard.Modifiers != ModifierKeys.Shift))
+					return;
+				if (e.Key == Key.ImeProcessed || (e.Key >= Key.A && e.Key <= Key.Z)
+					|| (e.Key >= Key.D0 && e.Key <= Key.D9) || (e.Key >= Key.NumPad0 && e.Key <= Key.NumPad9))
+					postTextBox.Focus ();
+			};
 		}
 
 		#region Config Load/Save
