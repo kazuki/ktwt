@@ -93,9 +93,9 @@ namespace TwitterStreaming
 		{
 			if (root.Value.ContainsKey ("windows"))
 				LoadConfigInternal ((JsonArray)root.Value["windows"], _rootTLs);
-			if (root.Value.ContainsKey ("colors"))
+			if (root.Value.ContainsKey ("colors")) // compatibility 0.0.5
 				LoadConfigInternalColors ((JsonObject)root.Value["colors"]);
-			if (root.Value.ContainsKey ("fonts"))
+			if (root.Value.ContainsKey ("fonts"))  // compatibility 0.0.5
 				LoadConfigInternalFonts ((JsonObject)root.Value["fonts"]);
 			if (root.Value.ContainsKey ("hashTags"))
 				LoadConfigInternalHashTags ((JsonArray)root.Value["hashTags"]);
@@ -107,6 +107,8 @@ namespace TwitterStreaming
 				if (conf.Value.ContainsKey ("include_other"))
 					IsIncludeOtherStatus = (conf.Value["include_other"] as JsonBoolean).Value;
 			}
+			if (root.Value.ContainsKey ("styles"))
+				LoadConfigInternalStyles ((JsonObject)root.Value["styles"]);
 		}
 		void LoadConfigInternal (JsonArray array, TimelineBase timelines)
 		{
@@ -151,6 +153,15 @@ namespace TwitterStreaming
 				}
 			}
 		}
+		void LoadConfigInternalStyles (JsonObject o)
+		{
+			if (o.Value.ContainsKey ("colors"))
+				LoadConfigInternalColors ((JsonObject)o.Value["colors"]);
+			if (o.Value.ContainsKey ("fonts"))
+				LoadConfigInternalFonts ((JsonObject)o.Value["fonts"]);
+			if (o.Value.ContainsKey ("icon_size"))
+				IconSize = (int)(o.Value["icon_size"] as JsonNumber).Value;
+		}
 		void LoadConfigInternalColors (JsonObject o)
 		{
 			ColorCodeNameConverter conv = new ColorCodeNameConverter ();
@@ -193,16 +204,13 @@ namespace TwitterStreaming
 				writer.WriteStartArray ();
 				SaveConfigInternal (writer, _rootTLs);
 				writer.WriteEndArray ();
-				writer.WriteKey ("colors");
-				writer.WriteStartObject ();
-				SaveConfigInternalColors (writer);
-				writer.WriteEndObject ();
-				writer.WriteKey ("fonts");
-				writer.WriteStartObject ();
-				SaveConfigInternalFonts (writer);
-				writer.WriteEndObject ();
+
+				writer.WriteKey ("styles");
+				SaveConfigInternalStyles (writer);
+
 				writer.WriteKey ("hashTags");
 				SaveConfigInternalHashTags (writer);
+
 				writer.WriteKey ("footer");
 				writer.WriteString (FooterText);
 
@@ -250,6 +258,25 @@ namespace TwitterStreaming
 				}
 				writer.WriteEndObject ();
 			}
+		}
+		void SaveConfigInternalStyles (JsonTextWriter writer)
+		{
+			writer.WriteStartObject ();
+
+			writer.WriteKey ("colors");
+			writer.WriteStartObject ();
+			SaveConfigInternalColors (writer);
+			writer.WriteEndObject ();
+
+			writer.WriteKey ("fonts");
+			writer.WriteStartObject ();
+			SaveConfigInternalFonts (writer);
+			writer.WriteEndObject ();
+
+			writer.WriteKey ("icon_size");
+			writer.WriteNumber (IconSize);
+
+			writer.WriteEndObject ();
 		}
 		void SaveConfigInternalColors (JsonTextWriter writer)
 		{
@@ -866,6 +893,15 @@ namespace TwitterStreaming
 			Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
 				postTextBox.Focus ();
 			}), null);
+		}
+		#endregion
+
+		#region Icon
+		public static readonly DependencyProperty IconSizeProperty =
+			DependencyProperty.Register ("IconSize", typeof (int), typeof (MainWindow), new PropertyMetadata (32));
+		public int IconSize {
+			get { return (int)GetValue (IconSizeProperty); }
+			set { SetValue (IconSizeProperty, value); }
 		}
 		#endregion
 	}

@@ -56,11 +56,14 @@ namespace TwitterStreaming
 
 			// Reset
 			self.userImage.Source = null;
+			self.userImage.Visibility = Visibility.Visible;
 			self.nameTextBlock.Inlines.Clear ();
 			self.postTextBlock.Inlines.Clear ();
 
-			if (s.User.ProfileImageUrl != null)
+			if (s.User.ProfileImageUrl != null) {
 				self.userImage.Source = new BitmapImage (new Uri (s.User.ProfileImageUrl));
+				self.IconVisibilityCheck ();
+			}
 
 			FontWeight defWeight = self.nameTextBlock.FontWeight;
 			RoutedEventHandler defLinkHandler = new RoutedEventHandler (self.Hyperlink_Click);
@@ -161,6 +164,38 @@ namespace TwitterStreaming
 		public Brush LinkForeground {
 			get { return (Brush)GetValue (LinkForegroundProperty); }
 			set { SetValue (LinkForegroundProperty, value); }
+		}
+		#endregion
+
+		#region Icon
+		public static readonly DependencyProperty IconSizeProperty =
+			DependencyProperty.Register ("IconSize", typeof (int), typeof (TwitterStatusViewer), new FrameworkPropertyMetadata (32, FrameworkPropertyMetadataOptions.AffectsArrange | FrameworkPropertyMetadataOptions.AffectsRender, IconSizePropertyChanged));
+		public int IconSize {
+			get { return (int)GetValue (IconSizeProperty); }
+			set {
+				SetValue (IconSizeProperty, value);
+				IconVisibilityCheck ();
+			}
+		}
+
+		public static readonly DependencyProperty MinimumIconSizeProperty =
+			DependencyProperty.Register ("MinimumIconSize", typeof (int), typeof (TwitterStatusViewer), new FrameworkPropertyMetadata (8, FrameworkPropertyMetadataOptions.AffectsArrange | FrameworkPropertyMetadataOptions.AffectsRender, IconSizePropertyChanged));
+		public int MinimumIconSize {
+			get { return (int)GetValue (MinimumIconSizeProperty); }
+			set {
+				SetValue (MinimumIconSizeProperty, value);
+				IconVisibilityCheck ();
+			}
+		}
+
+		static void IconSizePropertyChanged (DependencyObject d, DependencyPropertyChangedEventArgs e) {
+			TwitterStatusViewer self = (TwitterStatusViewer)d;
+			self.IconVisibilityCheck ();
+		}
+
+		void IconVisibilityCheck ()
+		{
+			userImage.Visibility = (IconSize >= MinimumIconSize ? Visibility.Visible : Visibility.Collapsed);
 		}
 		#endregion
 	}

@@ -25,7 +25,7 @@
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
-        <Image Grid.Column="0" x:Name="userImage" Width="32" Height="32" Margin="5 0 5 0" VerticalAlignment="Top" />
+        <Image Grid.Column="0" x:Name="userImage" Width="{Binding ElementName=uc, Path=IconSize}" Height="{Binding ElementName=uc, Path=IconSize}" Margin="5 0 5 0" VerticalAlignment="Top" />
         <StackPanel Grid.Column="1" Orientation="Vertical" Margin="0 0 0 2">
             <StackPanel Orientation="Horizontal">
                 <ToggleButton x:Name="isFav" IsChecked="{Binding ElementName=uc, Path=Status.IsFavorited, Mode=OneWay}" Style="{StaticResource favoriteButton}" Height="{Binding ElementName=uc, Path=FontSize}" Width="{Binding ElementName=uc, Path=FontSize}" Margin="0 0 3 0" VerticalAlignment="Center" Click="isFav_Click" />

@@ -265,4 +265,18 @@ namespace TwitterStreaming
 			}
 		}
 	}
+
+	class DoubleToIntegerValueConverter : IValueConverter
+	{
+		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			return (int)(double)value;
+		}
+
+		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			return (double)(int)value;
+		}
+	}
+
 }

@@ -5,6 +5,7 @@
     Title="Preference" Height="480" Width="640" WindowStyle="ToolWindow" x:Name="win" WindowStartupLocation="CenterOwner">
     <Window.Resources>
         <c:TimeSpanToSecondsConverter x:Key="intervalConverter" />
+        <c:DoubleToIntegerValueConverter x:Key="doubleToIntConverter" />
         <c:ColorCodeNameConverter x:Key="colorCodeBrushConverter" />
         <DataTemplate x:Key="nullTemplate">
             <TextBlock>
@@ -151,6 +152,16 @@
                                 <TextBox Text="{Binding ElementName=win, Path=MainWindow.PostTextBox.Foreground, Converter={StaticResource colorCodeBrushConverter}, ValidatesOnExceptions=True}" />
                             </UniformGrid>
                         </StackPanel>
+                    </GroupBox>
+                    <GroupBox Header="Icon">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Slider Grid.Column="0" Minimum="0" Maximum="48" IsSnapToTickEnabled="True" x:Name="iconSizeSlider" SmallChange="1" Value="{Binding ElementName=win, Path=MainWindow.IconSize}" />
+                            <TextBox Grid.Column="1" IsReadOnly="True" Text="{Binding ElementName=iconSizeSlider, Path=Value, Converter={StaticResource doubleToIntConverter}}" />
+                        </Grid>
                     </GroupBox>
                 </StackPanel>
             </TabItem>
