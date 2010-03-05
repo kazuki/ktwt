@@ -771,10 +771,13 @@ namespace TwitterStreaming
 					popup.IsOpen = false;
 					return;
 				}
-				if (e.Key == Key.Up || e.Key == Key.Down) {
-					int diff = (e.Key == Key.Up ? -1 : 1);
-					int new_idx = popupList.SelectedIndex + diff;
-					if (new_idx >= 0 && new_idx < popupList.Items.Count) {
+				if (e.Key == Key.Up || e.Key == Key.Down || e.Key == Key.PageDown || e.Key == Key.PageUp) {
+					if (popupList.Items.Count > 0) {
+						ScrollViewer v = popupList.FindVisualChild<ScrollViewer> ();
+						int diff = (e.Key == Key.Up ? -1 : e.Key == Key.Down ? 1 : e.Key == Key.PageUp ? -(int)v.ViewportHeight : (int)v.ViewportHeight);
+						int new_idx = popupList.SelectedIndex + diff;
+						if (new_idx < 0) new_idx = 0;
+						if (new_idx >= popupList.Items.Count) new_idx = popupList.Items.Count - 1;
 						popupList.SelectedIndex = new_idx;
 						popupList.ScrollIntoView (popupList.Items[popupList.SelectedIndex]);
 					}

@@ -96,6 +96,7 @@
     </Compile>
     <Compile Include="ConsumerKeyStore.cs" />
     <Compile Include="EmptyDelegate.cs" />
+    <Compile Include="Extentions.cs" />
     <Compile Include="FriendsManageWindow.xaml.cs">
       <DependentUpon>FriendsManageWindow.xaml</DependentUpon>
     </Compile>
