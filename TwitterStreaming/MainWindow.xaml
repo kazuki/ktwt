@@ -205,7 +205,7 @@
                 <ListBox ItemsSource="{Binding Source={StaticResource followingViewSource}}"
                          ScrollViewer.VerticalScrollBarVisibility="Visible"
                          MouseDoubleClick="PopupList_MouseDoubleClick"
-                         Height="200" MinWidth="120" x:Name="list">
+                         Height="200" MinWidth="120" x:Name="popupList">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">

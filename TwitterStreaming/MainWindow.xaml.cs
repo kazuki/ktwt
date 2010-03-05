@@ -707,7 +707,7 @@ namespace TwitterStreaming
 				ClosePopup ();
 			};
 			RoutedEventHandler focusCheck = delegate (object sender, RoutedEventArgs e) {
-				if (postTextBox.IsFocused || list.IsFocused)
+				if (postTextBox.IsFocused || popupList.IsFocused)
 					return;
 				ClosePopup ();
 			};
@@ -720,9 +720,9 @@ namespace TwitterStreaming
 					return;
 				_popupStartCaretIndex = postTextBox.CaretIndex;
 				popup.PlacementRectangle = postTextBox.GetRectFromCharacterIndex (postTextBox.CaretIndex);
-				if (list.Items.Count > 0) {
-					list.SelectedIndex = -1;
-					list.ScrollIntoView (list.Items[0]);
+				if (popupList.Items.Count > 0) {
+					popupList.SelectedIndex = -1;
+					popupList.ScrollIntoView (popupList.Items[0]);
 				}
 				popup.IsOpen = true;
 				return;
@@ -747,9 +747,9 @@ namespace TwitterStreaming
 						return false;
 					return ui.ScreenName.ToLower ().StartsWith (text);
 				};
-				if (list.Items.Count > 0) {
-					list.SelectedIndex = 0;
-					list.ScrollIntoView (list.Items[list.SelectedIndex]);
+				if (popupList.Items.Count > 0) {
+					popupList.SelectedIndex = 0;
+					popupList.ScrollIntoView (popupList.Items[popupList.SelectedIndex]);
 				}
 			}
 
@@ -773,10 +773,10 @@ namespace TwitterStreaming
 				}
 				if (e.Key == Key.Up || e.Key == Key.Down) {
 					int diff = (e.Key == Key.Up ? -1 : 1);
-					int new_idx = list.SelectedIndex + diff;
-					if (new_idx >= 0 && new_idx < list.Items.Count) {
-						list.SelectedIndex = new_idx;
-						list.ScrollIntoView (list.Items[list.SelectedIndex]);
+					int new_idx = popupList.SelectedIndex + diff;
+					if (new_idx >= 0 && new_idx < popupList.Items.Count) {
+						popupList.SelectedIndex = new_idx;
+						popupList.ScrollIntoView (popupList.Items[popupList.SelectedIndex]);
 					}
 					e.Handled = true;
 					return;
@@ -787,8 +787,8 @@ namespace TwitterStreaming
 		private void PopupList_MouseDoubleClick (object sender, MouseButtonEventArgs e)
 		{
 			ClosePopup ();
-			if (list.SelectedIndex >= 0) {
-				string name = "@" + (list.SelectedItem as User).ScreenName;
+			if (popupList.SelectedIndex >= 0) {
+				string name = "@" + (popupList.SelectedItem as User).ScreenName;
 				postTextBox.Text =
 					postTextBox.Text.Substring (0, _popupStartCaretIndex) + name +
 					postTextBox.Text.Substring (postTextBox.CaretIndex);
