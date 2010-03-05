@@ -57,37 +57,8 @@ namespace TwitterStreaming
 				postAccount.SelectedIndex = 0;
 
 			// Setup streaming & friends/followers list
-			if (targets != null) {
-				ThreadPool.QueueUserWorkItem (delegate (object o) {
-					TwitterAccount[] accounts = _mgr.Accounts;
-					for (int i = 0; i < accounts.Length; i++) {
-						try {
-							accounts[i].TwitterClient.UpdateFriendIDs ();
-						} catch {}
-					}
-
-					_mgr.ReconstructAllStreaming (targets, false);
-					Dispatcher.Invoke (new EmptyDelegate (delegate () {
-						foreach (TimelineInfo info in GetAllTimeLineInfo ())
-							info.UpdateStreamingConstruction ();
-					}));
-
-					for (int i = 0; i < accounts.Length; i++) {
-						try {
-							accounts[i].TwitterClient.UpdateFriends ();
-						} catch {}
-						try {
-							accounts[i].TwitterClient.UpdateFollowers ();
-						} catch {}
-					}
-
-					Dispatcher.Invoke (new EmptyDelegate (delegate () {
-						Binding binding = new Binding ("SelectedItem.TwitterClient.Friends");
-						binding.ElementName = "postAccount";
-						BindingOperations.SetBinding (cbDMto, ComboBox.ItemsSourceProperty, binding);
-					}));
-				});
-			}
+			InitStreaming (targets);
+			InitUserInfo ();
 			
 			this.PreviewKeyDown += delegate (object sender, KeyEventArgs e) {
 				if (postTextBox.IsFocused || (Keyboard.Modifiers != ModifierKeys.None && Keyboard.Modifiers != ModifierKeys.Shift))
@@ -97,6 +68,74 @@ namespace TwitterStreaming
 					postTextBox.Focus ();
 			};
 		}
+
+		#region Init
+		void InitStreaming (IStreamingHandler[] targets)
+		{
+			if (targets == null)
+				return;
+
+			TwitterAccount[] accounts = _mgr.Accounts;
+			ManualResetEvent[] waits = new ManualResetEvent[accounts.Length];
+
+			ThreadPool.QueueUserWorkItem (delegate (object o0) {
+				for (int i = 0; i < accounts.Length; i++) {
+					waits[i] = new ManualResetEvent (false);
+					ThreadPool.QueueUserWorkItem (delegate (object o1) {
+						object[] ary = (object[])o1;
+						try {
+							(ary[0] as TwitterAccount).TwitterClient.UpdateFriendIDs ();
+						} catch {}
+						(ary[1] as ManualResetEvent).Set ();
+					}, new object[] {accounts[i], waits[i]});
+				}
+				for (int i = 0; i < waits.Length; i ++)
+					waits[i].WaitOne ();
+
+				_mgr.ReconstructAllStreaming (targets, false);
+				Dispatcher.Invoke (new EmptyDelegate (delegate () {
+					foreach (TimelineInfo info in GetAllTimeLineInfo ())
+						info.UpdateStreamingConstruction ();
+				}));
+			});
+		}
+		void InitUserInfo ()
+		{
+			TwitterAccount[] accounts = _mgr.Accounts;
+			ThreadPool.QueueUserWorkItem (delegate (object o0) {
+				ManualResetEvent[] waits = new ManualResetEvent[accounts.Length * 2];
+				for (int i = 0; i < accounts.Length; i ++) {
+					waits[i] = new ManualResetEvent (false);
+					waits[i + accounts.Length] = new ManualResetEvent (false);
+					ThreadPool.QueueUserWorkItem (delegate (object o1) {
+						object[] ary = (object[])o1;
+						try {
+							(ary[0] as TwitterAccount).TwitterClient.UpdateFriends ();
+						} catch {}
+						(ary[1] as ManualResetEvent).Set ();
+					}, new object[] {accounts[i], waits[i]});
+					ThreadPool.QueueUserWorkItem (delegate (object o1) {
+						object[] ary = (object[])o1;
+						try {
+							(ary[0] as TwitterAccount).TwitterClient.UpdateFollowers ();
+						} catch {}
+						(ary[1] as ManualResetEvent).Set ();
+					}, new object[] {accounts[i], waits[i + accounts.Length]});
+				}
+				for (int i = 0; i < waits.Length; i ++)
+					waits[i].WaitOne ();
+				Dispatcher.Invoke (new EmptyDelegate (delegate () {
+					Binding binding = new Binding ("SelectedItem.TwitterClient.Friends");
+					binding.ElementName = "postAccount";
+					BindingOperations.SetBinding (cbDMto, ComboBox.ItemsSourceProperty, binding);
+
+					binding = new Binding ("SelectedItem.TwitterClient.Friends");
+					binding.ElementName = "postAccount";
+					BindingOperations.SetBinding (_popupListViewSource, CollectionViewSource.SourceProperty, binding);
+				}));
+			});
+		}
+		#endregion
 
 		#region Config Load/Save
 		void LoadConfig (JsonObject root)
