@@ -702,6 +702,15 @@ namespace TwitterStreaming
 		private void InitPopup ()
 		{
 			_popupListViewSource = (CollectionViewSource)Resources["followingViewSource"];
+
+			this.Deactivated += delegate (object sender, EventArgs e) {
+				ClosePopup ();
+			};
+			RoutedEventHandler focusCheck = delegate (object sender, RoutedEventArgs e) {
+				if (postTextBox.IsFocused || list.IsFocused)
+					return;
+				ClosePopup ();
+			};
 		}
 
 		private void postTextBox_PreviewTextInput (object sender, TextCompositionEventArgs e)
@@ -724,14 +733,14 @@ namespace TwitterStreaming
 		{
 			if (popup.IsOpen) {
 				if (postTextBox.CaretIndex < _popupStartCaretIndex || postTextBox.CaretIndex == _popupStartCaretIndex)
-					goto ClosePopup;
+					goto ClosePopupLabel;
 				string text = postTextBox.Text.Substring (_popupStartCaretIndex, postTextBox.CaretIndex - _popupStartCaretIndex).ToLower ();
 				if (text[0] != '@')
-					goto ClosePopup;
+					goto ClosePopupLabel;
 				text = text.Substring (1);
 				for (int i = 0; i < text.Length; i++)
 					if (!((text[i] >= 'a' && text[i] <= 'z') || (text[i] >= '0' && text[i] <= '9') || text[i] == '_'))
-						goto ClosePopup;
+						goto ClosePopupLabel;
 				_popupListViewSource.View.Filter = delegate (object o) {
 					User ui = (User)o;
 					if (ui.ScreenName.Length < text.Length)
@@ -745,8 +754,8 @@ namespace TwitterStreaming
 			}
 
 			return;
-		ClosePopup:
-			popup.IsOpen = false;
+		ClosePopupLabel:
+			ClosePopup ();
 		}
 
 		private void postTextBox_PreviewKeyDown (object sender, KeyEventArgs e)
@@ -777,7 +786,7 @@ namespace TwitterStreaming
 
 		private void PopupList_MouseDoubleClick (object sender, MouseButtonEventArgs e)
 		{
-			popup.IsOpen = false;
+			ClosePopup ();
 			if (list.SelectedIndex >= 0) {
 				string name = "@" + (list.SelectedItem as User).ScreenName;
 				postTextBox.Text =
@@ -787,6 +796,12 @@ namespace TwitterStreaming
 			}
 			if (!postTextBox.IsFocused)
 				postTextBox.Focus ();
+		}
+
+		private void ClosePopup ()
+		{
+			if (popup.IsOpen)
+				popup.IsOpen = false;
 		}
 		#endregion
 
