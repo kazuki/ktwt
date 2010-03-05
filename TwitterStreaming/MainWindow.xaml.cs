@@ -604,7 +604,7 @@ namespace TwitterStreaming
 			string txt = postTextBox.Text.Trim ();
 			if (txt.Length == 0) return;
 			postTextBox.IsReadOnly = true;
-			postTextBox.Foreground = Brushes.DimGray;
+			postTextBox.Foreground.Opacity = 0.5;
 			postButton.IsEnabled = false;
 			if (cbDMto.SelectedIndex < 0) {
 				if (!CheckReplyText (txt) || (_replyName != null && _replyName[1] == 'R'))
@@ -639,7 +639,7 @@ namespace TwitterStreaming
 			} catch {}
 			Dispatcher.Invoke (new EmptyDelegate (delegate () {
 				postTextBox.IsReadOnly = false;
-				postTextBox.Foreground = Brushes.White;
+				postTextBox.Foreground.Opacity = 1.0;
 				postButton.IsEnabled = true;
 				if (status != null) {
 					ResetReplySetting (false);
