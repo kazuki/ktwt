@@ -46,6 +46,7 @@ namespace TwitterStreaming
 		{
 			_hashTags.Add (string.Empty);
 			InitializeComponent ();
+			InitPopup ();
 			itemsControl.DataContext = this;
 			_mgr = new TwitterAccountManager ();
 			IStreamingHandler[] targets;
@@ -645,6 +646,101 @@ namespace TwitterStreaming
 			if (cbDMto.SelectedIndex >= 0)
 				postButton.Content = "Send DirectMessage";
 		}
+
+		#region ScreenName Input Helper
+		int _popupStartCaretIndex = -1;
+		CollectionViewSource _popupListViewSource = null;
+
+		private void InitPopup ()
+		{
+			_popupListViewSource = (CollectionViewSource)Resources["followingViewSource"];
+		}
+
+		private void postTextBox_PreviewTextInput (object sender, TextCompositionEventArgs e)
+		{
+			if (e.Text.Equals ("@")) {
+				if (_popupListViewSource.Source == null)
+					return;
+				_popupStartCaretIndex = postTextBox.CaretIndex;
+				popup.PlacementRectangle = postTextBox.GetRectFromCharacterIndex (postTextBox.CaretIndex);
+				if (list.Items.Count > 0) {
+					list.SelectedIndex = -1;
+					list.ScrollIntoView (list.Items[0]);
+				}
+				popup.IsOpen = true;
+				return;
+			}
+		}
+
+		private void postTextBox_SelectionChanged (object sender, RoutedEventArgs e)
+		{
+			if (popup.IsOpen) {
+				if (postTextBox.CaretIndex < _popupStartCaretIndex || postTextBox.CaretIndex == _popupStartCaretIndex)
+					goto ClosePopup;
+				string text = postTextBox.Text.Substring (_popupStartCaretIndex, postTextBox.CaretIndex - _popupStartCaretIndex).ToLower ();
+				if (text[0] != '@')
+					goto ClosePopup;
+				text = text.Substring (1);
+				for (int i = 0; i < text.Length; i++)
+					if (!((text[i] >= 'a' && text[i] <= 'z') || (text[i] >= '0' && text[i] <= '9') || text[i] == '_'))
+						goto ClosePopup;
+				_popupListViewSource.View.Filter = delegate (object o) {
+					User ui = (User)o;
+					if (ui.ScreenName.Length < text.Length)
+						return false;
+					return ui.ScreenName.ToLower ().StartsWith (text);
+				};
+				if (list.Items.Count > 0) {
+					list.SelectedIndex = 0;
+					list.ScrollIntoView (list.Items[list.SelectedIndex]);
+				}
+			}
+
+			return;
+		ClosePopup:
+			popup.IsOpen = false;
+		}
+
+		private void postTextBox_PreviewKeyDown (object sender, KeyEventArgs e)
+		{
+			if (popup.IsOpen) {
+				if (e.Key == Key.Return || e.Key == Key.Enter || e.Key == Key.Tab) {
+					e.Handled = true;
+					PopupList_MouseDoubleClick (null, null);
+					return;
+				}
+				if (e.Key == Key.Escape) {
+					e.Handled = true;
+					popup.IsOpen = false;
+					return;
+				}
+				if (e.Key == Key.Up || e.Key == Key.Down) {
+					int diff = (e.Key == Key.Up ? -1 : 1);
+					int new_idx = list.SelectedIndex + diff;
+					if (new_idx >= 0 && new_idx < list.Items.Count) {
+						list.SelectedIndex = new_idx;
+						list.ScrollIntoView (list.Items[list.SelectedIndex]);
+					}
+					e.Handled = true;
+					return;
+				}
+			}
+		}
+
+		private void PopupList_MouseDoubleClick (object sender, MouseButtonEventArgs e)
+		{
+			popup.IsOpen = false;
+			if (list.SelectedIndex >= 0) {
+				string name = "@" + (list.SelectedItem as User).ScreenName;
+				postTextBox.Text =
+					postTextBox.Text.Substring (0, _popupStartCaretIndex) + name +
+					postTextBox.Text.Substring (postTextBox.CaretIndex);
+				postTextBox.CaretIndex = _popupStartCaretIndex + name.Length;
+			}
+			if (!postTextBox.IsFocused)
+				postTextBox.Focus ();
+		}
+		#endregion
 
 		#region Streaming Filter
 		public static readonly DependencyProperty IsIncludeOtherStatusProperty =
