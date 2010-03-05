@@ -57,6 +57,7 @@ namespace TwitterStreaming
 				postAccount.SelectedIndex = 0;
 
 			// Setup streaming & friends/followers list
+			InitThreadPoolSetting ();
 			InitStreaming (targets);
 			InitUserInfo ();
 			
@@ -70,6 +71,14 @@ namespace TwitterStreaming
 		}
 
 		#region Init
+		void InitThreadPoolSetting ()
+		{
+			const int MinThreads = 8;
+			int worker, asyncIO;
+			ThreadPool.GetMinThreads (out worker, out asyncIO);
+			if (worker < MinThreads)
+				ThreadPool.SetMinThreads (MinThreads, asyncIO);
+		}
 		void InitStreaming (IStreamingHandler[] targets)
 		{
 			if (targets == null)
