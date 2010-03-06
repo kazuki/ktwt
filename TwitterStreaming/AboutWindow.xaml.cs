@@ -16,24 +16,20 @@
  */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.ComponentModel;
+using System.IO;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using System.Reflection;
-using System.IO;
+using System.Windows.Threading;
 
 namespace TwitterStreaming
 {
-	public partial class AboutWindow : Window
+	public partial class AboutWindow : Window, INotifyPropertyChanged
 	{
+		public event PropertyChangedEventHandler PropertyChanged;
+
 		public AboutWindow ()
 		{
 			Assembly asm = Assembly.GetExecutingAssembly ();
@@ -45,12 +41,26 @@ namespace TwitterStreaming
 			LoadLicense (licenseLitJSON, asm, "TwitterStreaming.Json.LitJSON.COPYING.txt");
 			LoadLicense (licenseOAuthBase, asm, "TwitterStreaming.COPYING.APACHE_LICENSE-2.0.txt");
 			LoadLicense (licenseGPL, asm, "TwitterStreaming.COPYING.GPL.txt");
+
+			DispatcherTimer timer = new DispatcherTimer ();
+			timer.Interval = TimeSpan.FromSeconds (1);
+			timer.Tick += delegate (object sender, EventArgs e) {
+				InvokePropertyChanged ("TotalManagedMemory");
+				InvokePropertyChanged ("IconCacheEntries");
+			};
+			timer.Start ();
 		}
 
 		public string AssemblyTitle { get; set; }
 		public string Copyright { get; set; }
 		public string Description { get; set; }
 		public Version Version { get; set; }
+		public string TotalManagedMemory {
+			get { return (GC.GetTotalMemory (false) / 1024.0 / 1024.0).ToString ("f2") + " MB"; }
+		}
+		public int IconCacheEntries {
+			get { return IconCache.GetNumberOfEntries (); }
+		}
 
 		static void LoadLicense (TextBox block, Assembly asm, string name)
 		{
@@ -65,6 +75,17 @@ namespace TwitterStreaming
 		private void Button_Click (object sender, RoutedEventArgs e)
 		{
 			Close ();
+		}
+
+		private void Force_GC_Button_Click (object sender, RoutedEventArgs e)
+		{
+			GC.Collect ();
+		}
+
+		void InvokePropertyChanged (string name)
+		{
+			if (PropertyChanged != null)
+				PropertyChanged (this, new PropertyChangedEventArgs (name));
 		}
 	}
 }
