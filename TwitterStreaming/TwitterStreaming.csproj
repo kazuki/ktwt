@@ -103,6 +103,7 @@
     <Compile Include="HashTagInputWindow.xaml.cs">
       <DependentUpon>HashTagInputWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="IconCache.cs" />
     <Compile Include="Json\JsonTextWriter.cs" />
     <Compile Include="StarShape.cs" />
     <Compile Include="StreamingClient.cs" />

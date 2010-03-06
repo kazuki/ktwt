@@ -31,12 +31,15 @@ namespace TwitterStreaming
 		SearchStatuses[] _searches = new SearchStatuses[0];
 		Thread _restThread;
 
+		public event EventHandler AccountsPropertyChanged;
+
 		public TwitterAccountManager ()
 		{
 			_accounts = new TwitterAccount[0];
 			_restThread = new Thread (RestThread);
 			_restThread.IsBackground = true;
 			_restThread.Start ();
+			IconCache.Init (this);
 
 			// defaults
 			HomeIncludeMentions = true;
@@ -51,6 +54,8 @@ namespace TwitterStreaming
 				if (account.StreamingClient != null)
 					account.StreamingClient.Dispose ();
 			}
+			if (AccountsPropertyChanged != null)
+				AccountsPropertyChanged (this, EventArgs.Empty);
 		}
 
 		public TwitterAccount[] Accounts {

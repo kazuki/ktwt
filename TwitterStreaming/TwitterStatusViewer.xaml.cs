@@ -16,14 +16,12 @@
  */
 
 using System;
-using System.ComponentModel;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using ktwt.Twitter;
 
 namespace TwitterStreaming
@@ -64,7 +62,7 @@ namespace TwitterStreaming
 			self.postTextBlock.Inlines.Clear ();
 
 			if (s.User.ProfileImageUrl != null) {
-				self.userImage.Source = new BitmapImage (new Uri (s.User.ProfileImageUrl));
+				self.userImage.Source = IconCache.GetImage (s.User.ID, s.User.ProfileImageUrl);
 				self.IconVisibilityCheck ();
 			}
 

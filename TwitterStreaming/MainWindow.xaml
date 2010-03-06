@@ -7,6 +7,7 @@
     x:Name="mw" Foreground="White" Background="#222" Icon="/TwitterStreaming;component/apple.ico">
     <Window.Resources>
         <c:TimeSpanToSecConverter x:Key="timeSpanToSecConverter" />
+        <c:ImageCacheConverter x:Key="iconCacheConverter" />
         <DataTemplate x:Key="timelineTemplate">
             <Grid>
                 <Grid.RowDefinitions>
@@ -184,7 +185,10 @@
                 <ComboBox x:Name="cbDMto" SelectionChanged="cbDMto_SelectionChanged">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding ScreenName}" />
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="{Binding ProfileImageUrl, Converter={StaticResource iconCacheConverter}}" Width="20" Height="20" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding ScreenName}" VerticalAlignment="Center" Margin="5 0 5 0" />
+                            </StackPanel>
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
@@ -209,7 +213,7 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
-                                <Image Source="{Binding ProfileImageUrl}" Width="20" Height="20" VerticalAlignment="Center" />
+                                <Image Source="{Binding ProfileImageUrl, Converter={StaticResource iconCacheConverter}}" Width="20" Height="20" VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding ScreenName}" VerticalAlignment="Center" Margin="5 0 5 0" />
                             </StackPanel>
                         </DataTemplate>
