@@ -58,8 +58,9 @@ namespace TwitterStreaming
 		public string TotalManagedMemory {
 			get { return (GC.GetTotalMemory (false) / 1024.0 / 1024.0).ToString ("f2") + " MB"; }
 		}
-		public int IconCacheEntries {
-			get { return IconCache.GetNumberOfEntries (); }
+		public string IconCacheEntries {
+			get { return string.Format ("Friends:{0} / Other:{1}",
+				IconCache.FriendsCache.Count, IconCache.NonFriendCache.Count); }
 		}
 
 		static void LoadLicense (TextBox block, Assembly asm, string name)
@@ -80,6 +81,16 @@ namespace TwitterStreaming
 		private void Force_GC_Button_Click (object sender, RoutedEventArgs e)
 		{
 			GC.Collect ();
+		}
+
+		private void ClearFriendIcon_Click (object sender, RoutedEventArgs e)
+		{
+			IconCache.FriendsCache.Clear ();
+		}
+
+		private void ClearOtherIcon_Click (object sender, RoutedEventArgs e)
+		{
+			IconCache.NonFriendCache.Clear ();
 		}
 
 		void InvokePropertyChanged (string name)

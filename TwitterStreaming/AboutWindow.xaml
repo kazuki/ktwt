@@ -106,7 +106,11 @@
                     </StackPanel>
                     
                     <TextBlock Grid.Column="0" Grid.Row="1" VerticalAlignment="Center" Margin="0 0 10 0">Icon Cache Entries: </TextBlock>
-                    <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding ElementName=win, Path=IconCacheEntries}" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" Grid.Row="1" Orientation="Horizontal">
+                        <TextBlock Text="{Binding ElementName=win, Path=IconCacheEntries}" VerticalAlignment="Center" />
+                        <Button Click="ClearFriendIcon_Click" Margin="10 0 0 0" VerticalAlignment="Center">Clear Friends Cache</Button>
+                        <Button Click="ClearOtherIcon_Click" VerticalAlignment="Center">Clear Other Cache</Button>
+                    </StackPanel>
                 </Grid>
             </TabItem>
         </TabControl>

@@ -17,7 +17,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition />
                 </Grid.ColumnDefinitions>
-                <Image Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Width="32" Height="32" Margin="0 0 5 0" VerticalAlignment="Top" Source="{Binding ProfileImageUrl, Converter={StaticResource iconCacheConverter}}" />
+                <Image Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Width="32" Height="32" Margin="0 0 5 0" VerticalAlignment="Top" Source="{Binding Converter={StaticResource iconCacheConverter}}" />
                 <TextBlock Grid.Column="1" Grid.Row="0" FontWeight="Bold">
                     <TextBlock Text="{Binding ScreenName}" />
                     <TextBlock> :: </TextBlock>

@@ -26,13 +26,16 @@ namespace TwitterStreaming
 {
 	public static class IconCache
 	{
-		public static int MaxCacheEntries = 8192;
-		static LinkedList<CacheItem> _lru = new LinkedList<CacheItem> ();
-		static Dictionary<Uri, CacheItem> _lru_cache = new Dictionary<Uri, CacheItem> ();
 		static HashSet<ulong> _friends = new HashSet<ulong> ();
+		static LRU<Uri, BitmapImage> _friendsCache;
+		static LRU<Uri, BitmapImage> _nonfriendCache;
 
 		public static void Init (TwitterAccountManager mgr)
 		{
+			LRU<Uri, BitmapImage>.CreateDelegate create = delegate (Uri key) {return new BitmapImage (key);};
+			_friendsCache = new LRU<Uri,BitmapImage> (create, 2048);
+			_nonfriendCache = new LRU<Uri, BitmapImage> (create, 1024);
+
 			mgr.AccountsPropertyChanged += delegate (object sender, EventArgs e) {
 				TwitterAccount[] accounts = mgr.Accounts;
 				for (int i = 0; i < accounts.Length; i ++) {
@@ -53,11 +56,12 @@ namespace TwitterStreaming
 			}
 		}
 
-		public static int GetNumberOfEntries ()
-		{
-			lock (_lru_cache) {
-				return _lru_cache.Count;
-			}
+		public static LRU<Uri,BitmapImage> FriendsCache {
+			get { return _friendsCache; }
+		}
+
+		public static LRU<Uri,BitmapImage> NonFriendCache {
+			get { return _nonfriendCache; }
 		}
 
 		public static BitmapImage GetImage (string uri)
@@ -77,44 +81,76 @@ namespace TwitterStreaming
 
 		public static BitmapImage GetImage (ulong user_id, Uri uri)
 		{
-			if (user_id != 0) {
-				bool is_friend;
+			bool is_friend;
+			if (user_id > 0) {
 				lock (_friends) {
 					is_friend = _friends.Contains (user_id);
 				}
-				if (!is_friend)
-					return new BitmapImage (uri);
+			} else {
+				is_friend = false;
 			}
-
-			lock (_lru_cache) {
-				CacheItem item;
-				if (_lru_cache.TryGetValue (uri, out item)) {
-					_lru.Remove (item.Node);
-					_lru.AddLast (item.Node);
-					return item.Image;
-				}
-
-				item = new CacheItem (uri);
-				_lru.AddLast (item.Node);
-				_lru_cache.Add (uri, item);
-				if (_lru_cache.Count > MaxCacheEntries)
-					_lru.RemoveFirst ();
-				return item.Image;
-			}
+			return (is_friend ? _friendsCache : _nonfriendCache).Get (uri);
 		}
 
-		sealed class CacheItem
+		public sealed class LRU<K,T>
 		{
-			public CacheItem (Uri uri)
+			int _max_entries;
+			LinkedList<CacheItem> _lru = new LinkedList<CacheItem> ();
+			Dictionary<K, CacheItem> _cache = new Dictionary<K, CacheItem> ();
+			CreateDelegate _create;
+
+			public LRU (CreateDelegate create, int maxEntries)
 			{
-				this.Uri = uri;
-				this.Image = new BitmapImage (uri);
-				this.Node = new LinkedListNode<CacheItem> (this);
+				_create = create;
+				_max_entries = maxEntries;
 			}
 
-			public Uri Uri { get; private set; }
-			public BitmapImage Image { get; private set; }
-			public LinkedListNode<CacheItem> Node { get; private set; }
+			public T Get (K key)
+			{
+				lock (_lru) {
+					CacheItem item;
+					if (_cache.TryGetValue (key, out item)) {
+						_lru.Remove (item.Node);
+						_lru.AddLast (item.Node);
+						return item.Value;
+					}
+
+					item = new CacheItem (key, _create (key));
+					_lru.AddLast (item.Node);
+					_cache.Add (key, item);
+					if (_cache.Count > _max_entries)
+						_lru.RemoveFirst ();
+					return item.Value;
+				}
+			}
+
+			public void Clear ()
+			{
+				lock (_lru) {
+					_lru.Clear ();
+					_cache.Clear ();
+				}
+			}
+
+			public int Count {
+				get { return _cache.Count; }
+			}
+
+			sealed class CacheItem
+			{
+				public CacheItem (K key, T value)
+				{
+					this.Key = key;
+					this.Value = value;
+					this.Node = new LinkedListNode<CacheItem> (this);
+				}
+
+				public K Key { get; private set; }
+				public T Value { get; private set; }
+				public LinkedListNode<CacheItem> Node { get; private set; }
+			}
+
+			public delegate T CreateDelegate (K key);
 		}
 	}
 
@@ -122,7 +158,15 @@ namespace TwitterStreaming
 	{
 		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{
-			return IconCache.GetImage ((string)value);
+			if (value is string)
+				return IconCache.GetImage ((string)value);
+			if (value is Uri)
+				return IconCache.GetImage ((Uri)value);
+			if (value is User) {
+				User user = (User)value;
+				return IconCache.GetImage (user.ID, user.ProfileImageUrl);
+			}
+			throw new NotSupportedException ();
 		}
 
 		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
