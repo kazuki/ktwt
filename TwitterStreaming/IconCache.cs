@@ -158,15 +158,22 @@ namespace TwitterStreaming
 	{
 		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{
-			if (value is string)
-				return IconCache.GetImage ((string)value);
-			if (value is Uri)
-				return IconCache.GetImage ((Uri)value);
-			if (value is User) {
-				User user = (User)value;
-				return IconCache.GetImage (user.ID, user.ProfileImageUrl);
-			}
-			throw new NotSupportedException ();
+			try {
+				if (value is string) {
+					string s = (string)value;
+					if (s.Length == 0)
+						return null;
+					return IconCache.GetImage (s);
+				}
+				if (value is Uri)
+					return IconCache.GetImage ((Uri)value);
+				if (value is User) {
+					User user = (User)value;
+					return IconCache.GetImage (user.ID, user.ProfileImageUrl);
+				}
+			} catch {}
+
+			return null;
 		}
 
 		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
