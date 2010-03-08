@@ -182,7 +182,7 @@
                 <ComboBox x:Name="cbHashTag" ItemsSource="{Binding ElementName=mw, Path=HashTagList}" SelectionChanged="cbHashTag_SelectionChanged" />
                 
                 <TextBlock Margin="10 0 2 0" VerticalAlignment="Center">DirectMessage:</TextBlock>
-                <ComboBox x:Name="cbDMto" SelectionChanged="cbDMto_SelectionChanged">
+                <ComboBox x:Name="cbDMto" SelectionChanged="cbDMto_SelectionChanged" ItemsSource="{Binding Source={StaticResource followingViewSource}}" IsSynchronizedWithCurrentItem="False">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">

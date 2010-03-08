@@ -136,10 +136,6 @@ namespace TwitterStreaming
 				Dispatcher.Invoke (new EmptyDelegate (delegate () {
 					Binding binding = new Binding ("SelectedItem.TwitterClient.Friends");
 					binding.ElementName = "postAccount";
-					BindingOperations.SetBinding (cbDMto, ComboBox.ItemsSourceProperty, binding);
-
-					binding = new Binding ("SelectedItem.TwitterClient.Friends");
-					binding.ElementName = "postAccount";
 					BindingOperations.SetBinding (_popupListViewSource, CollectionViewSource.SourceProperty, binding);
 				}));
 			});
