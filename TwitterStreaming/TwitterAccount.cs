@@ -49,9 +49,10 @@ namespace TwitterStreaming
 
 			// defaults
 			SelfUserID = 0;
-			RestHome = new RestUsage {Interval = TimeSpan.FromSeconds (30), Count = 200, IsEnabled = true, LastExecTime = DateTime.MinValue};
-			RestMentions = new RestUsage {Interval = TimeSpan.FromSeconds (600), Count = 20, IsEnabled = true, LastExecTime = DateTime.MinValue};
-			RestDirectMessages = new RestUsage {Interval = TimeSpan.FromSeconds (600), Count = 20, IsEnabled = true, LastExecTime = DateTime.MinValue};
+			RestHome = new RestUsage {Interval = TimeSpan.FromSeconds (30), Count = 200};
+			RestMentions = new RestUsage {Interval = TimeSpan.FromSeconds (600), Count = 20};
+			RestDirectMessages = new RestUsage {Interval = TimeSpan.FromSeconds (600), Count = 20};
+			RestList = new TwitterAccount.RestUsage {Interval = TimeSpan.FromSeconds (30), Count = 200};
 			_restInfoList = new RestUsage[] {RestHome, RestMentions, RestDirectMessages};
 			_restSinceList = new ulong?[] {null, null, null};
 		}
@@ -151,6 +152,7 @@ namespace TwitterStreaming
 		public RestUsage RestHome { get; private set; }
 		public RestUsage RestMentions { get; private set; }
 		public RestUsage RestDirectMessages { get; private set; }
+		public RestUsage RestList { get; private set; }
 		public string ScreenName { get; private set; }
 		public ulong SelfUserID { get; set; }
 		public bool IsIncludeOtherStatus { get; set; }
@@ -216,9 +218,12 @@ namespace TwitterStreaming
 
 			public RestUsage ()
 			{
+				TimeLine = new TwitterTimeLine ();
+				Interval = TimeSpan.MaxValue;
+				IsEnabled = true;
 				IsRunning = false;
 				Count = 0;
-				TimeLine = new TwitterTimeLine ();
+				LastExecTime = DateTime.MinValue;
 			}
 
 			public TwitterTimeLine TimeLine { get; private set; }
@@ -246,6 +251,11 @@ namespace TwitterStreaming
 				try {
 					PropertyChanged (this, new PropertyChangedEventArgs (name));
 				} catch {}
+			}
+
+			public RestUsage CopyConfig ()
+			{
+				return new RestUsage {Interval = Interval, Count = Count};
 			}
 		}
 	}

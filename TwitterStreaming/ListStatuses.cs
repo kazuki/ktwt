@@ -23,16 +23,12 @@ namespace TwitterStreaming
 	public class ListStatuses : IUpdateChecker, IDisposable, IStreamingHandler
 	{
 		ulong? _since_id = null;
-		TwitterAccount.RestUsage _rest;
 
 		public ListStatuses (TwitterAccount account, ListInfo li) : base ()
 		{
 			Account = account;
 			List = li;
-
-			// default
-			_rest = new TwitterAccount.RestUsage {Interval = TimeSpan.FromSeconds (30),
-				Count = 200, IsEnabled = true, LastExecTime = DateTime.MinValue};
+			RestInfo = account.RestList.CopyConfig ();
 		}
 
 		void IStreamingHandler.Streaming_StatusArrived (object sender, StatusArrivedEventArgs e)
@@ -45,12 +41,12 @@ namespace TwitterStreaming
 
 		public void UpdateTimeLines ()
 		{
-			if (!_rest.IsRunning && _rest.IsEnabled) {
-				if (_rest.NextExecTime < DateTime.Now) {
-					_rest.LastExecTime = DateTime.Now;
-					_rest.IsRunning = true;
+			if (!RestInfo.IsRunning && RestInfo.IsEnabled) {
+				if (RestInfo.NextExecTime < DateTime.Now) {
+					RestInfo.LastExecTime = DateTime.Now;
+					RestInfo.IsRunning = true;
 					try {
-						Status[] statuses = Account.TwitterClient.GetListStatuses (List, _since_id, null, _rest.Count, null);
+						Status[] statuses = Account.TwitterClient.GetListStatuses (List, _since_id, null, RestInfo.Count, null);
 						_since_id = TwitterClient.GetMaxStatusID (_since_id, statuses);
 						Account.Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
 							for (int i = 0; i < statuses.Length; i++)
@@ -58,12 +54,12 @@ namespace TwitterStreaming
 						}));
 					} catch {
 					} finally {
-						_rest.IsRunning = false;
-						_rest.LastExecTime = DateTime.Now;
-						_rest.UpdateNextExecTimeRemaining ();
+						RestInfo.IsRunning = false;
+						RestInfo.LastExecTime = DateTime.Now;
+						RestInfo.UpdateNextExecTimeRemaining ();
 					}
 				}
-				_rest.UpdateNextExecTimeRemaining ();
+				RestInfo.UpdateNextExecTimeRemaining ();
 			}
 		}
 
@@ -77,12 +73,8 @@ namespace TwitterStreaming
 
 		public TwitterAccount Account { get; private set; }
 		public ListInfo List { get; private set; }
-		public TwitterTimeLine Statuses {
-			get { return _rest.TimeLine; }
-		}
-		public TwitterAccount.RestUsage RestInfo {
-			get { return _rest; }
-		}
+		public TwitterTimeLine Statuses { get { return RestInfo.TimeLine; } }
+		public TwitterAccount.RestUsage RestInfo { get; private set; }
 		public StreamingClient StreamingClient { get; set; }
 	}
 }

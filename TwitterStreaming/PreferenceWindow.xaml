@@ -55,6 +55,9 @@
                                                 <RowDefinition />
                                                 <RowDefinition />
                                                 <RowDefinition />
+                                                <RowDefinition />
+                                                <RowDefinition />
+                                                <RowDefinition />
                                             </Grid.RowDefinitions>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition />
@@ -66,13 +69,21 @@
                                             <CheckBox Grid.Column="0" Grid.Row="1" IsChecked="{Binding Path=RestHome.IsEnabled}">Home:</CheckBox>
                                             <CheckBox Grid.Column="0" Grid.Row="2" IsChecked="{Binding Path=RestMentions.IsEnabled}">Mentions:</CheckBox>
                                             <CheckBox Grid.Column="0" Grid.Row="3" IsChecked="{Binding Path=RestDirectMessages.IsEnabled}">DM:</CheckBox>
+                                            <TextBlock Grid.Column="0" Grid.Row="4" Margin="5 0 5 0">List:</TextBlock>
                                             <TextBox Grid.Column="1" Grid.Row="1" Text="{Binding Path=RestHome.Interval, Converter={StaticResource intervalConverter}, ValidatesOnExceptions=True}" />
                                             <TextBox Grid.Column="1" Grid.Row="2" Text="{Binding Path=RestMentions.Interval, Converter={StaticResource intervalConverter}, ValidatesOnExceptions=True}" />
                                             <TextBox Grid.Column="1" Grid.Row="3" Text="{Binding Path=RestDirectMessages.Interval, Converter={StaticResource intervalConverter}, ValidatesOnExceptions=True}" />
+                                            <TextBox Grid.Column="1" Grid.Row="4" Text="{Binding Path=RestList.Interval, Converter={StaticResource intervalConverter}, ValidatesOnExceptions=True}" />
                                             <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding Path=RestHome.Count, ValidatesOnExceptions=True}" />
                                             <TextBox Grid.Column="2" Grid.Row="2" Text="{Binding Path=RestMentions.Count, ValidatesOnExceptions=True}" />
                                             <TextBox Grid.Column="2" Grid.Row="3" Text="{Binding Path=RestDirectMessages.Count, ValidatesOnExceptions=True}" />
-                                            <StackPanel Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <TextBox Grid.Column="2" Grid.Row="4" Text="{Binding Path=RestList.Count, ValidatesOnExceptions=True}" />
+                                            <StackPanel Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <Button Click="UpdateListButton_Click">List一覧更新</Button>
+                                                <Button Click="UpdateFriendsButton_Click">友達一覧更新</Button>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <Button Click="UpdateAuthButton_Click">oAuth更新</Button>
                                                 <Button Click="DeleteButton_Click">削除</Button>
                                             </StackPanel>
                                         </Grid>

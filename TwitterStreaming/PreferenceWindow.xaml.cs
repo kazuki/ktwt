@@ -163,6 +163,41 @@ namespace TwitterStreaming
 			}
 		}
 
+		private void UpdateListButton_Click (object sender, RoutedEventArgs e)
+		{
+			TwitterAccount selected = (TwitterAccount)((Button)sender).DataContext;
+			try {
+				selected.TwitterClient.UpdateSelfAndFollowingList ();
+				MessageBox.Show ("更新に成功しました");
+			} catch {
+				MessageBox.Show ("更新に失敗");
+			}
+		}
+
+		private void UpdateFriendsButton_Click (object sender, RoutedEventArgs e)
+		{
+			TwitterAccount selected = (TwitterAccount)((Button)sender).DataContext;
+			try {
+				selected.TwitterClient.UpdateFriends ();
+				selected.TwitterClient.UpdateFollowers ();
+				MessageBox.Show ("更新に成功しました");
+			} catch {
+				MessageBox.Show ("更新に失敗");
+			}
+		}
+
+		private void UpdateAuthButton_Click (object sender, RoutedEventArgs e)
+		{
+			TwitterAccount selected = (TwitterAccount)((Button)sender).DataContext;
+			try {
+				selected.UpdateOAuthAccessToken ();
+				MessageBox.Show ("更新に成功しました");
+			} catch {
+				MessageBox.Show ("oAuthアクセストークンの更新が出来ませんでした．" + Environment.NewLine +
+					"Twitter.comへの接続が出来なかったかか，ユーザ名/パスワードが間違っています");
+			}
+		}
+
 		private void DeleteButton_Click (object sender, RoutedEventArgs e)
 		{
 			TwitterAccount selected = (TwitterAccount)((Button)sender).DataContext;
