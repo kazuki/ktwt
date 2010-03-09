@@ -51,6 +51,11 @@ namespace ktwt.Twitter
 		const string UsersShowURL = "https://twitter.com/users/show.json";
 		const string UserFriendsURL = "https://api.twitter.com/1/statuses/friends.json";
 		const string UserFollowersURL = "https://api.twitter.com/1/statuses/followers.json";
+		const string ListGetListURL = "https://api.twitter.com/1/{0}/lists.json";
+		const string ListGetMembershipsListURL = "https://api.twitter.com/1/{0}/lists/memberships.json";
+		const string ListGetSubscriptionsListURL = "https://api.twitter.com/1/{0}/lists/subscriptions.json";
+		const string ListGetStatusesURL = "https://api.twitter.com/1/{0}/lists/{1}/statuses.json";
+		const string ListGetMembersURL = "https://api.twitter.com/1/{0}/{1}/members.json";
 		static readonly Uri AccountVerifyCredentialsURL = new Uri ("https://api.twitter.com/1/account/verify_credentials.json");
 		const string FavoritesURL = "https://api.twitter.com/1/favorites.json";
 		const string FavoritesUserURL = "https://api.twitter.com/1/favorites/{0}.json";
@@ -113,20 +118,20 @@ namespace ktwt.Twitter
 		#region Timeline Methods
 		public Status[] GetHomeTimeline (ulong? since_id, ulong? max_id, int? count, int? page)
 		{
-			return GetStatus (StatusesHomeTimelineURL, false, since_id, max_id, count, page);
+			return GetStatus (StatusesHomeTimelineURL, false, false, since_id, max_id, count, page);
 		}
 
 		public Status[] GetMentions (ulong? since_id, ulong? max_id, int? count, int? page)
 		{
-			return GetStatus (StatusesMentionsURL, false, since_id, max_id, count, page);
+			return GetStatus (StatusesMentionsURL, false, false, since_id, max_id, count, page);
 		}
 
-		public Status[] GetStatus (string baseUrl, bool isDmMode, ulong? since_id, ulong? max_id, int? count, int? page)
+		public Status[] GetStatus (string baseUrl, bool isDmMode, bool isListMode, ulong? since_id, ulong? max_id, int? count, int? page)
 		{
 			string query = "";
 			if (since_id.HasValue) query += "&since_id=" + since_id.Value.ToString ();
 			if (max_id.HasValue) query += "&max_id=" + max_id.Value.ToString ();
-			if (count.HasValue) query += "&count=" + count.Value.ToString ();
+			if (count.HasValue) query += (isListMode ? "&per_page=" : "&count=") + count.Value.ToString ();
 			if (page.HasValue) query += "&page=" + page.Value.ToString ();
 			if (query.Length > 0) query = "?" + query.Substring (1);
 			return GetStatus (new Uri (baseUrl + query), isDmMode);
@@ -219,8 +224,8 @@ namespace ktwt.Twitter
 				query_base = "?user_id=" + user_id.Value.ToString ();
 			else if (screen_name != null && screen_name.Length > 0)
 				query_base = "?screen_name=" + OAuthBase.UrlEncode (screen_name);
-
-			query_base = (query_base.Length == 0 ? "?cursor=" : "&cursor=");
+			return GetAllPages<User> (url, query_base, "users", true);
+			/*query_base = (query_base.Length == 0 ? "?cursor=" : "&cursor=");
 			string query = query_base + "-1";
 			List<User> users = new List<User> ();
 			while (true) {
@@ -235,7 +240,7 @@ namespace ktwt.Twitter
 					break;
 				query = query_base + next;
 			}
-			return users.ToArray ();
+			return users.ToArray ();*/
 		}
 
 		public void UpdateFriends ()
@@ -291,6 +296,64 @@ namespace ktwt.Twitter
 		}
 		#endregion
 
+		#region List Methods
+		ListInfo[] GetListInternal (string url, string screen_name_or_id)
+		{
+			return GetAllPages<ListInfo> (string.Format (url, screen_name_or_id), null, "lists", false);
+		}
+
+		public ListInfo[] GetList ()
+		{
+			return GetList (SelfScreenName);
+		}
+
+		public ListInfo[] GetListSubscriptions ()
+		{
+			return GetListSubscriptions (SelfScreenName);
+		}
+
+		public ListInfo[] GetListMemberships ()
+		{
+			return GetListMemberships (SelfScreenName);
+		}
+
+		public ListInfo[] GetList (string screen_name_or_id)
+		{
+			return GetListInternal (ListGetListURL, screen_name_or_id);
+		}
+
+		public ListInfo[] GetListSubscriptions (string screen_name_or_id)
+		{
+			return GetListInternal (ListGetSubscriptionsListURL, screen_name_or_id);
+		}
+
+		public ListInfo[] GetListMemberships (string screen_name_or_id)
+		{
+			return GetListInternal (ListGetMembershipsListURL, screen_name_or_id);
+		}
+
+		public Status[] GetListStatuses (ListInfo li, ulong? since_id, ulong? max_id, int? count, int? page)
+		{
+			return GetListStatuses (li.User.ID.ToString (), li.ID, since_id, max_id, count, page);
+		}
+
+		public Status[] GetListStatuses (string screen_name_or_id, ulong list_id, ulong? since_id, ulong? max_id, int? count, int? page)
+		{
+			string base_url = string.Format (ListGetStatusesURL, screen_name_or_id, list_id);
+			return GetStatus (base_url, false, true, since_id, max_id, count, page);
+		}
+
+		public User[] GetListMembers (ListInfo li)
+		{
+			return GetListMembers (li.User.ID.ToString (), li.ID);
+		}
+
+		public User[] GetListMembers (string screen_name_or_id, ulong list_id)
+		{
+			return GetAllPages<User> (string.Format (ListGetMembersURL, screen_name_or_id, list_id), null, "users", false);
+		}
+		#endregion
+
 		#region Search API Methods
 		public Status[] Search (string keywords, string lang, string locale, int? rpp, int? page, ulong? since_id, string geocode, bool? show_user)
 		{
@@ -330,11 +393,11 @@ namespace ktwt.Twitter
 		#region Direct Message Methods
 		public Status[] GetDirectMessages (ulong? since_id, ulong? max_id, int? count, int? page)
 		{
-			return GetStatus (DirectMessagesURL, true, since_id, max_id, count, page);
+			return GetStatus (DirectMessagesURL, true, false, since_id, max_id, count, page);
 		}
 		public Status[] GetDirectSentMessages (ulong? since_id, ulong? max_id, int? count, int? page)
 		{
-			return GetStatus (DirectMessagesSentURL, true, since_id, max_id, count, page);
+			return GetStatus (DirectMessagesSentURL, true, false, since_id, max_id, count, page);
 		}
 		public Status[] GetDirectMessagesAll (ulong? since_id, ulong? max_id, int? count, int? page)
 		{
@@ -536,6 +599,16 @@ namespace ktwt.Twitter
 				current = Math.Max (current, status[i].ID);
 			return current;
 		}
+
+		public string SelfScreenName {
+			get {
+				if (_client.Credentials is NetworkCredential)
+					return (_client.Credentials as NetworkCredential).UserName;
+				if (_client.Credentials is OAuthPasswordCache)
+					return (_client.Credentials as OAuthPasswordCache).UserName;
+				throw new NotSupportedException ();
+			}
+		}
 		#endregion
 
 		#region Internal Use
@@ -596,6 +669,29 @@ namespace ktwt.Twitter
 					return reader.ReadToEnd ();
 				}
 			}
+		}
+
+		T[] GetAllPages<T> (string url, string query_base, string array_key, bool support_str_cursor) where T : class, new ()
+		{
+			if (query_base == null) query_base = string.Empty;
+			query_base = (query_base.Length == 0 ? "?cursor=" : "&cursor=");
+			string query = query_base + "-1";
+			List<T> list = new List<T> ();
+			while (true) {
+				string json = DownloadString (new Uri (url + query), HTTP_GET, null);
+				JsonObject obj = (JsonObject)new JsonValueReader (json).Read ();
+				JsonArray array = (JsonArray)obj.Value[array_key];
+				for (int i = 0; i < array.Length; i++)
+					list.Add (JsonDeserializer.Deserialize<T> ((JsonObject)array[i]));
+
+				string next = support_str_cursor
+					? (obj.Value["next_cursor_str"] as JsonString).Value
+					: ((ulong)(obj.Value["next_cursor"] as JsonNumber).Value).ToString ();
+				if (next == "0")
+					break;
+				query = query_base + next;
+			}
+			return list.ToArray ();
 		}
 		#endregion
 

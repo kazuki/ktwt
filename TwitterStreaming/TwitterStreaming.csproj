@@ -162,6 +162,8 @@
     </Compile>
     <Compile Include="TwitterTimeLine.cs" />
     <Compile Include="Twitter\IStreamingState.cs" />
+    <Compile Include="Twitter\ListInfo.cs" />
+    <Compile Include="Twitter\ListMode.cs" />
     <Compile Include="Twitter\Status.cs" />
     <Compile Include="Twitter\TwitterClient.cs" />
     <Compile Include="Twitter\User.cs" />

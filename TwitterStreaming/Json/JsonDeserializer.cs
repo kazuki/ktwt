@@ -70,6 +70,8 @@ namespace ktwt.Json
 					case JsonValueType.String:
 						if (prop.PropertyType == typeof (DateTime))
 							prop.SetValue (r, DateTime.ParseExact ((v as JsonString).Value, DateTimeFormat, InvariantCulture), null);
+						else if (prop.PropertyType.IsEnum)
+							prop.SetValue (r, Enum.Parse (prop.PropertyType, (v as JsonString).Value, true), null);
 						else
 							prop.SetValue (r, (v as JsonString).Value, null);
 						break;
