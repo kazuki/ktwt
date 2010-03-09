@@ -513,6 +513,15 @@ namespace TwitterStreaming
 			SaveConfig ();
 		}
 
+		private void TimeLine_KeyDown (object sender, KeyEventArgs e)
+		{
+			if (e.Key == Key.Enter || e.Key == Key.Return) {
+				Status status = (sender as ListBox).SelectedItem as Status;
+				if (status != null)
+					TwitterStatusViewer_MouseDoubleClick (status, null);
+			}
+		}
+
 		private void TwitterStatusViewer_LinkClick (object sender, LinkClickEventArgs e)
 		{
 			string url;

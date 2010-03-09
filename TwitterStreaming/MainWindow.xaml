@@ -70,8 +70,11 @@
                         <Button Click="TimeLineCloseButton_Click">×</Button>
                     </StackPanel>
                 </Grid>
-                <ListBox Background="{Binding ElementName=mw, Path=Background}" Grid.Row="1" SelectionMode="Single" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
-                         ItemsSource="{Binding Path=Statuses}" IsSynchronizedWithCurrentItem="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox Background="{Binding ElementName=mw, Path=Background}" Grid.Row="1" SelectionMode="Single"
+                         HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                         ItemsSource="{Binding Path=Statuses}" IsSynchronizedWithCurrentItem="True"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         KeyDown="TimeLine_KeyDown">
                     <ListBox.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="Reply" Click="ReplyMenuItem_Click" />
