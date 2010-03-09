@@ -80,6 +80,28 @@ namespace TwitterStreaming
 				StreamingStart ();
 		}
 
+		public StreamingClient (TwitterAccount[] accounts, TwitterAccount liAccount, ListInfo li, IStreamingHandler target, bool dummy) : this (accounts, target, dummy)
+		{
+			StreamingUri = StreamingFilterUri;
+			if (dummy) return;
+
+			ThreadPool.QueueUserWorkItem (delegate (object o) {
+				string[] postDatas = new string[accounts.Length];
+				User[] users = liAccount.TwitterClient.GetListMembers (li);
+				for (int j = 0, p = 0; j < accounts.Length; j++, p = Math.Min (users.Length, p + MaxFollowCount) % users.Length) {
+					StringBuilder sb = new StringBuilder ();
+					for (int i = 0; i < Math.Min (MaxFollowCount, users.Length - p); i++) {
+						sb.Append (users[i + p].ID);
+						sb.Append (',');
+					}
+					if (sb.Length > 0)
+						sb.Remove (sb.Length - 1, 1);
+					_states[j].StreamingPostData = "follow=" + OAuthBase.UrlEncode (sb.ToString ());
+				}
+				StreamingStart ();
+			});
+		}
+
 		static string ReadLineWithTimeout (Stream strm, ref byte[] buffer, ref int filled, TimeSpan timeout)
 		{
 			if (buffer == null) buffer = new byte[8192];

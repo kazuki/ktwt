@@ -94,6 +94,35 @@
                 <TextBox Grid.Column="1" Grid.Row="0" x:Name="tabTitle" TextChanged="TextBox_TextChanged" />
             </Grid>
         </GroupBox>
+        <GroupBox>
+            <GroupBox.Header>
+                <RadioButton GroupName="DataType" x:Name="chk4" Checked="RadioButton_Checked">List</RadioButton>
+            </GroupBox.Header>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Grid.Column="0" Grid.Row="0" Margin="10 0 5 0" VerticalAlignment="Center">アカウント:</TextBlock>
+                <ComboBox Grid.Column="1" Grid.Row="0" x:Name="listAccount" SelectionChanged="ComboBox_SelectionChanged" ItemsSource="{Binding Path=Accounts}" ItemTemplate="{Binding Path=ItemTemplate, ElementName=tlAccount}" />
+                
+                <TextBlock Grid.Column="0" Grid.Row="1" Margin="10 0 5 0" VerticalAlignment="Center">リスト:</TextBlock>
+                <ComboBox Grid.Column="1" Grid.Row="1" x:Name="listList" SelectionChanged="ComboBox_SelectionChanged"
+                          ItemsSource="{Binding ElementName=listAccount, Path=SelectedItem.TwitterClient.SelfAndFollowingList}"
+                          DisplayMemberPath="FullName" />
+
+                <TextBlock Grid.Column="0" Grid.Row="2" Margin="10 0 5 0" VerticalAlignment="Center">Streaming:</TextBlock>
+                <ComboBox Grid.Column="1" Grid.Row="2" IsEnabled="False" x:Name="listStreamingAccount" SelectionChanged="ComboBox_SelectionChanged" ItemsSource="{Binding Path=Accounts}" ItemTemplate="{Binding Path=ItemTemplate, ElementName=tlAccount}" />
+                <CheckBox Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="3" x:Name="listStreaming" Checked="listStreaming_Checked" Unchecked="listStreaming_Checked" Margin="0 4 0 4">Streaming API を利用する</CheckBox>
+            </Grid>
+        </GroupBox>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Padding="3" Margin="2" Click="AddButton_Click" x:Name="AddButton">追加</Button>
             <Button Padding="3" Margin="2" Click="CancelButton_Click">キャンセル</Button>

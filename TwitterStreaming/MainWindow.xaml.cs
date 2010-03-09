@@ -216,6 +216,14 @@ namespace TwitterStreaming
 							LoadConfigInternal ((JsonArray)obj.Value["windows"], tb);
 							info = tb;
 							break;
+						case "list":
+							ulong id = (ulong)(obj.Value["id"] as JsonNumber).Value;
+							foreach (ListStatuses list in _mgr.Lists)
+								if (id == list.List.ID) {
+									info = new TimelineInfo (timelines, list);
+									break;
+								}
+							break;
 					}
 					if (info != null)
 						timelines.TimeLines.Add (info);
@@ -306,7 +314,15 @@ namespace TwitterStreaming
 				TimelineInfo tl = item as TimelineInfo;
 				TabInfo tb = item as TabInfo;
 				if (tl != null) {
-					if (tl.Search == null) {
+					if (tl.Search != null) {
+						writer.WriteString ("search");
+						writer.WriteKey ("keywords");
+						writer.WriteString (tl.Search.Keyword);
+					} else if (tl.List != null) {
+						writer.WriteString ("list");
+						writer.WriteKey ("id");
+						writer.WriteNumber (tl.List.List.ID);
+					} else {
 						writer.WriteString ("account");
 						writer.WriteKey ("subtype");
 						if (tl.Statuses == tl.RestAccount.HomeTimeline)
@@ -317,10 +333,6 @@ namespace TwitterStreaming
 							writer.WriteString ("directmessages");
 						writer.WriteKey ("name");
 						writer.WriteString (tl.RestAccount.ScreenName);
-					} else {
-						writer.WriteString ("search");
-						writer.WriteKey ("keywords");
-						writer.WriteString (tl.Search.Keyword);
 					}
 				} else if (tb != null) {
 					writer.WriteString ("tab");
@@ -865,6 +877,12 @@ namespace TwitterStreaming
 				info = new TimelineInfo (_rootTLs, win.SelectedExistedSearch);
 			} else if (win.IsCheckedNewTab && win.NewTabTitle.Length > 0) {
 				info = new TabInfo (_rootTLs, win.NewTabTitle);
+			} else if (win.IsCheckedList) {
+				ListStatuses listStatuses = new ListStatuses (win.SelectedAccount, win.SelectedList);
+				if (win.IsUseStreamingForList)
+					listStatuses.StreamingClient = new StreamingClient (new TwitterAccount[] {win.SelectedListStreamingAccount}, win.SelectedAccount, win.SelectedList, listStatuses, false);
+				_mgr.AddListInfo (listStatuses);
+				info = new TimelineInfo (_rootTLs, listStatuses);
 			}
 			if (info != null) {
 				_rootTLs.TimeLines.Add (info);
@@ -1062,6 +1080,9 @@ namespace TwitterStreaming
 					Dispatcher.Invoke (new EmptyDelegate (delegate () {
 						for (int i = 0; i < accounts.Length; i++)
 							accounts[i].RemoveFromAllTimeLines (status.ID);
+						ListStatuses[] lists = _mgr.Lists;
+						for (int i = 0; i < lists.Length; i++)
+							lists[i].Statuses.Remove (status.ID);
 					}));
 				} catch {
 					Dispatcher.Invoke (new EmptyDelegate (delegate () {
@@ -1285,14 +1306,25 @@ namespace TwitterStreaming
 			RestUsage = search.RestInfo;
 		}
 
+		public TimelineInfo (TimelineBase owner, ListStatuses list)
+			: this (owner, list.Statuses, "List \"" + list.List.FullName + "\"")
+		{
+			List = list;
+			RestAccount = list.Account;
+			RestUsage = list.RestInfo;
+		}
+
 		public TwitterAccount RestAccount { get; private set; }
 		public TwitterAccount.RestUsage RestUsage { get; private set; }
 		public TwitterTimeLine Statuses { get; private set; }
 		public SearchStatuses Search { get; private set; }
+		public ListStatuses List { get; private set; }
 		public StreamingClient StreamingClient {
 			get {
 				if (Search != null)
 					return Search.StreamingClient;
+				if (List != null)
+					return List.StreamingClient;
 				if (RestUsage == RestAccount.RestDirectMessages)
 					return null;
 				return RestAccount.StreamingClient;

@@ -22,6 +22,7 @@ using System.Net;
 using System.Threading;
 using ktwt.Json;
 using ktwt.OAuth;
+using ktwt.Twitter;
 
 namespace TwitterStreaming
 {
@@ -29,6 +30,7 @@ namespace TwitterStreaming
 	{
 		TwitterAccount[] _accounts;
 		SearchStatuses[] _searches = new SearchStatuses[0];
+		ListStatuses[] _lists = new ListStatuses[0];
 		Thread _restThread;
 
 		public event EventHandler AccountsPropertyChanged;
@@ -73,6 +75,17 @@ namespace TwitterStreaming
 			get { return _searches; }
 		}
 
+		public void AddListInfo (ListStatuses ls)
+		{
+			List<ListStatuses> list = new List<ListStatuses> (_lists);
+			list.Add (ls);
+			_lists = list.ToArray ();
+		}
+
+		public ListStatuses[] Lists {
+			get { return _lists; }
+		}
+
 		public void CloseTimeLine (TwitterTimeLine timeline)
 		{
 			IDisposable disposeObj = null;
@@ -84,6 +97,16 @@ namespace TwitterStreaming
 					_searches = list.ToArray ();
 					break;
 				}
+
+			List<ListStatuses> list2 = new List<ListStatuses> (_lists);
+			for (int i = 0; i < list2.Count; i++)
+				if (list2[i].Statuses == timeline) {
+					disposeObj = list2[i];
+					list2.RemoveAt (i);
+					_lists = list2.ToArray ();
+					break;
+				}
+
 			if (disposeObj != null)
 				disposeObj.Dispose ();
 		}
@@ -93,6 +116,7 @@ namespace TwitterStreaming
 			while (true) {
 				List<IUpdateChecker> list = new List<IUpdateChecker> (_accounts);
 				list.AddRange (_searches);
+				list.AddRange (_lists);
 				for (int i = 0; i < list.Count; i++) {
 					try {
 						list[i].UpdateTimeLines ();
@@ -127,6 +151,7 @@ namespace TwitterStreaming
 			foreach (KeyValuePair<IStreamingHandler, List<TwitterAccount>> pair in dic) {
 				TwitterAccount homeTarget = pair.Key as TwitterAccount;
 				SearchStatuses searchTarget = pair.Key as SearchStatuses;
+				ListStatuses listTarget = pair.Key as ListStatuses;
 				if (homeTarget != null) {
 					ulong[] ids;
 					try {
@@ -137,6 +162,8 @@ namespace TwitterStreaming
 					new StreamingClient (pair.Value.ToArray (), ids, homeTarget, dummy);
 				} else if (searchTarget != null) {
 					searchTarget.StreamingClient = new StreamingClient (pair.Value.ToArray (), searchTarget.Keyword, searchTarget, dummy);
+				} else if (listTarget != null) {
+					listTarget.StreamingClient = new StreamingClient (pair.Value.ToArray (), listTarget.Account, listTarget.List, listTarget, dummy);
 				}
 			}
 		}
@@ -146,6 +173,10 @@ namespace TwitterStreaming
 				if (Accounts[i].StreamingClient != null)
 					Accounts[i].StreamingClient.Dispose ();
 			}
+			for (int i = 0; i < _searches.Length; i ++)
+				_searches[i].StreamingClient = null;
+			for (int i = 0; i < _lists.Length; i++)
+				_lists[i].StreamingClient = null;
 		}
 		#endregion
 
@@ -175,9 +206,20 @@ namespace TwitterStreaming
 						searches[i] = LoadSearch ((JsonObject)array[i], accounts);
 					_searches = searches;
 
+					if (root.Value.ContainsKey ("lists")) {
+						array = (JsonArray)root.Value["lists"];
+						List<ListStatuses> lists = new List<ListStatuses> ();
+						for (int i = 0; i < array.Length; i++) {
+							ListStatuses ls = LoadList ((JsonObject)array[i], accounts);
+							if (ls != null)
+								lists.Add (ls);
+						}
+						_lists = lists.ToArray ();
+					}
+
 					targets = new IStreamingHandler[accountsArray.Length];
 					for (int i = 0; i < accountsArray.Length; i ++)
-						targets[i] = LoadStreamingTarget ((JsonObject)accountsArray[i], accounts, _searches);
+						targets[i] = LoadStreamingTarget ((JsonObject)accountsArray[i], accounts, _searches, _lists);
 					ReconstructAllStreaming (targets, true);
 				}
 				load (root);
@@ -203,6 +245,12 @@ namespace TwitterStreaming
 				writer.WriteStartArray ();
 				for (int i = 0; i < _searches.Length; i ++)
 					WriteSearch (writer, _searches[i]);
+				writer.WriteEndArray ();
+
+				writer.WriteKey ("lists");
+				writer.WriteStartArray ();
+				for (int i = 0; i < _lists.Length; i++)
+					WriteList (writer, _lists[i]);
 				writer.WriteEndArray ();
 
 				save (writer);
@@ -310,13 +358,17 @@ namespace TwitterStreaming
 					writer.WriteString ("track");
 					writer.WriteKey ("keywords");
 					writer.WriteString (account.StreamingClient.SearchKeywords);
+				} else if (account.StreamingClient.Target is ListStatuses) {
+					writer.WriteString ("list");
+					writer.WriteKey ("id");
+					writer.WriteNumber ((account.StreamingClient.Target as ListStatuses).List.ID);
 				}
 				writer.WriteEndObject ();
 			}
 			writer.WriteEndObject ();
 		}
 
-		IStreamingHandler LoadStreamingTarget (JsonObject obj, TwitterAccount[] accounts, SearchStatuses[] searches)
+		IStreamingHandler LoadStreamingTarget (JsonObject obj, TwitterAccount[] accounts, SearchStatuses[] searches, ListStatuses[] lists)
 		{
 			JsonObject root = obj.Value["streaming"] as JsonObject;
 			if (root == null) return null;
@@ -333,6 +385,12 @@ namespace TwitterStreaming
 					for (int i = 0; i < searches.Length; i ++)
 						if (keywords.Equals (searches[i].Keyword))
 							return searches[i];
+					break;
+				case "list":
+					ulong id = (ulong)(root.Value["id"] as JsonNumber).Value;
+					for (int i = 0; i < lists.Length; i++)
+						if (id == lists[i].List.ID)
+							return lists[i];
 					break;
 			}
 			return null;
@@ -356,6 +414,32 @@ namespace TwitterStreaming
 			writer.WriteString (search.Keyword);
 			writer.WriteKey ("username");
 			writer.WriteString (search.Account.ScreenName);
+			writer.WriteEndObject ();
+		}
+
+		ListStatuses LoadList (JsonObject obj, TwitterAccount[] accounts)
+		{
+			ulong id = (ulong)(obj.Value["id"] as JsonNumber).Value;
+			string username = (obj.Value["username"] as JsonString).Value;
+			for (int i = 0; i < accounts.Length; i++) {
+				if (accounts[i].ScreenName == username) {
+					ListInfo[] lists = accounts[i].TwitterClient.SelfAndFollowingList;
+					for (int j = 0; j < lists.Length; j ++) {
+						if (lists[j].ID == id)
+							return new ListStatuses (accounts[i], lists[j]);
+					}
+				}
+			}
+			return null;
+		}
+
+		void WriteList (JsonTextWriter writer, ListStatuses list)
+		{
+			writer.WriteStartObject ();
+			writer.WriteKey ("id");
+			writer.WriteNumber (list.List.ID);
+			writer.WriteKey ("username");
+			writer.WriteString (list.Account.ScreenName);
 			writer.WriteEndObject ();
 		}
 		#endregion

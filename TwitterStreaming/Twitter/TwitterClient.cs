@@ -82,6 +82,8 @@ namespace ktwt.Twitter
 		ulong[] _friendIDs = null;
 		HashSet<ulong> _friendSet = null;
 
+		ListInfo[] _selfAndFollowingList = null;
+
 		public event EventHandler ApiLimitChanged;
 
 		public TwitterClient (ISimpleWebClient baseClient)
@@ -225,22 +227,6 @@ namespace ktwt.Twitter
 			else if (screen_name != null && screen_name.Length > 0)
 				query_base = "?screen_name=" + OAuthBase.UrlEncode (screen_name);
 			return GetAllPages<User> (url, query_base, "users", true);
-			/*query_base = (query_base.Length == 0 ? "?cursor=" : "&cursor=");
-			string query = query_base + "-1";
-			List<User> users = new List<User> ();
-			while (true) {
-				string json = DownloadString (new Uri (url + query), HTTP_GET, null);
-				JsonObject obj = (JsonObject)new JsonValueReader (json).Read ();
-				JsonArray array = (JsonArray)obj.Value["users"];
-				for (int i = 0; i < array.Length; i++)
-					users.Add (JsonDeserializer.Deserialize<User> ((JsonObject)array[i]));
-
-				string next = (obj.Value["next_cursor_str"] as JsonString).Value;
-				if (next == "0")
-					break;
-				query = query_base + next;
-			}
-			return users.ToArray ();*/
 		}
 
 		public void UpdateFriends ()
@@ -302,21 +288,6 @@ namespace ktwt.Twitter
 			return GetAllPages<ListInfo> (string.Format (url, screen_name_or_id), null, "lists", false);
 		}
 
-		public ListInfo[] GetList ()
-		{
-			return GetList (SelfScreenName);
-		}
-
-		public ListInfo[] GetListSubscriptions ()
-		{
-			return GetListSubscriptions (SelfScreenName);
-		}
-
-		public ListInfo[] GetListMemberships ()
-		{
-			return GetListMemberships (SelfScreenName);
-		}
-
 		public ListInfo[] GetList (string screen_name_or_id)
 		{
 			return GetListInternal (ListGetListURL, screen_name_or_id);
@@ -351,6 +322,22 @@ namespace ktwt.Twitter
 		public User[] GetListMembers (string screen_name_or_id, ulong list_id)
 		{
 			return GetAllPages<User> (string.Format (ListGetMembersURL, screen_name_or_id, list_id), null, "users", false);
+		}
+
+		public ListInfo[] SelfAndFollowingList {
+			get {
+				if (_selfAndFollowingList == null)
+					UpdateSelfAndFollowingList ();
+				return _selfAndFollowingList;
+			}
+		}
+
+		public void UpdateSelfAndFollowingList ()
+		{
+			List<ListInfo> list = new List<ListInfo> ();
+			list.AddRange (GetList (SelfScreenName));
+			list.AddRange (GetListSubscriptions (SelfScreenName));
+			_selfAndFollowingList = list.ToArray ();
 		}
 		#endregion
 

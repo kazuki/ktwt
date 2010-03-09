@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using ktwt.Twitter;
 
 namespace TwitterStreaming
 {
@@ -54,8 +55,16 @@ namespace TwitterStreaming
 			get { return chk3.IsChecked.HasValue && chk3.IsChecked.Value; }
 		}
 
+		public bool IsCheckedList {
+			get { return chk4.IsChecked.HasValue && chk4.IsChecked.Value; }
+		}
+
 		public bool IsUseStreamingForSearch {
 			get { return searchStreaming.IsChecked.HasValue && searchStreaming.IsChecked.Value; }
+		}
+
+		public bool IsUseStreamingForList {
+			get { return listStreaming.IsChecked.HasValue && listStreaming.IsChecked.Value; }
 		}
 
 		public TwitterAccount SelectedAccount {
@@ -64,10 +73,24 @@ namespace TwitterStreaming
 					return tlAccount.SelectedItem as TwitterAccount;
 				if (IsCheckedNewSearch)
 					return searchAccount.SelectedItem as TwitterAccount;
+				if (IsCheckedList)
+					return listAccount.SelectedItem as TwitterAccount;
 				return null;
 			}
 		}
 
+		public ListInfo SelectedList {
+			get { return listList.SelectedItem as ListInfo; }
+		}
+
+		public TwitterAccount SelectedListStreamingAccount {
+			get {
+				if (!IsUseStreamingForList)
+					return null;
+				return listStreamingAccount.SelectedItem as TwitterAccount;
+			}
+		}
+		
 		public TwitterTimeLine SelectedAccountTimeline {
 			get {
 				TwitterAccount account = tlAccount.SelectedItem as TwitterAccount;
@@ -141,6 +164,11 @@ namespace TwitterStreaming
 					isValid = (SelectedExistedSearch != null);
 				} else if (IsCheckedNewTab) {
 					isValid = (NewTabTitle.Length > 0);
+				} else if (IsCheckedList) {
+					isValid = (SelectedAccount != null);
+					isValid &= (SelectedList != null);
+					if (IsUseStreamingForList)
+						isValid &= (SelectedListStreamingAccount != null);
 				} else {
 					isValid = false;
 				}
@@ -160,6 +188,22 @@ namespace TwitterStreaming
 				searchAccount.ItemsSource = list.ToArray ();
 			} else {
 				searchAccount.ItemsSource = _mgr.Accounts;
+			}
+			Validate ();
+		}
+
+		private void listStreaming_Checked (object sender, RoutedEventArgs e)
+		{
+			if (IsUseStreamingForList) {
+				List<TwitterAccount> list = new List<TwitterAccount> ();
+				for (int i = 0; i < _mgr.Accounts.Length; i++)
+					if (_mgr.Accounts[i].StreamingClient == null)
+						list.Add (_mgr.Accounts[i]);
+				listStreamingAccount.ItemsSource = list.ToArray ();
+				listStreamingAccount.IsEnabled = true;
+			} else {
+				listStreamingAccount.ItemsSource = _mgr.Accounts;
+				listStreamingAccount.IsEnabled = false;
 			}
 			Validate ();
 		}

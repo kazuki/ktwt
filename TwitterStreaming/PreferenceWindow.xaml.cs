@@ -52,6 +52,7 @@ namespace TwitterStreaming
 			selector.NullTemplate = (DataTemplate)Resources["nullTemplate"];
 			selector.HomeTemplate = (DataTemplate)Resources["homeTemplate"];
 			selector.SearchTemplate = (DataTemplate)Resources["searchTemplate"];
+			selector.ListTemplate = (DataTemplate)Resources["listTemplate"];
 			Resources.Add ("targetTemplateSelector", selector);
 
 			_observableAccountList = new ObservableCollection<TwitterAccount> (mgr.Accounts);
@@ -59,6 +60,7 @@ namespace TwitterStreaming
 			list.Add ("null");
 			for (int i = 0; i < mgr.Accounts.Length; i ++) list.Add (mgr.Accounts[i]);
 			for (int i = 0; i < mgr.Searches.Length; i ++) list.Add (mgr.Searches[i]);
+			for (int i = 0; i < mgr.Lists.Length; i ++) list.Add (mgr.Lists[i]);
 			_targetList = list.ToArray ();
 			this.DataContext = _observableAccountList;
 			this.Closed += delegate (object sender, EventArgs e) {
@@ -179,6 +181,7 @@ namespace TwitterStreaming
 			public DataTemplate NullTemplate { get; set; }
 			public DataTemplate HomeTemplate { get; set; }
 			public DataTemplate SearchTemplate { get; set; }
+			public DataTemplate ListTemplate { get; set; }
 
 			public override DataTemplate SelectTemplate (object item, DependencyObject container)
 			{
@@ -186,6 +189,8 @@ namespace TwitterStreaming
 					return HomeTemplate;
 				if (item is SearchStatuses)
 					return SearchTemplate;
+				if (item is ListStatuses)
+					return ListTemplate;
 				return NullTemplate;
 			}
 		}

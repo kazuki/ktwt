@@ -25,6 +25,13 @@
                 <TextBlock>&quot;</TextBlock>
             </TextBlock>
         </DataTemplate>
+        <DataTemplate x:Key="listTemplate">
+            <TextBlock>
+                <TextBlock>List &quot;</TextBlock>
+                <TextBlock Text="{Binding Path=List.FullName}" />
+                <TextBlock>&quot;</TextBlock>
+            </TextBlock>
+        </DataTemplate>
     </Window.Resources>
     <Grid>
         <TabControl>
