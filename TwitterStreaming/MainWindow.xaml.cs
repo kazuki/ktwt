@@ -1037,7 +1037,6 @@ namespace TwitterStreaming
 			} catch {}
 		}
 
-		MenuItem _deletePostMenuItem = null;
 		private void DeletePostMenuItem_Click (object sender, RoutedEventArgs e)
 		{
 			ListBox lb = (ListBox)((ContextMenu)((MenuItem)sender).Parent).PlacementTarget;
@@ -1076,21 +1075,20 @@ namespace TwitterStreaming
 		{
 			ListBox lb = (ListBox)sender;
 			ContextMenu menu = lb.ContextMenu;
-			if (_deletePostMenuItem == null) {
-				foreach (object o in menu.Items) {
-					MenuItem mi = o as MenuItem;
-					if (mi == null)
-						continue;
-					if ("deletePostMenuItem".Equals (mi.GetValue (MenuItem.NameProperty))) {
-						_deletePostMenuItem = mi;
-						break;
-					}
+			MenuItem deletePostMenuItem = null;
+			foreach (object o in menu.Items) {
+				MenuItem mi = o as MenuItem;
+				if (mi == null)
+					continue;
+				if ("deletePostMenuItem".Equals (mi.GetValue (MenuItem.NameProperty))) {
+					deletePostMenuItem = mi;
+					break;
 				}
-				if (_deletePostMenuItem == null)
-					return;
 			}
+			if (deletePostMenuItem == null)
+				return;
 
-			_deletePostMenuItem.IsEnabled = false;
+			deletePostMenuItem.IsEnabled = false;
 			Status status = lb.SelectedItem as Status;
 			if (status == null)
 				return;
@@ -1098,7 +1096,7 @@ namespace TwitterStreaming
 			TwitterAccount[] accounts = _mgr.Accounts;
 			for (int i = 0; i < accounts.Length; i ++)
 				if (status.User.ID == accounts[i].SelfUserID) {
-					_deletePostMenuItem.IsEnabled = true;
+					deletePostMenuItem.IsEnabled = true;
 					return;
 				}
 		}
