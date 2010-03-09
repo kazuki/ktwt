@@ -160,6 +160,7 @@
                 <MenuItem Header="バージョン情報" Click="MenuItem_ShowAboutWindow_Click" />
                 <Separator />
                 <MenuItem Header="最新版を確認 (ブラウザでサイトを開きます)" Tag="https://oikw.org/software/twitterstreaming" Click="MenuItem_OpenUrl_Click" />
+                <MenuItem Header="使い方を見る" Tag="https://oikw.org/software/twitterstreaming/usage" Click="MenuItem_OpenUrl_Click" />
                 <MenuItem Header="チケットの一覧を表示" Tag="https://oikw.org/bug/report/12" Click="MenuItem_OpenUrl_Click" />
                 <MenuItem Header="バグを報告する" Tag="https://oikw.org/bug/newticket" Click="MenuItem_OpenUrl_Click" />
             </MenuItem>
