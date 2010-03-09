@@ -74,7 +74,7 @@
                          HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                          ItemsSource="{Binding Path=Statuses}" IsSynchronizedWithCurrentItem="True"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         KeyDown="TimeLine_KeyDown">
+                         KeyDown="TimeLine_KeyDown" ContextMenuOpening="TimeLine_ContextMenuOpening">
                     <ListBox.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="Reply" Click="ReplyMenuItem_Click" />
@@ -88,6 +88,8 @@
                             <Separator />
                             <MenuItem Header="パーマリンクを開く" Tag="Permalink" Click="OpenLinkMenuItem_Click" />
                             <MenuItem Header="ユーザページを開く" Tag="User" Click="OpenLinkMenuItem_Click" />
+                            <Separator />
+                            <MenuItem Header="投稿を削除" x:Name="deletePostMenuItem" Click="DeletePostMenuItem_Click" />
                         </ContextMenu>
                     </ListBox.ContextMenu>
                     <ListBox.ItemTemplate>

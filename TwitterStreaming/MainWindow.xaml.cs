@@ -1036,6 +1036,72 @@ namespace TwitterStreaming
 				Process.Start (url);
 			} catch {}
 		}
+
+		MenuItem _deletePostMenuItem = null;
+		private void DeletePostMenuItem_Click (object sender, RoutedEventArgs e)
+		{
+			ListBox lb = (ListBox)((ContextMenu)((MenuItem)sender).Parent).PlacementTarget;
+			Status status = lb.SelectedItem as Status;
+			if (status == null)
+				return;
+
+			TwitterAccount[] accounts = _mgr.Accounts;
+			TwitterAccount account = null;
+			for (int i = 0; i < accounts.Length; i++)
+				if (status.User.ID == accounts[i].SelfUserID) {
+					account = accounts[i];
+					break;
+				}
+			if (account == null) return;
+
+			if (MessageBox.Show (string.Format ("以下の投稿を削除しますか？\r\n{0}: {1}", status.User.ScreenName, status.Text), string.Empty, MessageBoxButton.YesNo) != MessageBoxResult.Yes)
+				return;
+
+			ThreadPool.QueueUserWorkItem (delegate (object o) {
+				try {
+					account.TwitterClient.Destroy (status.ID);
+					Dispatcher.Invoke (new EmptyDelegate (delegate () {
+						for (int i = 0; i < accounts.Length; i++)
+							accounts[i].RemoveFromAllTimeLines (status.ID);
+					}));
+				} catch {
+					Dispatcher.Invoke (new EmptyDelegate (delegate () {
+						MessageBox.Show ("投稿の削除に失敗しました");
+					}));
+				}
+			});
+		}
+
+		private void TimeLine_ContextMenuOpening (object sender, ContextMenuEventArgs e)
+		{
+			ListBox lb = (ListBox)sender;
+			ContextMenu menu = lb.ContextMenu;
+			if (_deletePostMenuItem == null) {
+				foreach (object o in menu.Items) {
+					MenuItem mi = o as MenuItem;
+					if (mi == null)
+						continue;
+					if ("deletePostMenuItem".Equals (mi.GetValue (MenuItem.NameProperty))) {
+						_deletePostMenuItem = mi;
+						break;
+					}
+				}
+				if (_deletePostMenuItem == null)
+					return;
+			}
+
+			_deletePostMenuItem.IsEnabled = false;
+			Status status = lb.SelectedItem as Status;
+			if (status == null)
+				return;
+
+			TwitterAccount[] accounts = _mgr.Accounts;
+			for (int i = 0; i < accounts.Length; i ++)
+				if (status.User.ID == accounts[i].SelfUserID) {
+					_deletePostMenuItem.IsEnabled = true;
+					return;
+				}
+		}
 		#endregion
 
 		#region Colors

@@ -74,6 +74,12 @@ namespace TwitterStreaming
 				_restInfoList[i].LastExecTime = DateTime.MinValue;
 		}
 
+		public void RemoveFromAllTimeLines (ulong status_id)
+		{
+			for (int i = 0; i < _restInfoList.Length; i ++)
+				_restInfoList[i].TimeLine.Remove (status_id);
+		}
+
 		delegate Status[] RestUpdateDelegate (ulong? since_id, ulong? max_id, int? count, int? page);
 		public void UpdateTimeLines ()
 		{

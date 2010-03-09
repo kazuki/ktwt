@@ -45,6 +45,17 @@ namespace TwitterStreaming
 			throw new NotSupportedException ();
 		}
 
+		public void Remove (ulong status_id)
+		{
+			for (int i = 0; i < Count; i ++) {
+				if (status_id == this[i].ID) {
+					this.RemoveAt (i);
+					return;
+				} else if (status_id > this[i].ID)
+					return;
+			}
+		}
+
 		protected override void ClearItems ()
 		{
 			base.ClearItems ();

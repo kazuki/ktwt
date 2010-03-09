@@ -41,6 +41,7 @@ namespace ktwt.Twitter
 		const string StatusesMentionsURL = "https://twitter.com/statuses/mentions.json";
 		const string StatusesShowURL = "https://api.twitter.com/1/statuses/show/{0}.json";
 		const string StatusesUpdateURL = "https://twitter.com/statuses/update.json";
+		const string StatusesDestroyURL = "https://api.twitter.com/1/statuses/destroy/{0}.json";
 		const string StatusesRetweetURL = "https://api.twitter.com/1/statuses/retweet/{0}.json";
 		const string SearchURL = "http://search.twitter.com/search.json";
 		const string DirectMessagesURL = "http://api.twitter.com/1/direct_messages.json";
@@ -170,6 +171,12 @@ namespace ktwt.Twitter
 			if (geo_lat != null && geo_lat.Length > 0) query += "&lat=" + geo_lat;
 			if (geo_long != null && geo_long.Length > 0) query += "&long=" + geo_long;
 			string json = DownloadString (new Uri (StatusesUpdateURL + query), HTTP_POST, null);
+			return JsonDeserializer.Deserialize<Status> ((JsonObject)new JsonValueReader (json).Read ());
+		}
+
+		public Status Destroy (ulong id)
+		{
+			string json = DownloadString (new Uri (string.Format (StatusesDestroyURL, id)), HTTP_POST, null);
 			return JsonDeserializer.Deserialize<Status> ((JsonObject)new JsonValueReader (json).Read ());
 		}
 
