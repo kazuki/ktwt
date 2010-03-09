@@ -128,7 +128,13 @@ namespace TwitterStreaming
 				TwitterAccount homeTarget = pair.Key as TwitterAccount;
 				SearchStatuses searchTarget = pair.Key as SearchStatuses;
 				if (homeTarget != null) {
-					new StreamingClient (pair.Value.ToArray (), dummy ? null : homeTarget.TwitterClient.FriendIDs, homeTarget, dummy);
+					ulong[] ids;
+					try {
+						ids = dummy ? null : homeTarget.TwitterClient.FriendIDs;
+					} catch {
+						continue;
+					}
+					new StreamingClient (pair.Value.ToArray (), ids, homeTarget, dummy);
 				} else if (searchTarget != null) {
 					searchTarget.StreamingClient = new StreamingClient (pair.Value.ToArray (), searchTarget.Keyword, searchTarget, dummy);
 				}

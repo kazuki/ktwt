@@ -68,6 +68,12 @@ namespace TwitterStreaming
 			ScreenName = ((OAuthPasswordCache)_credential).UserName;
 		}
 
+		public void UpdateAllTimeLinesForce ()
+		{
+			for (int i = 0; i < _restInfoList.Length; i ++)
+				_restInfoList[i].LastExecTime = DateTime.MinValue;
+		}
+
 		delegate Status[] RestUpdateDelegate (ulong? since_id, ulong? max_id, int? count, int? page);
 		public void UpdateTimeLines ()
 		{

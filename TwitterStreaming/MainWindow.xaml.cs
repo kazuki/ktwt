@@ -56,10 +56,7 @@ namespace TwitterStreaming
 			if (_mgr.Accounts.Length > 0)
 				postAccount.SelectedIndex = 0;
 
-			// Setup streaming & friends/followers list
-			InitThreadPoolSetting ();
-			InitStreaming (targets);
-			InitUserInfo ();
+			Init (targets);
 			
 			this.PreviewKeyDown += delegate (object sender, KeyEventArgs e) {
 				if (postTextBox.IsFocused || (Keyboard.Modifiers != ModifierKeys.None && Keyboard.Modifiers != ModifierKeys.Shift))
@@ -71,6 +68,15 @@ namespace TwitterStreaming
 		}
 
 		#region Init
+		void Init (IStreamingHandler[] targets)
+		{
+			InitThreadPoolSetting ();
+			ThreadPool.QueueUserWorkItem (delegate (object o) {
+				InitUserInfo ();
+				InitStreaming (targets);
+				InitUserFollowers ();
+			});
+		}
 		void InitThreadPoolSetting ()
 		{
 			const int MinThreads = 8;
@@ -86,59 +92,66 @@ namespace TwitterStreaming
 
 			TwitterAccount[] accounts = _mgr.Accounts;
 			ManualResetEvent[] waits = new ManualResetEvent[accounts.Length];
+			for (int i = 0; i < accounts.Length; i++) {
+				waits[i] = new ManualResetEvent (false);
+				ThreadPool.QueueUserWorkItem (delegate (object o1) {
+					object[] ary = (object[])o1;
+					try {
+						(ary[0] as TwitterAccount).TwitterClient.UpdateFriendIDs ();
+					} catch {}
+					(ary[1] as ManualResetEvent).Set ();
+				}, new object[] {accounts[i], waits[i]});
+			}
+			for (int i = 0; i < waits.Length; i ++)
+				waits[i].WaitOne ();
 
-			ThreadPool.QueueUserWorkItem (delegate (object o0) {
-				for (int i = 0; i < accounts.Length; i++) {
-					waits[i] = new ManualResetEvent (false);
-					ThreadPool.QueueUserWorkItem (delegate (object o1) {
-						object[] ary = (object[])o1;
-						try {
-							(ary[0] as TwitterAccount).TwitterClient.UpdateFriendIDs ();
-						} catch {}
-						(ary[1] as ManualResetEvent).Set ();
-					}, new object[] {accounts[i], waits[i]});
-				}
-				for (int i = 0; i < waits.Length; i ++)
-					waits[i].WaitOne ();
-
-				_mgr.ReconstructAllStreaming (targets, false);
-				Dispatcher.Invoke (new EmptyDelegate (delegate () {
-					foreach (TimelineInfo info in GetAllTimeLineInfo ())
-						info.UpdateStreamingConstruction ();
-				}));
-			});
+			_mgr.ReconstructAllStreaming (targets, false);
+			Dispatcher.Invoke (new EmptyDelegate (delegate () {
+				foreach (TimelineInfo info in GetAllTimeLineInfo ())
+					info.UpdateStreamingConstruction ();
+			}));
 		}
 		void InitUserInfo ()
 		{
 			TwitterAccount[] accounts = _mgr.Accounts;
-			ThreadPool.QueueUserWorkItem (delegate (object o0) {
-				ManualResetEvent[] waits = new ManualResetEvent[accounts.Length * 2];
-				for (int i = 0; i < accounts.Length; i ++) {
-					waits[i] = new ManualResetEvent (false);
-					waits[i + accounts.Length] = new ManualResetEvent (false);
-					ThreadPool.QueueUserWorkItem (delegate (object o1) {
-						object[] ary = (object[])o1;
+			ManualResetEvent[] waits = new ManualResetEvent[accounts.Length];
+			for (int i = 0; i < accounts.Length; i ++) {
+				waits[i] = new ManualResetEvent (false);
+				ThreadPool.QueueUserWorkItem (delegate (object o) {
+					object[] ary = (object[])o;
+					TwitterAccount account = ary[0] as TwitterAccount;
+					try {
+						account.TwitterClient.UpdateFriends ();
+					} catch {
 						try {
-							(ary[0] as TwitterAccount).TwitterClient.UpdateFriends ();
+							account.UpdateOAuthAccessToken ();
+							account.UpdateAllTimeLinesForce ();
+							account.TwitterClient.UpdateFriends ();
 						} catch {}
-						(ary[1] as ManualResetEvent).Set ();
-					}, new object[] {accounts[i], waits[i]});
-					ThreadPool.QueueUserWorkItem (delegate (object o1) {
-						object[] ary = (object[])o1;
-						try {
-							(ary[0] as TwitterAccount).TwitterClient.UpdateFollowers ();
-						} catch {}
-						(ary[1] as ManualResetEvent).Set ();
-					}, new object[] {accounts[i], waits[i + accounts.Length]});
-				}
-				for (int i = 0; i < waits.Length; i ++)
-					waits[i].WaitOne ();
-				Dispatcher.Invoke (new EmptyDelegate (delegate () {
-					Binding binding = new Binding ("SelectedItem.TwitterClient.Friends");
-					binding.ElementName = "postAccount";
-					BindingOperations.SetBinding (_popupListViewSource, CollectionViewSource.SourceProperty, binding);
-				}));
-			});
+					}
+					(ary[1] as ManualResetEvent).Set ();
+				}, new object[] {accounts[i], waits[i]});
+			}
+			for (int i = 0; i < waits.Length; i ++) {
+				waits[i].WaitOne ();
+				waits[i].Close ();
+			}
+			Dispatcher.Invoke (new EmptyDelegate (delegate () {
+				Binding binding = new Binding ("SelectedItem.TwitterClient.Friends");
+				binding.ElementName = "postAccount";
+				BindingOperations.SetBinding (_popupListViewSource, CollectionViewSource.SourceProperty, binding);
+			}));
+		}
+		void InitUserFollowers ()
+		{
+			TwitterAccount[] accounts = _mgr.Accounts;
+			for (int i = 0; i < accounts.Length; i ++) {
+				ThreadPool.QueueUserWorkItem (delegate (object o) {
+					try {
+						(o as TwitterAccount).TwitterClient.UpdateFollowers ();
+					} catch {}
+				}, accounts[i]);
+			}
 		}
 		#endregion
 
