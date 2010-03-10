@@ -214,9 +214,9 @@ namespace TwitterStreaming
 								}
 							if (account == null) continue;
 							switch (subtype) {
-								case "home": info = new TimelineInfo (timelines, account, account.HomeTimeline); break;
-								case "mentions": info = new TimelineInfo (timelines, account, account.Mentions); break;
-								case "directmessages": info = new TimelineInfo (timelines, account, account.DirectMessages); break;
+								case "home": info = new TimelineInfo (_mgr, timelines, account, account.HomeTimeline); break;
+								case "mentions": info = new TimelineInfo (_mgr, timelines, account, account.Mentions); break;
+								case "directmessages": info = new TimelineInfo (_mgr, timelines, account, account.DirectMessages); break;
 							}
 							break;
 						case "search":
@@ -883,7 +883,7 @@ namespace TwitterStreaming
 			TimelineBase info = null;
 			TwitterAccount account = win.SelectedAccount;
 			if (win.IsCheckedAccountTimeline) {
-				info = new TimelineInfo (_rootTLs, account, win.SelectedAccountTimeline);
+				info = new TimelineInfo (_mgr, _rootTLs, account, win.SelectedAccountTimeline);
 			} else if (win.IsCheckedNewSearch && win.SearchKeyword.Length > 0) {
 				SearchStatuses search = new SearchStatuses (account, win.SearchKeyword);
 				if (win.IsUseStreamingForSearch)
@@ -1348,8 +1348,11 @@ namespace TwitterStreaming
 
 	public class TimelineInfo : TimelineBase
 	{
-		TimelineInfo (TimelineBase owner, TwitterTimeLine timeline, string title) : base (owner, title)
+		TwitterAccountManager _mgr;
+
+		TimelineInfo (TwitterAccountManager mgr, TimelineBase owner, TwitterTimeLine timeline, string title) : base (owner, title)
 		{
+			_mgr = mgr;
 			Statuses = timeline;
 			timeline.CollectionChanged += new NotifyCollectionChangedEventHandler (Timeline_CollectionChanged);
 		}
@@ -1360,8 +1363,8 @@ namespace TwitterStreaming
 				NoticeNewPost (this);
 		}
 
-		public TimelineInfo (TimelineBase owner, TwitterAccount account, TwitterTimeLine timeline)
-			: this (owner, timeline, CreateTitle (account, timeline))
+		public TimelineInfo (TwitterAccountManager mgr, TimelineBase owner, TwitterAccount account, TwitterTimeLine timeline)
+			: this (mgr, owner, timeline, CreateTitle (account, timeline))
 		{
 			RestAccount = account;
 			RestUsage = (timeline == account.HomeTimeline ? account.RestHome :
@@ -1375,7 +1378,7 @@ namespace TwitterStreaming
 		}
 
 		public TimelineInfo (TimelineBase owner, SearchStatuses search)
-			: this (owner, search.Statuses, "Search \"" + search.Keyword + "\"")
+			: this (null, owner, search.Statuses, "Search \"" + search.Keyword + "\"")
 		{
 			Search = search;
 			RestAccount = search.Account;
@@ -1383,7 +1386,7 @@ namespace TwitterStreaming
 		}
 
 		public TimelineInfo (TimelineBase owner, ListStatuses list)
-			: this (owner, list.Statuses, "List \"" + list.List.FullName + "\"")
+			: this (null, owner, list.Statuses, "List \"" + list.List.FullName + "\"")
 		{
 			List = list;
 			RestAccount = list.Account;
@@ -1403,7 +1406,15 @@ namespace TwitterStreaming
 					return List.StreamingClient;
 				if (RestUsage == RestAccount.RestDirectMessages)
 					return null;
-				return RestAccount.StreamingClient;
+
+				TwitterAccount[] accounts = _mgr.Accounts;
+				for (int i = 0; i < accounts.Length; i++) {
+					if (accounts[i].StreamingClient == null)
+						continue;
+					if (accounts[i].StreamingClient.Target == RestAccount)
+						return accounts[i].StreamingClient;
+				}
+				return null;
 			}
 		}
 
