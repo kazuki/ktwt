@@ -79,6 +79,9 @@ namespace TwitterStreaming
 					|| (e.Key >= Key.D0 && e.Key <= Key.D9) || (e.Key >= Key.NumPad0 && e.Key <= Key.NumPad9))
 					ShowPostArea (true);
 			};
+			this.Closed += delegate (object sender, EventArgs e) {
+				SaveConfig ();
+			};
 		}
 
 		#region Init
