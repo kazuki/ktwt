@@ -1261,8 +1261,12 @@ namespace TwitterStreaming
 		public static readonly ICommand ChangePostAreaVisibilityCommand = new RoutedCommand ("ChangePostAreaVisibility", typeof (MainWindow));
 		private void ChangePostAreaVisibilityCommand_Executed (object source, ExecutedRoutedEventArgs e)
 		{
-			if (e.OriginalSource is MainWindow)
-				ChangePostAreaVisibilityMenu.IsChecked = !ChangePostAreaVisibilityMenu.IsChecked;
+			if (e.OriginalSource is MainWindow) {
+				if (ChangePostAreaVisibilityMenu.IsChecked)
+					ChangePostAreaVisibilityMenu.IsChecked = false;
+				else
+					ShowPostArea (true);
+			}
 		}
 		void ShowPostArea (bool focus)
 		{
