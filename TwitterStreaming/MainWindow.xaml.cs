@@ -1477,4 +1477,28 @@ namespace TwitterStreaming
 			throw new NotSupportedException ();
 		}
 	}
+
+	public class IsVisibleConverter : IValueConverter
+	{
+		public IsVisibleConverter ()
+		{
+			HiddenType = Visibility.Collapsed;
+		}
+
+		public Visibility HiddenType { get; set; }
+
+		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			return (Visibility)value == Visibility.Visible ? true : false;
+		}
+
+		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			if (value is string)
+				value = bool.Parse ((string)value);
+			if (value is bool)
+				return (bool)value ?	Visibility.Visible : HiddenType;
+			throw new NotSupportedException ();
+		}
+	}
 }

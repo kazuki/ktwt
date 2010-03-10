@@ -10,6 +10,7 @@
         <c:ImageCacheConverter x:Key="iconCacheConverter" />
         <c:DateTimeConverter x:Key="apiResetTimeConverter" Kind="Local" Format="t" />
         <c:IsNullConverter x:Key="isNullConverter" />
+        <c:IsVisibleConverter x:Key="isVisibleConverter" HiddenType="Collapsed" />
         <DataTemplate x:Key="timelineTemplate">
             <Grid>
                 <Grid.RowDefinitions>
@@ -199,6 +200,8 @@
         </Grid.RowDefinitions>
         <Menu Grid.Row="0" VerticalAlignment="Top">
             <MenuItem Header="表示">
+                <MenuItem Header="投稿エリア" IsCheckable="True"
+                          IsChecked="{Binding ElementName=postArea, Path=Visibility, Converter={StaticResource isVisibleConverter}}" />
                 <MenuItem Header="設定" Click="MenuItem_ShowPreference_Click" />
                 <MenuItem Header="Following/Followers一覧" Click="MenuItem_ShowFriendsFollowers_Click" />
             </MenuItem>
@@ -215,7 +218,7 @@
                 <MenuItem Header="バグを報告する" Tag="https://oikw.org/bug/newticket" Click="MenuItem_OpenUrl_Click" />
             </MenuItem>
         </Menu>
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="1" x:Name="postArea">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
                 <ColumnDefinition Width="Auto" />
