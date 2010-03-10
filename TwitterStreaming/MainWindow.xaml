@@ -201,6 +201,7 @@
         <Menu Grid.Row="0" VerticalAlignment="Top">
             <MenuItem Header="表示">
                 <MenuItem Header="投稿エリア" IsCheckable="True"
+                          x:Name="ChangePostAreaVisibilityMenu"
                           IsChecked="{Binding ElementName=postArea, Path=Visibility, Converter={StaticResource isVisibleConverter}}" />
                 <MenuItem Header="設定" Click="MenuItem_ShowPreference_Click" />
                 <MenuItem Header="Following/Followers一覧" Click="MenuItem_ShowFriendsFollowers_Click" />

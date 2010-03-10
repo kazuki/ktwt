@@ -47,6 +47,7 @@ namespace TwitterStreaming
 		{
 			_hashTags.Add (string.Empty);
 			InitializeComponent ();
+			InitCommandBinding ();
 			InitPopup ();
 			itemsControl.DataContext = this;
 			_mgr = new TwitterAccountManager ();
@@ -66,7 +67,7 @@ namespace TwitterStreaming
 					return;
 				if (e.Key == Key.ImeProcessed || (e.Key >= Key.A && e.Key <= Key.Z)
 					|| (e.Key >= Key.D0 && e.Key <= Key.D9) || (e.Key >= Key.NumPad0 && e.Key <= Key.NumPad9))
-					postTextBox.Focus ();
+					ShowPostArea (true);
 			};
 		}
 
@@ -574,7 +575,7 @@ namespace TwitterStreaming
 			SetReplySetting ();
 			Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
 				postTextBox.SelectionStart = postTextBox.Text.Length;
-				postTextBox.Focus ();
+				ShowPostArea (true);
 			}));
 		}
 
@@ -704,7 +705,7 @@ namespace TwitterStreaming
 			cbDMto.SelectedIndex = -1;
 			postTextBox.Text = GenerateFooter ();
 			postTextBox.SelectionStart = 0;
-			postTextBox.Focus ();
+			ShowPostArea (true);
 		}
 
 		void SetReplySetting ()
@@ -831,7 +832,7 @@ namespace TwitterStreaming
 				postTextBox.CaretIndex = _popupStartCaretIndex + name.Length;
 			}
 			if (!postTextBox.IsFocused)
-				postTextBox.Focus ();
+				ShowPostArea (true);
 		}
 
 		private void ClosePopup ()
@@ -999,7 +1000,7 @@ namespace TwitterStreaming
 			SetReplySetting ();
 			Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
 				postTextBox.SelectionStart = 0;
-				postTextBox.Focus ();
+				ShowPostArea (true);
 			}));
 		}
 
@@ -1013,7 +1014,7 @@ namespace TwitterStreaming
 			SetReplySetting ();
 			Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
 				postTextBox.SelectionStart = 0;
-				postTextBox.Focus ();
+				ShowPostArea (true);
 			}));
 		}
 
@@ -1190,7 +1191,7 @@ namespace TwitterStreaming
 			postTextBox.Text = txt + GenerateFooter ();
 			postTextBox.SelectionStart = txt.Length;
 			Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
-				postTextBox.Focus ();
+				ShowPostArea (true);
 			}), null);
 		}
 		#endregion
@@ -1227,6 +1228,35 @@ namespace TwitterStreaming
 		{
 			Popup popupConfig = (Popup)sender;
 			popupConfig.Tag = DateTime.Now;
+		}
+		#endregion
+
+		#region Commands
+		void InitCommandBinding ()
+		{
+			BindCommandAndInput (ChangePostAreaVisibilityCommand, new KeyGesture (Key.S, ModifierKeys.Control), ChangePostAreaVisibilityCommand_Executed, ChangePostAreaVisibilityMenu);
+		}
+		void BindCommandAndInput (ICommand command, KeyGesture gesture, ExecutedRoutedEventHandler handler, MenuItem bindItem)
+		{
+			CommandBindings.Add (new CommandBinding (command, handler));
+			if (gesture != null)
+				InputBindings.Add (new InputBinding (command, gesture));
+			if (gesture != null && bindItem != null)
+				bindItem.InputGestureText = gesture.GetDisplayStringForCulture (null);
+		}
+
+		public static readonly ICommand ChangePostAreaVisibilityCommand = new RoutedCommand ("ChangePostAreaVisibility", typeof (MainWindow));
+		private void ChangePostAreaVisibilityCommand_Executed (object source, ExecutedRoutedEventArgs e)
+		{
+			if (e.OriginalSource is MainWindow)
+				ChangePostAreaVisibilityMenu.IsChecked = !ChangePostAreaVisibilityMenu.IsChecked;
+		}
+		void ShowPostArea (bool focus)
+		{
+			if (!ChangePostAreaVisibilityMenu.IsChecked)
+				ChangePostAreaVisibilityMenu.IsChecked = true;
+			if (focus)
+				postTextBox.Focus ();
 		}
 		#endregion
 	}
