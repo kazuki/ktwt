@@ -223,7 +223,6 @@
             <Grid.RowDefinitions>
                 <RowDefinition />
                 <RowDefinition />
-                <RowDefinition />
             </Grid.RowDefinitions>
             <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3">
                 <ComboBox x:Name="postAccount">
@@ -250,6 +249,8 @@
                 </ComboBox>
 
                 <Button Click="ClearButton_Click" Margin="10 0 0 0" VerticalAlignment="Center">Clear</Button>
+                
+                <TextBlock x:Name="postLengthText" Margin="10 0 0 0" VerticalAlignment="Center" />
             </StackPanel>
             <TextBox Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" x:Name="postTextBox"
                      VerticalContentAlignment="Center"
@@ -259,7 +260,6 @@
                      PreviewKeyDown="postTextBox_PreviewKeyDown"
                      AcceptsReturn="True" TextWrapping="Wrap" />
             <Button Grid.Column="1" Grid.Row="1" Padding="8 0 8 0" x:Name="postButton" Click="postButton_Click">Post</Button>
-            <TextBlock Grid.Column="1" Grid.Row="2" x:Name="postLengthText" HorizontalAlignment="Center" />
 
             <Popup x:Name="popup" PlacementTarget="{Binding ElementName=postTextBox}">
                 <ListBox ItemsSource="{Binding Source={StaticResource followingViewSource}}"
