@@ -59,11 +59,21 @@ namespace TwitterStreaming
 				postAccount.SelectedIndex = 0;
 
 			Init (targets);
-			
-			this.PreviewKeyDown += delegate (object sender, KeyEventArgs e) {
+
+			Predicate<object> previewCheck = delegate (object o) {
 				if (postTextBox.IsFocused || (Keyboard.Modifiers != ModifierKeys.None && Keyboard.Modifiers != ModifierKeys.Shift))
-					return;
+					return false;
 				if (Keyboard.FocusedElement is TextBox)
+					return false;
+				return true;
+			};
+			this.PreviewTextInput += delegate (object sender, TextCompositionEventArgs e) {
+				if (!previewCheck (null))
+					return;
+				ShowPostArea (true);
+			};
+			this.PreviewKeyDown += delegate (object sender, KeyEventArgs e) {
+				if (!previewCheck (null))
 					return;
 				if (e.Key == Key.ImeProcessed || (e.Key >= Key.A && e.Key <= Key.Z)
 					|| (e.Key >= Key.D0 && e.Key <= Key.D9) || (e.Key >= Key.NumPad0 && e.Key <= Key.NumPad9))
