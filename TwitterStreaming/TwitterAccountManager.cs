@@ -401,8 +401,11 @@ namespace TwitterStreaming
 			string keywords = (obj.Value["keywords"] as JsonString).Value;
 			string username = (obj.Value["username"] as JsonString).Value;
 			for (int i = 0; i < accounts.Length; i ++) {
-				if (accounts[i].ScreenName == username)
-					return new SearchStatuses (accounts[i], keywords);
+				if (accounts[i].ScreenName == username) {
+					SearchStatuses ss = new SearchStatuses (accounts[i], keywords);
+					LoadRestUsage (obj, ss.RestInfo);
+					return ss;
+				}
 			}
 			throw new Exception ();
 		}
@@ -414,6 +417,7 @@ namespace TwitterStreaming
 			writer.WriteString (search.Keyword);
 			writer.WriteKey ("username");
 			writer.WriteString (search.Account.ScreenName);
+			WriteRestUsage (writer, search.RestInfo);
 			writer.WriteEndObject ();
 		}
 
@@ -425,8 +429,11 @@ namespace TwitterStreaming
 				if (accounts[i].ScreenName == username) {
 					ListInfo[] lists = accounts[i].TwitterClient.SelfAndFollowingList;
 					for (int j = 0; j < lists.Length; j ++) {
-						if (lists[j].ID == id)
-							return new ListStatuses (accounts[i], lists[j]);
+						if (lists[j].ID == id) {
+							ListStatuses statuses = new ListStatuses (accounts[i], lists[j]);
+							LoadRestUsage (obj, statuses.RestInfo);
+							return statuses;
+						}
 					}
 				}
 			}
@@ -440,7 +447,24 @@ namespace TwitterStreaming
 			writer.WriteNumber (list.List.ID);
 			writer.WriteKey ("username");
 			writer.WriteString (list.Account.ScreenName);
+			WriteRestUsage (writer, list.RestInfo);
 			writer.WriteEndObject ();
+		}
+
+		void LoadRestUsage (JsonObject obj, TwitterAccount.RestUsage usage)
+		{
+			if (obj.Value.ContainsKey ("interval"))
+				usage.Interval = TimeSpan.FromSeconds ((obj.Value["interval"] as JsonNumber).Value);
+			if (obj.Value.ContainsKey ("count"))
+				usage.Count = (int)(obj.Value["count"] as JsonNumber).Value;
+		}
+
+		void WriteRestUsage (JsonTextWriter writer, TwitterAccount.RestUsage usage)
+		{
+			writer.WriteKey ("interval");
+			writer.WriteNumber (usage.Interval.TotalSeconds);
+			writer.WriteKey ("count");
+			writer.WriteNumber (usage.Count);
 		}
 		#endregion
 	}
