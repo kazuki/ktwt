@@ -30,9 +30,7 @@ namespace TwitterStreaming
 			Account = account;
 			Keyword = keyword;
 			KeywordForRestAPI = keyword.Replace (",", " OR ").Replace ("  ", " ");
-
-			// default
-			_rest = new TwitterAccount.RestUsage {Interval = TimeSpan.FromSeconds (30), Count = 100, IsEnabled = true, LastExecTime = DateTime.MinValue};
+			_rest = account.RestSearch.CopyConfig ();
 		}
 
 		void IStreamingHandler.Streaming_StatusArrived (object sender, StatusArrivedEventArgs e)

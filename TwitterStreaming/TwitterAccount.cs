@@ -53,6 +53,7 @@ namespace TwitterStreaming
 			RestMentions = new RestUsage {Interval = TimeSpan.FromSeconds (600), Count = 20};
 			RestDirectMessages = new RestUsage {Interval = TimeSpan.FromSeconds (600), Count = 20};
 			RestList = new TwitterAccount.RestUsage {Interval = TimeSpan.FromSeconds (30), Count = 200};
+			RestSearch = new TwitterAccount.RestUsage {Interval = TimeSpan.FromSeconds (30), Count = 100};
 			_restInfoList = new RestUsage[] {RestHome, RestMentions, RestDirectMessages};
 			_restSinceList = new ulong?[] {null, null, null};
 		}
@@ -153,6 +154,7 @@ namespace TwitterStreaming
 		public RestUsage RestMentions { get; private set; }
 		public RestUsage RestDirectMessages { get; private set; }
 		public RestUsage RestList { get; private set; }
+		public RestUsage RestSearch { get; private set; }
 		public string ScreenName { get; private set; }
 		public ulong SelfUserID { get; set; }
 		public bool IsIncludeOtherStatus { get; set; }
@@ -219,19 +221,55 @@ namespace TwitterStreaming
 			public RestUsage ()
 			{
 				TimeLine = new TwitterTimeLine ();
-				Interval = TimeSpan.MaxValue;
-				IsEnabled = true;
-				IsRunning = false;
-				Count = 0;
-				LastExecTime = DateTime.MinValue;
 			}
 
 			public TwitterTimeLine TimeLine { get; private set; }
-			public TimeSpan Interval { get; set; }
-			public bool IsEnabled { get; set; }
-			public bool IsRunning { get; set; }
-			public int Count { get; set; }
-			public DateTime LastExecTime { get; set; }
+
+			TimeSpan _interval = TimeSpan.MaxValue;
+			public TimeSpan Interval {
+				get { return _interval; }
+				set {
+					_interval = value;
+					InvokePropertyChanged ("Interval");
+				}
+			}
+
+			bool _enabled = true;
+			public bool IsEnabled {
+				get { return _enabled; }
+				set {
+					_enabled = value;
+					InvokePropertyChanged ("IsEnabled");
+				}
+			}
+
+			bool _isRunning = false;
+			public bool IsRunning {
+				get { return _isRunning; }
+				set {
+					_isRunning = value;
+					InvokePropertyChanged ("IsRunning");
+				}
+			}
+
+			int _count = 0;
+			public int Count {
+				get { return _count; }
+				set {
+					_count = value;
+					InvokePropertyChanged ("Count");
+				}
+			}
+
+			DateTime _lastExec = DateTime.MinValue;
+			public DateTime LastExecTime {
+				get { return _lastExec; }
+				set {
+					_lastExec = value;
+					InvokePropertyChanged ("LastExecTime");
+				}
+			}
+
 			public DateTime NextExecTime {
 				get { return LastExecTime + Interval; }
 			}
@@ -247,7 +285,6 @@ namespace TwitterStreaming
 			{
 				if (PropertyChanged == null)
 					return;
-
 				try {
 					PropertyChanged (this, new PropertyChangedEventArgs (name));
 				} catch {}

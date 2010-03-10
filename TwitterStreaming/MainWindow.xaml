@@ -8,6 +8,8 @@
     <Window.Resources>
         <c:TimeSpanToSecConverter x:Key="timeSpanToSecConverter" />
         <c:ImageCacheConverter x:Key="iconCacheConverter" />
+        <c:DateTimeConverter x:Key="apiResetTimeConverter" Kind="Local" Format="t" />
+        <c:IsNullConverter x:Key="isNullConverter" />
         <DataTemplate x:Key="timelineTemplate">
             <Grid>
                 <Grid.RowDefinitions>
@@ -15,59 +17,107 @@
                     <RowDefinition />
                 </Grid.RowDefinitions>
                 <Grid Grid.Row="0">
-                    <Grid.Resources>
-                        <Style TargetType="{x:Type TextBlock}" x:Key="smallStyle">
-                            <Setter Property="FontSize" Value="9" />
-                        </Style>
-                    </Grid.Resources>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Grid Grid.Column="0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Padding="5" Text="{Binding Path=Title}" />
-                        <StackPanel Orientation="Vertical" Grid.Column="1" VerticalAlignment="Center" Margin="5 0 5 0">
-                            <TextBlock VerticalAlignment="Center" Style="{StaticResource smallStyle}">
-                                <TextBlock>RestAPI: </TextBlock>
-                                <TextBlock Text="{Binding RestAccount.TwitterClient.ApiLimitRemaining}" />
-                                <TextBlock>/</TextBlock>
-                                <TextBlock Text="{Binding RestAccount.TwitterClient.ApiLimitMax}" />
-                                <TextBlock> (@</TextBlock>
-                                <TextBlock Text="{Binding RestAccount.ScreenName}" />
-                                <TextBlock>), Next: </TextBlock>
-                                <TextBlock Text="{Binding RestUsage.NextExecTimeRemaining, Converter={StaticResource timeSpanToSecConverter}}" />
-                            </TextBlock>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource smallStyle}">Streaming:</TextBlock>
-                                <ItemsControl ItemsSource="{Binding StreamingClient.States}" IsTabStop="False">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Style="{StaticResource smallStyle}">
-                                                <TextBlock>@</TextBlock>
-                                                <TextBlock Text="{Binding Account.ScreenName}" />
-                                                <TextBlock>(</TextBlock>
-                                                <TextBlock Text="{Binding ConnectionState}" />
-                                                <TextBlock>), </TextBlock>
-                                            </TextBlock>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal" />
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                </ItemsControl>
-                            </StackPanel>
-                        </StackPanel>
-                    </Grid>
+                    <TextBlock Grid.Column="0" Padding="5 0 0 0" VerticalAlignment="Center" Text="{Binding Path=Title}" />
                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Click="TimeLineMoveLeftButton_Click">&lt;</Button>
-                        <Button Click="TimeLineMoveRightButton_Click">&gt;</Button>
-                        <Button Click="TimeLineCloseButton_Click">×</Button>
+                        <Button Tag="{Binding ElementName=popupConfig}" Click="TimeLineConfigButton_Click">O</Button>
+                        <Popup x:Name="popupConfig" StaysOpen="False" Placement="Bottom" Closed="TimeLineConfigPopup_Closed">
+                            <Grid Margin="1" Background="{x:Static SystemColors.WindowBrush}">
+                                <Grid Margin="0 5 5 5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition />
+                                        <RowDefinition />
+                                        <RowDefinition />
+                                        <RowDefinition />
+                                        <RowDefinition />
+                                        <RowDefinition />
+                                        <RowDefinition />
+                                        <RowDefinition />
+                                    </Grid.RowDefinitions>
+                                    <Grid.Resources>
+                                        <Style TargetType="{x:Type TextBlock}">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Foreground" Value="{x:Static SystemColors.WindowTextBrush}" />
+                                        </Style>
+                                        <Style TargetType="{x:Type ItemsControl}">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="VerticalContentAlignment" Value="Center" />
+                                            <Setter Property="Foreground" Value="{x:Static SystemColors.WindowTextBrush}" />
+                                        </Style>
+                                        <Style TargetType="{x:Type TextBox}">
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="VerticalContentAlignment" Value="Center" />
+                                        </Style>
+                                    </Grid.Resources>
+
+                                    <TextBlock  Grid.Column="0" Grid.Row="0" Margin="5">Window:</TextBlock>
+                                    <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button Click="TimeLineMoveLeftButton_Click">&lt;</Button>
+                                        <Button Click="TimeLineMoveRightButton_Click">&gt;</Button>
+                                        <Button Click="TimeLineCloseButton_Click">X</Button>
+                                    </StackPanel>
+
+                                    <TextBlock Grid.Column="0" Grid.Row="1" Margin="5">API Limit:</TextBlock>
+                                    <TextBlock Grid.Column="1" Grid.Row="1">
+                                        <TextBlock Text="{Binding RestAccount.TwitterClient.ApiLimitRemaining}" />
+                                        <Run>/</Run>
+                                        <TextBlock Text="{Binding RestAccount.TwitterClient.ApiLimitMax}" />
+                                    </TextBlock>
+
+                                    <TextBlock Grid.Column="0" Grid.Row="2" Margin="5">API State:</TextBlock>
+                                    <TextBlock Grid.Column="1" Grid.Row="2">
+                                        <TextBlock.Style>
+                                            <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding RestUsage.IsRunning}" Value="False">
+                                                        <Setter Property="Text">
+                                                            <Setter.Value>
+                                                                <Binding Path="RestUsage.NextExecTimeRemaining" Converter="{StaticResource timeSpanToSecConverter}" StringFormat="{}{0} sec" />
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding RestUsage.IsRunning}" Value="True">
+                                                        <Setter Property="Text" Value="Updating" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+
+                                    <TextBlock Grid.Column="0" Grid.Row="3" Margin="5">API Reset:</TextBlock>
+                                    <TextBlock Grid.Column="1" Grid.Row="3" Text="{Binding RestAccount.TwitterClient.ApiLimitResetTime, Converter={StaticResource apiResetTimeConverter}}" />
+
+                                    <TextBlock Grid.Column="0" Grid.Row="4" Margin="5">API Interval:</TextBlock>
+                                    <TextBox   Grid.Column="1" Grid.Row="4" Text="{Binding RestUsage.Interval, Converter={StaticResource timeSpanToSecConverter}, ValidatesOnExceptions=True}" />
+
+                                    <TextBlock Grid.Column="0" Grid.Row="5" Margin="5">API Count:</TextBlock>
+                                    <TextBox   Grid.Column="1" Grid.Row="5" Text="{Binding RestUsage.Count, ValidatesOnExceptions=True}" />
+
+                                    <TextBlock    Grid.Column="0" Grid.Row="6" Margin="5">Streaming:</TextBlock>
+                                    <ItemsControl Grid.Column="1" Grid.Row="6" ItemsSource="{Binding StreamingClient.States}" IsTabStop="False">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock>
+                                                    <Run>@</Run>
+                                                    <TextBlock Text="{Binding Account.ScreenName}" />
+                                                    <Run>: </Run>
+                                                    <TextBlock Text="{Binding ConnectionState}" />
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    
+                                    <Button Grid.Column="1" Grid.Row="7" HorizontalAlignment="Right" Tag="{Binding ElementName=popupConfig}" Click="TimeLineConfigCloseButton_Click">設定ポップアップを閉じる</Button>
+                                </Grid>
+                            </Grid>
+                        </Popup>
                     </StackPanel>
                 </Grid>
                 <ListBox Background="{Binding ElementName=mw, Path=Background}" Grid.Row="1" SelectionMode="Single"
@@ -115,8 +165,8 @@
                     <ColumnDefinition />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Row="0" Grid.Column="0" Padding="5" Text="{Binding Path=Title}" />
-                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock Grid.Row="0" Grid.Column="0" Padding="5 0 0 0" Text="{Binding Path=Title}" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Click="TimeLineMoveLeftButton_Click">&lt;</Button>
                     <Button Click="TimeLineMoveRightButton_Click">&gt;</Button>
                     <Button Click="TimeLineCloseButton_Click">×</Button>

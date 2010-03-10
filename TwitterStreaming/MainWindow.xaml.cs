@@ -24,6 +24,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -60,6 +61,8 @@ namespace TwitterStreaming
 			
 			this.PreviewKeyDown += delegate (object sender, KeyEventArgs e) {
 				if (postTextBox.IsFocused || (Keyboard.Modifiers != ModifierKeys.None && Keyboard.Modifiers != ModifierKeys.Shift))
+					return;
+				if (Keyboard.FocusedElement is TextBox)
 					return;
 				if (e.Key == Key.ImeProcessed || (e.Key >= Key.A && e.Key <= Key.Z)
 					|| (e.Key >= Key.D0 && e.Key <= Key.D9) || (e.Key >= Key.NumPad0 && e.Key <= Key.NumPad9))
@@ -1200,6 +1203,32 @@ namespace TwitterStreaming
 			set { SetValue (IconSizeProperty, value); }
 		}
 		#endregion
+
+		#region TimeLine Config
+		private void TimeLineConfigButton_Click (object sender, RoutedEventArgs e)
+		{
+			Button btn = (Button)sender;
+			Popup popupConfig = (Popup)btn.Tag;
+			if (popupConfig.Tag is DateTime) {
+				if (DateTime.Now.Subtract ((DateTime)popupConfig.Tag).TotalSeconds < 0.5)
+					return;
+			}
+			popupConfig.IsOpen = true;
+		}
+
+		private void TimeLineConfigCloseButton_Click (object sender, RoutedEventArgs e)
+		{
+			Button btn = (Button)sender;
+			Popup popupConfig = (Popup)btn.Tag;
+			popupConfig.IsOpen = false;
+		}
+
+		private void TimeLineConfigPopup_Closed (object sender, EventArgs e)
+		{
+			Popup popupConfig = (Popup)sender;
+			popupConfig.Tag = DateTime.Now;
+		}
+		#endregion
 	}
 
 	public abstract class TimelineBase : INotifyPropertyChanged
@@ -1397,6 +1426,50 @@ namespace TwitterStreaming
 			if (span == null)
 				return value;
 			return (int)span.TotalSeconds;
+		}
+
+		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			if (value is double)
+				return TimeSpan.FromSeconds ((double)value);
+
+			double sec;
+			if (value is string && double.TryParse ((string)value, out sec))
+				return TimeSpan.FromSeconds (sec);
+			return value;
+		}
+	}
+
+	public class DateTimeConverter : IValueConverter
+	{
+		public DateTimeConverter ()
+		{
+			Kind = DateTimeKind.Local;
+			Format = "g";
+		}
+
+		public DateTimeKind Kind { get; set; }
+		public string Format { get; set; }
+
+		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			DateTime dt = (DateTime)value;
+			if (dt.Kind != Kind)
+				dt = (Kind == DateTimeKind.Local ? dt.ToLocalTime () : dt.ToUniversalTime ());
+			return dt.ToString (Format);
+		}
+
+		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			throw new NotSupportedException ();
+		}
+	}
+
+	public class IsNullConverter : IValueConverter
+	{
+		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			return value == null ? true : false;
 		}
 
 		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)

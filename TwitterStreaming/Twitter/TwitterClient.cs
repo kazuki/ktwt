@@ -111,6 +111,8 @@ namespace ktwt.Twitter
 		public DateTime ApiLimitResetTime {
 			get { return _apiLimitResetTime; }
 			private set {
+				if (_apiLimitResetTime.Equals (value))
+					return;
 				_apiLimitResetTime = value;
 				InvokePropertyChanged ("ApiLimitResetTime");
 			}
