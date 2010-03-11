@@ -1,8 +1,10 @@
 ﻿<Window x:Class="TwitterStreaming.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:corlib="clr-namespace:System;assembly=mscorlib"
     xmlns:c="clr-namespace:TwitterStreaming"
     xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+    xmlns:pfc="clr-namespace:System.Windows.Controls;assembly=PresentationFramework"
     Title="ktwt (Simple Twitter Client with OAuth-REST/Streaming API)" Width="640" Height="480"
     x:Name="mw" Foreground="White" Background="#222" Icon="/TwitterStreaming;component/apple.ico">
     <Window.Resources>
@@ -11,6 +13,7 @@
         <c:DateTimeConverter x:Key="apiResetTimeConverter" Kind="Local" Format="t" />
         <c:IsNullConverter x:Key="isNullConverter" />
         <c:IsVisibleConverter x:Key="isVisibleConverter" HiddenType="Collapsed" />
+        <c:ScrollBarVisibilityConverter x:Key="scrollBarVisibilityConverter" />
         <DataTemplate x:Key="timelineTemplate">
             <Grid>
                 <Grid.RowDefinitions>
@@ -41,6 +44,8 @@
                                         <RowDefinition />
                                         <RowDefinition />
                                         <RowDefinition />
+                                        <RowDefinition />
+                                        <RowDefinition />
                                     </Grid.RowDefinitions>
                                     <Grid.Resources>
                                         <Style TargetType="{x:Type TextBlock}">
@@ -56,6 +61,11 @@
                                             <Setter Property="VerticalAlignment" Value="Center" />
                                             <Setter Property="VerticalContentAlignment" Value="Center" />
                                         </Style>
+                                        <ObjectDataProvider x:Key="statusViewStyleEnum" MethodName="GetValues" ObjectType="{x:Type corlib:Enum}">
+                                            <ObjectDataProvider.MethodParameters>
+                                                <x:Type TypeName="c:StatusViewMode"/>
+                                            </ObjectDataProvider.MethodParameters>
+                                        </ObjectDataProvider>
                                     </Grid.Resources>
 
                                     <TextBlock  Grid.Column="0" Grid.Row="0" Margin="5">Window:</TextBlock>
@@ -115,7 +125,17 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
                                     
-                                    <Button Grid.Column="1" Grid.Row="7" HorizontalAlignment="Right" Tag="{Binding ElementName=popupConfig}" Click="TimeLineConfigCloseButton_Click">設定ポップアップを閉じる</Button>
+                                    <TextBlock Grid.Column="0" Grid.Row="7" Margin="5">Style Mode:</TextBlock>
+                                    <ComboBox  Grid.Column="1" Grid.Row="7"
+                                               VerticalAlignment="Center" SelectedIndex="0" x:Name="statusViewStyle" 
+                                               ItemsSource="{Binding Source={StaticResource statusViewStyleEnum}}" />
+
+                                    <CheckBox Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="8" Margin="5"
+                                              IsChecked="{Binding ElementName=tweetList, Path=(ScrollViewer.HorizontalScrollBarVisibility), Converter={StaticResource scrollBarVisibilityConverter}}">
+                                        <Run>Show Horizon ScrollBar</Run>
+                                    </CheckBox>
+
+                                    <Button Grid.Column="1" Grid.Row="9" HorizontalAlignment="Right" Tag="{Binding ElementName=popupConfig}" Click="TimeLineConfigCloseButton_Click">設定ポップアップを閉じる</Button>
                                 </Grid>
                             </Grid>
                         </Popup>
@@ -124,7 +144,7 @@
                 <ListBox Background="{Binding ElementName=mw, Path=Background}" Grid.Row="1" SelectionMode="Single"
                          HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                          ItemsSource="{Binding Path=Statuses}" IsSynchronizedWithCurrentItem="True"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" x:Name="tweetList"
                          KeyDown="TimeLine_KeyDown" ContextMenuOpening="TimeLine_ContextMenuOpening">
                     <ListBox.ContextMenu>
                         <ContextMenu>
@@ -145,11 +165,12 @@
                     </ListBox.ContextMenu>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <c:TwitterStatusViewer Status="{Binding}" LinkClick="TwitterStatusViewer_LinkClick" MouseDoubleClick="TwitterStatusViewer_MouseDoubleClick"
+                            <c:TwitterStatusViewer LinkClick="TwitterStatusViewer_LinkClick" MouseDoubleClick="TwitterStatusViewer_MouseDoubleClick"
                                                    FavoriteIconClick="TwitterStatusViewer_FavoriteIconClick"
                                                    NameForeground="{Binding ElementName=mw, Path=NameForeground}" LinkForeground="{Binding ElementName=mw, Path=LinkForeground}"
                                                    Foreground="{Binding ElementName=mw, Path=PostForeground}" Background="{Binding ElementName=mw, Path=PostBackground}"
-                                                   IconSize="{Binding ElementName=mw, Path=IconSize}" Margin="0 1 0 1" />
+                                                   IconSize="{Binding ElementName=mw, Path=IconSize}" Margin="0 1 0 1"
+                                                   ViewMode="{Binding ElementName=statusViewStyle, Path=SelectedItem}" />
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>

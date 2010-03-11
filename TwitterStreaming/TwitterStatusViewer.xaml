@@ -8,7 +8,9 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ToggleButton}">
-                        <c:StarShape Stroke="{Binding ElementName=uc, Path=NameForeground}" Fill="{Binding ElementName=uc, Path=Background}" StrokeThickness="1" x:Name="starPath" />
+                        <c:StarShape Stroke="{Binding ElementName=uc, Path=NameForeground}"
+                                     Fill="{Binding ElementName=uc, Path=Background}"
+                                     StrokeThickness="1" x:Name="starPath" />
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="starPath" Property="Fill" Value="Gold"/>
@@ -19,19 +21,65 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <DataTemplate x:Key="normalTemplate">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <c:TweetProfileImage Grid.Column="0" Margin="5 0 5 0" VerticalAlignment="Top"
+                                     Owner="{Binding ElementName=uc}"
+                                     Width="{Binding ElementName=uc, Path=IconSize}"
+                                     Height="{Binding ElementName=uc, Path=IconSize}" />
+                <StackPanel Grid.Column="1" Orientation="Vertical" Margin="0 0 0 2">
+                    <StackPanel Orientation="Horizontal">
+                        <ToggleButton x:Name="isFav" IsChecked="{Binding Path=IsFavorited, Mode=OneWay}"
+                                      Style="{StaticResource favoriteButton}"
+                                      Height="{Binding ElementName=uc, Path=FontSize}"
+                                      Width="{Binding ElementName=uc, Path=FontSize}"
+                                      Margin="0 0 3 0" VerticalAlignment="Center" Click="isFav_Click" />
+                        <c:TweetNameTextBlock FontWeight="Bold" VerticalAlignment="Center"
+                                              Owner="{Binding ElementName=uc}"
+                                              Foreground="{Binding ElementName=uc, Path=NameForeground}" />
+                    </StackPanel>
+                    <c:TweetBodyTextBlock Owner="{Binding ElementName=uc}"
+                                          TextWrapping="Wrap"
+                                          Foreground="{Binding ElementName=uc, Path=Foreground}" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="compactTemplate">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Canvas Grid.Column="0" Margin="5 0 3 0"
+                        Width="{Binding ElementName=uc, Path=IconSize}">
+                    <c:TweetProfileImage Canvas.Left="0" Canvas.Top="0"
+                                         Owner="{Binding ElementName=uc}"
+                                         Width="{Binding ElementName=uc, Path=IconSize}"
+                                         Height="{Binding ElementName=uc, Path=IconSize}" />
+                </Canvas>
+                <c:TweetCompactTextBlock Grid.Column="2" Margin="3 0 2 2" TextWrapping="Wrap"
+                                         VerticalAlignment="Center"
+                                         Owner="{Binding ElementName=uc}"
+                                         Foreground="{Binding ElementName=uc, Path=Foreground}" />
+            </Grid>
+        </DataTemplate>
     </UserControl.Resources>
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition />
-        </Grid.ColumnDefinitions>
-        <Image Grid.Column="0" x:Name="userImage" Width="{Binding ElementName=uc, Path=IconSize}" Height="{Binding ElementName=uc, Path=IconSize}" Margin="5 0 5 0" VerticalAlignment="Top" />
-        <StackPanel Grid.Column="1" Orientation="Vertical" Margin="0 0 0 2">
-            <StackPanel Orientation="Horizontal">
-                <ToggleButton x:Name="isFav" IsChecked="{Binding ElementName=uc, Path=Status.IsFavorited, Mode=OneWay}" Style="{StaticResource favoriteButton}" Height="{Binding ElementName=uc, Path=FontSize}" Width="{Binding ElementName=uc, Path=FontSize}" Margin="0 0 3 0" VerticalAlignment="Center" Click="isFav_Click" />
-                <TextBlock FontWeight="Bold" Foreground="{Binding ElementName=uc, Path=NameForeground}" x:Name="nameTextBlock" VerticalAlignment="Center" />
-            </StackPanel>
-            <TextBlock x:Name="postTextBlock" TextWrapping="Wrap" Foreground="{Binding ElementName=uc, Path=Foreground}" />
-        </StackPanel>
-    </Grid>
+    <UserControl.Style>
+        <Style TargetType="{x:Type UserControl}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding ElementName=uc,Path=ViewMode}" Value="Normal">
+                    <Setter Property="ContentTemplate" Value="{StaticResource normalTemplate}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding ElementName=uc,Path=ViewMode}" Value="Compact">
+                    <Setter Property="ContentTemplate" Value="{StaticResource compactTemplate}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Style>
 </UserControl>

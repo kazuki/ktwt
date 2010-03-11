@@ -1559,4 +1559,24 @@ namespace TwitterStreaming
 			throw new NotSupportedException ();
 		}
 	}
+
+	public class ScrollBarVisibilityConverter : IValueConverter
+	{
+		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			ScrollBarVisibility v;
+			if (value is string)
+				v = (ScrollBarVisibility)Enum.Parse (typeof (ScrollBarVisibility), (string)value);
+			else
+				v = (ScrollBarVisibility)value;
+			return v == ScrollBarVisibility.Disabled ? false : true;
+		}
+
+		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			bool visible = (bool)value;
+			return visible ? ScrollBarVisibility.Auto : ScrollBarVisibility.Disabled;
+		}
+	}
+
 }

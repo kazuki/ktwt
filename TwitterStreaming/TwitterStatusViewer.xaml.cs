@@ -16,9 +16,11 @@
  */
 
 using System;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
@@ -36,108 +38,80 @@ namespace TwitterStreaming
 		public event EventHandler<LinkClickEventArgs> LinkClick;
 		public event EventHandler<RoutedEventArgs> FavoriteIconClick;
 
-		public static readonly DependencyProperty StatusProperty =
-			DependencyProperty.Register ("Status", typeof (Status), typeof (TwitterStatusViewer), new PropertyMetadata (null, StatusPropertyChanged));
-		public Status Status {
-			get { return (Status)GetValue (StatusProperty); }
-			set { SetValue (StatusProperty, value); }
-		}
-
-		static Regex _urlRegex = new Regex (
+		#region Render Helper
+		public static Regex TweetRegex = new Regex (
 			@"(?<url>https?://[a-zA-Z0-9!#$%&'()=\-~^@`;\+:\*,\./\\?_]+)|" +
 			@"(?<username>(?<=^|[^a-zA-Z0-9_])@[a-zA-Z0-9_]+)|" +
 			@"(?<hashtag>(?<=^|[^a-zA-Z0-9\&\/])#[a-zA-Z0-9_]+)", RegexOptions.Compiled);
-		static void StatusPropertyChanged (DependencyObject d, DependencyPropertyChangedEventArgs e) {
-			TwitterStatusViewer self = (TwitterStatusViewer)d;
-			Status s = (Status)e.NewValue;
-			if (s == null) return;
-			Status s1 = s;
-			if (s.RetweetedStatus != null)
-				s = s.RetweetedStatus;
 
-			// Reset
-			self.userImage.Source = null;
-			self.userImage.Visibility = Visibility.Visible;
-			self.nameTextBlock.Inlines.Clear ();
-			self.postTextBlock.Inlines.Clear ();
+		public ToggleButton CreateFavoriteButton (Status s)
+		{
+			ToggleButton b = new ToggleButton ();
+			Binding fontSizeBinding = CreateBinding (this, FontSizeProperty.Name, BindingMode.OneWay);
+			b.SetBinding (ToggleButton.WidthProperty, fontSizeBinding);
+			b.SetBinding (ToggleButton.HeightProperty, fontSizeBinding);
+			Binding favBinding = CreateBinding (s, "IsFavorited", BindingMode.OneWay);
+			b.SetBinding (ToggleButton.IsCheckedProperty, favBinding);
+			b.Margin = new Thickness (0, 0, 3, 0);
+			b.VerticalAlignment = VerticalAlignment.Center;
+			b.Click += isFav_Click;
+			b.Style = (Style)Resources["favoriteButton"];
+			return b;
+		}
 
-			if (s.User.ProfileImageUrl != null) {
-				self.userImage.Source = IconCache.GetImage (s.User.ID, s.User.ProfileImageUrl);
-				self.IconVisibilityCheck ();
-			}
+		public Run CreateTextBlock (string text, FontWeight weight)
+		{
+			return CreateTextBlock (text, weight, null);
+		}
 
-			FontWeight defWeight = self.nameTextBlock.FontWeight;
-			RoutedEventHandler defLinkHandler = new RoutedEventHandler (self.Hyperlink_Click);
-			InlineCollection nameInlines = self.nameTextBlock.Inlines;
-			nameInlines.Add (self.CreateHyperlink (s.User.ScreenName + " [" + s.User.Name + "]", "/" + s.User.ScreenName, NameForegroundProperty, defWeight, defLinkHandler));
-			if (!string.IsNullOrEmpty (s.InReplyToScreenName)) {
-				nameInlines.Add (CreateTextBlock (" in reply to ", FontWeights.Normal));
-				nameInlines.Add (self.CreateHyperlink ("@" + s.InReplyToScreenName, "/" + s.InReplyToScreenName + (s.InReplyToStatusId == 0 ? string.Empty : "/status/" + s.InReplyToStatusId.ToString ()), NameForegroundProperty, defWeight, defLinkHandler));
-			}
-			if (s != s1) {
-				nameInlines.Add (CreateTextBlock (" retweeted by ", FontWeights.Normal));
-				nameInlines.Add (self.CreateHyperlink ("@" + s1.User.ScreenName, "/" + s1.User.ScreenName, NameForegroundProperty, defWeight, defLinkHandler));
-			}
-			if (s.Source != null) {
-				int p1 = s.Source.IndexOf ('>');
-				int p2 = s.Source.IndexOf ('<', Math.Max (0, p1));
-				string appName = s.Source;
-				if (p1 >= 0 && p2 > 0)
-					appName = s.Source.Substring (p1 + 1, p2 - p1 - 1);
-				p1 = s.Source.IndexOf ('\"');
-				p2 = s.Source.IndexOf ('\"', Math.Max (0, p1 + 1));
-				nameInlines.Add (CreateTextBlock (" from ", FontWeights.Normal));
-				if (p1 >= 0 && p2 > 0) {
-					nameInlines.Add (self.CreateHyperlink (appName, s.Source.Substring (p1 + 1, p2 - p1 - 1), NameForegroundProperty, defWeight, defLinkHandler));
-				} else {
-					nameInlines.Add (appName);
-				}
-			}
-			nameInlines.Add (CreateTextBlock (" (" + s.CreatedAt.ToString ("MM/dd HH:mm:ss") + ")", FontWeights.Normal));
+		public Run CreateTextBlock (string text, FontWeight weight, DependencyProperty foreground)
+		{
+			Run x = new Run (text);
+			x.FontWeight = weight;
+			if (foreground != null)
+				x.SetBinding (Run.ForegroundProperty, CreateBinding (this, foreground.Name, BindingMode.OneWay));
+			return x;
+		}
 
-			InlineCollection inlines = self.postTextBlock.Inlines;
-			Match m = _urlRegex.Match (s.Text);
+		public Hyperlink CreateHyperlink (string text, string url, DependencyProperty foreground, FontWeight weight, RoutedEventHandler handler)
+		{
+			Hyperlink link = new Hyperlink ();
+			link.SetBinding (Hyperlink.ForegroundProperty, CreateBinding (this, foreground.Name, BindingMode.OneWay));
+			link.Inlines.Add (text);
+			link.Tag = url;
+			link.Click += handler;
+			link.FontWeight = weight;
+			return link;
+		}
+
+		public static Binding CreateBinding (object source, string path, BindingMode mode)
+		{
+			Binding binding = new Binding (path);
+			binding.Source = source;
+			binding.Mode = mode;
+			return binding;
+		}
+
+		public void CreateTweetBody (string text, InlineCollection inlines)
+		{
+			Match m = TwitterStatusViewer.TweetRegex.Match (text);
 			int last = 0;
 			while (m.Success) {
-				inlines.Add (s.Text.Substring (last, m.Index - last));
+				inlines.Add (text.Substring (last, m.Index - last));
 				if (m.Success) {
-					Hyperlink link = self.CreateHyperlink (m.Value, m.Value, LinkForegroundProperty, self.postTextBlock.FontWeight, self.Hyperlink_Click);
+					Hyperlink link = CreateHyperlink (m.Value, m.Value, TwitterStatusViewer.LinkForegroundProperty, this.FontWeight, Hyperlink_Click);
 					inlines.Add (link);
-					/*if (m.Groups["url"].Success) {
-						link.Foreground = self.LinkForeground;
-					} else if (m.Groups["username"].Success) {
-						link.Foreground = self.LinkForeground;
-					} else if (m.Groups["hashtag"].Success) {
-						link.Foreground = self.LinkForeground;
-					}*/
 				}
 
 				last = m.Index + m.Length;
 				m = m.NextMatch ();
 			}
-			inlines.Add (s.Text.Substring (last));
+			inlines.Add (text.Substring (last));
 		}
+		#endregion
 
-		static Run CreateTextBlock (string text, FontWeight weight)
-		{
-			Run x = new Run (text);
-			x.FontWeight = weight;
-			return x;
-		}
-
-		Hyperlink CreateHyperlink (string text, string url, DependencyProperty foreground, FontWeight weight, RoutedEventHandler handler)
-		{
-			Hyperlink link = new Hyperlink ();
-			Binding binding = new Binding (foreground.Name);
-			binding.Source = this;
-			link.SetBinding (Hyperlink.ForegroundProperty, binding);
-			link.Inlines.Add (text);
-			link.Tag = url;
-			link.Click += handler;
-			return link;
-		}
-
-		void Hyperlink_Click (object sender, RoutedEventArgs e)
+		#region Event Handlers
+		public void Hyperlink_Click (object sender, RoutedEventArgs e)
 		{
 			if (LinkClick != null)
 				LinkClick (this, new LinkClickEventArgs ((sender as Hyperlink).Tag as string));
@@ -151,6 +125,7 @@ namespace TwitterStreaming
 				FavoriteIconClick (DataContext, e);
 			} catch {}
 		}
+		#endregion
 
 		#region Colors
 		public static readonly DependencyProperty NameForegroundProperty =
@@ -196,8 +171,207 @@ namespace TwitterStreaming
 
 		void IconVisibilityCheck ()
 		{
-			userImage.Visibility = (IconSize >= MinimumIconSize ? Visibility.Visible : Visibility.Collapsed);
+			//userImage.Visibility = (IconSize >= MinimumIconSize ? Visibility.Visible : Visibility.Collapsed);
 		}
 		#endregion
+
+		#region View Style
+		const FrameworkPropertyMetadataOptions AffectsAll = FrameworkPropertyMetadataOptions.AffectsArrange | FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.AffectsRender;
+
+		public static readonly DependencyProperty ViewModeProperty =
+			DependencyProperty.Register ("ViewMode", typeof (StatusViewMode), typeof (TwitterStatusViewer), new FrameworkPropertyMetadata (StatusViewMode.Normal, AffectsAll, PropertyChanged));
+		public StatusViewMode ViewMode {
+			get { return (StatusViewMode)GetValue (ViewModeProperty); }
+			set { SetValue (ViewModeProperty, value); }
+		}
+
+		static void PropertyChanged (DependencyObject d, DependencyPropertyChangedEventArgs e)
+		{
+		}
+		#endregion
+
+		#region Misc
+		public Status Status {
+			get { return DataContext as Status; }
+		}
+		#endregion
+	}
+
+	public enum StatusViewMode
+	{
+		Normal,
+		Compact
+	}
+
+	public class TweetProfileImage : Image
+	{
+		public static readonly DependencyProperty OwnerProperty =
+			DependencyProperty.Register ("Owner", typeof (TwitterStatusViewer), typeof (TweetProfileImage), new PropertyMetadata (new PropertyChangedCallback (OnOwnerChanged)));
+		public TwitterStatusViewer Owner {
+			get { return (TwitterStatusViewer)GetValue (OwnerProperty); }
+			set { SetValue (OwnerProperty, value); }
+		}
+
+		private static void OnOwnerChanged (DependencyObject d, DependencyPropertyChangedEventArgs e)
+		{
+			TweetProfileImage self = (TweetProfileImage)d;
+			self.Render ();
+		}
+
+		void Render ()
+		{
+			if (Owner == null) {
+				Source = null;
+				return;
+			}
+			Status s = Owner.DataContext as Status;
+			if (s == null)
+				return;
+			Source = IconCache.GetImage (s.User.ID, s.User.ProfileImageUrl);
+		}
+	}
+
+	public abstract class TweetTextBlockBase : TextBlock
+	{
+		public static readonly DependencyProperty OwnerProperty =
+			DependencyProperty.Register ("Owner", typeof (TwitterStatusViewer), typeof (TweetTextBlockBase), new PropertyMetadata (new PropertyChangedCallback (OnOwnerChanged)));
+		public TwitterStatusViewer Owner {
+			get { return (TwitterStatusViewer)GetValue (OwnerProperty); }
+			set { SetValue (OwnerProperty, value); }
+		}
+
+		private static void OnOwnerChanged (DependencyObject d, DependencyPropertyChangedEventArgs e)
+		{
+			TweetTextBlockBase self = (TweetTextBlockBase)d;
+			self.Render ();
+		}
+
+		protected abstract void Render ();
+	}
+
+	public class TweetNameTextBlock : TweetTextBlockBase
+	{
+		protected override void Render ()
+		{
+			InlineCollection inlines = Inlines;
+			inlines.Clear ();
+
+			TwitterStatusViewer v = Owner;
+			if (v == null) return;
+			Status s = v.DataContext as Status;
+			if (s == null) return;
+			Status s1 = s;
+			if (s.RetweetedStatus != null)
+				s = s.RetweetedStatus;
+
+			FontWeight defWeight = this.FontWeight;
+			RoutedEventHandler defLinkHandler = new RoutedEventHandler (v.Hyperlink_Click);
+			DependencyProperty nameFg = TwitterStatusViewer.NameForegroundProperty;
+
+			Inlines.Add (v.CreateHyperlink (s.User.ScreenName + " [" + s.User.Name + "]", "/" + s.User.ScreenName, nameFg, defWeight, defLinkHandler));
+			if (!string.IsNullOrEmpty (s.InReplyToScreenName)) {
+				Inlines.Add (v.CreateTextBlock (" in reply to ", FontWeights.Normal));
+				Inlines.Add (v.CreateHyperlink ("@" + s.InReplyToScreenName, "/" + s.InReplyToScreenName + (s.InReplyToStatusId == 0 ? string.Empty : "/status/" + s.InReplyToStatusId.ToString ()), nameFg, defWeight, defLinkHandler));
+			}
+			if (s != s1) {
+				Inlines.Add (v.CreateTextBlock (" retweeted by ", FontWeights.Normal));
+				Inlines.Add (v.CreateHyperlink ("@" + s1.User.ScreenName, "/" + s1.User.ScreenName, nameFg, defWeight, defLinkHandler));
+			}
+			if (s.Source != null) {
+				int p1 = s.Source.IndexOf ('>');
+				int p2 = s.Source.IndexOf ('<', Math.Max (0, p1));
+				string appName = s.Source;
+				if (p1 >= 0 && p2 > 0)
+					appName = s.Source.Substring (p1 + 1, p2 - p1 - 1);
+				p1 = s.Source.IndexOf ('\"');
+				p2 = s.Source.IndexOf ('\"', Math.Max (0, p1 + 1));
+				Inlines.Add (v.CreateTextBlock (" from ", FontWeights.Normal));
+				if (p1 >= 0 && p2 > 0) {
+					Inlines.Add (v.CreateHyperlink (appName, s.Source.Substring (p1 + 1, p2 - p1 - 1), nameFg, defWeight, defLinkHandler));
+				} else {
+					Inlines.Add (appName);
+				}
+			}
+			Inlines.Add (v.CreateTextBlock (" (" + s.CreatedAt.ToString ("MM/dd HH:mm:ss") + ")", FontWeights.Normal));
+		}
+	}
+
+	public class TweetBodyTextBlock : TweetTextBlockBase
+	{
+		protected override void Render ()
+		{
+			InlineCollection inlines = Inlines;
+			inlines.Clear ();
+
+			TwitterStatusViewer v = Owner;
+			if (v == null) return;
+			Status s = v.DataContext as Status;
+			if (s == null) return;
+			Status s1 = s;
+			if (s.RetweetedStatus != null)
+				s = s.RetweetedStatus;
+
+			v.CreateTweetBody (s.Text, inlines);
+		}
+	}
+
+	public class TweetCompactTextBlock : TweetTextBlockBase
+	{
+		protected override void Render ()
+		{
+			InlineCollection inlines = Inlines;
+			while (inlines.Count > 1)
+				inlines.Remove (inlines.LastInline);
+
+			TwitterStatusViewer v = Owner;
+			if (v == null) return;
+			Status s = v.DataContext as Status;
+			if (s == null) return;
+			Status s1 = s;
+			if (s.RetweetedStatus != null)
+				s = s.RetweetedStatus;
+
+			// 改行や連続する空白を削除
+			string text = s.Text;
+			StringBuilder sb = new StringBuilder (text.Length);
+			int state = 0;
+			for (int i = 0; i < text.Length; i ++) {
+				char c = text[i];
+				if (c == '\r' || c == '\n') continue;
+				if (char.IsWhiteSpace (c)) {
+					if (state == 1) continue;
+					state = 1;
+				} else {
+					state = 0;
+				}
+				sb.Append (text[i]);
+			}
+			text = sb.ToString ();
+
+			// Favoriteアイコン
+			ToggleButton favBtn = v.CreateFavoriteButton (s);
+			favBtn.Margin = new Thickness (0, 0, 3, 0);
+			inlines.Add (favBtn);
+
+			// 名前を追加
+			RoutedEventHandler defLinkHandler = new RoutedEventHandler (v.Hyperlink_Click);
+			DependencyProperty nameFg = TwitterStatusViewer.NameForegroundProperty;
+			inlines.Add (v.CreateHyperlink (s.User.ScreenName, "/" + s.User.ScreenName, nameFg, FontWeights.Bold, defLinkHandler));
+			inlines.Add (" ");
+
+			// 本文を追加
+			v.CreateTweetBody (text, inlines);
+
+			// 返信情報を追加
+			if (!string.IsNullOrEmpty (s.InReplyToScreenName)) {
+				inlines.Add (v.CreateTextBlock (" in reply to ", FontWeights.Normal, nameFg));
+				inlines.Add (v.CreateHyperlink ("@" + s.InReplyToScreenName, "/" + s.InReplyToScreenName + (s.InReplyToStatusId == 0 ? string.Empty : "/status/" + s.InReplyToStatusId.ToString ()), nameFg, FontWeights.Bold, defLinkHandler));
+			}
+			if (s != s1) {
+				inlines.Add (v.CreateTextBlock (" RT by ", FontWeights.Normal, nameFg));
+				inlines.Add (v.CreateHyperlink ("@" + s1.User.ScreenName, "/" + s1.User.ScreenName, nameFg, FontWeights.Bold, defLinkHandler));
+			}
+
+		}
 	}
 }
