@@ -118,8 +118,10 @@ namespace TwitterStreaming
 					item = new CacheItem (key, _create (key));
 					_lru.AddLast (item.Node);
 					_cache.Add (key, item);
-					if (_cache.Count > _max_entries)
+					if (_cache.Count > _max_entries) {
+						_cache.Remove (_lru.First.Value.Key);
 						_lru.RemoveFirst ();
+					}
 					return item.Value;
 				}
 			}
