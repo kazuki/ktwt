@@ -21,6 +21,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -42,6 +43,8 @@ namespace TwitterStreaming
 
 		Status _replyInfo;
 		string _replyName;
+
+		public static Regex UrlRegex = new Regex (@"(?<url>https?://[a-zA-Z0-9!#$%&'()=\-~^@`;\+:\*,\./\\?_]+)", RegexOptions.Compiled);
 
 		public MainWindow ()
 		{
@@ -677,6 +680,20 @@ namespace TwitterStreaming
 			TwitterAccount account = (TwitterAccount)items[1];
 			User dmTo = items[2] as User;
 			Status status = null;
+
+			if (txt.Length > TwitterClient.MaxStatusLength) {
+				txt = UrlRegex.Replace (txt, delegate (Match m) {
+					string url = UrlShortener.Shortener (UrlShortenerServices.toly, m.Value).ToString ();
+					Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
+						postTextBox.Text = postTextBox.Text.Replace (m.Value, url);
+					}));
+					return url;
+				});
+				Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
+					postTextBox.Text = txt;
+				}));
+			}
+
 			try {
 				if (dmTo == null) {
 					status = account.TwitterClient.Update (txt, (_replyInfo == null ? (ulong?)null : _replyInfo.ID), null, null);

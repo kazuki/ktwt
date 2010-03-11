@@ -168,6 +168,7 @@
     <Compile Include="Twitter\Status.cs" />
     <Compile Include="Twitter\TwitterClient.cs" />
     <Compile Include="Twitter\User.cs" />
+    <Compile Include="UrlShortener.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
