@@ -249,34 +249,40 @@
                 <RowDefinition />
                 <RowDefinition />
             </Grid.RowDefinitions>
-            <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3">
-                <ComboBox x:Name="postAccount">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Path=Credential.UserName}" />
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-                
-                <TextBlock Margin="10 0 2 0" VerticalAlignment="Center">HashTag:</TextBlock>
-                <ComboBox x:Name="cbHashTag" ItemsSource="{Binding ElementName=mw, Path=HashTagList}" SelectionChanged="cbHashTag_SelectionChanged" />
-                
-                <TextBlock Margin="10 0 2 0" VerticalAlignment="Center">DirectMessage:</TextBlock>
-                <ComboBox x:Name="cbDMto" SelectionChanged="cbDMto_SelectionChanged" ItemsSource="{Binding Source={StaticResource followingViewSource}}" IsSynchronizedWithCurrentItem="False">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <Image Source="{Binding Converter={StaticResource iconCacheConverter}}" Width="20" Height="20" VerticalAlignment="Center" />
-                                <TextBlock Text="{Binding ScreenName}" VerticalAlignment="Center" Margin="5 0 5 0" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
+            <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" Grid.Column="0">
+                    <ComboBox x:Name="postAccount">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=Credential.UserName}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
 
-                <Button Click="ClearButton_Click" Margin="10 0 0 0" VerticalAlignment="Center">Clear</Button>
+                    <TextBlock Margin="10 0 2 0" VerticalAlignment="Center">HashTag:</TextBlock>
+                    <ComboBox x:Name="cbHashTag" ItemsSource="{Binding ElementName=mw, Path=HashTagList}" SelectionChanged="cbHashTag_SelectionChanged" />
+
+                    <TextBlock Margin="10 0 2 0" VerticalAlignment="Center">DirectMessage:</TextBlock>
+                    <ComboBox x:Name="cbDMto" SelectionChanged="cbDMto_SelectionChanged" ItemsSource="{Binding Source={StaticResource followingViewSource}}" IsSynchronizedWithCurrentItem="False">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="{Binding Converter={StaticResource iconCacheConverter}}" Width="20" Height="20" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding ScreenName}" VerticalAlignment="Center" Margin="5 0 5 0" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <Button Click="ClearButton_Click" Margin="10 0 0 0" VerticalAlignment="Center">Clear</Button>
+                </StackPanel>
                 
-                <TextBlock x:Name="postLengthText" Margin="10 0 0 0" VerticalAlignment="Center" />
-            </StackPanel>
+                <TextBlock Grid.Column="1" x:Name="postLengthText" VerticalAlignment="Center" Margin="0 0 10 0" />
+            </Grid>
             <TextBox Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" x:Name="postTextBox"
                      VerticalContentAlignment="Center"
                      KeyDown="postTextBox_KeyDown" TextChanged="postTextBox_TextChanged"
