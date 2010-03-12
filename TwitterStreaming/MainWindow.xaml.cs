@@ -1485,7 +1485,7 @@ namespace TwitterStreaming
 			get { return _selectedItem; }
 			set {
 				_selectedItem = value;
-				if (value.Title != value.BaseTitle)
+				if (value != null && value.Title != value.BaseTitle)
 					value.Title = value.BaseTitle;
 				InvokePropertyChanged ("SelectedItem");
 			}
