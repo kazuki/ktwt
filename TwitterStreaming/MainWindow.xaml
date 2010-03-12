@@ -127,11 +127,12 @@
                                     
                                     <TextBlock Grid.Column="0" Grid.Row="7" Margin="5">Style Mode:</TextBlock>
                                     <ComboBox  Grid.Column="1" Grid.Row="7"
-                                               VerticalAlignment="Center" SelectedIndex="0" x:Name="statusViewStyle" 
+                                               VerticalAlignment="Center" x:Name="statusViewStyle" 
+                                               SelectedItem="{Binding StatusViewMode}"
                                                ItemsSource="{Binding Source={StaticResource statusViewStyleEnum}}" />
 
                                     <CheckBox Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="8" Margin="5"
-                                              IsChecked="{Binding ElementName=tweetList, Path=(ScrollViewer.HorizontalScrollBarVisibility), Converter={StaticResource scrollBarVisibilityConverter}}">
+                                              IsChecked="{Binding ShowHorizonScrollBar}">
                                         <Run>Show Horizon ScrollBar</Run>
                                     </CheckBox>
 
@@ -144,7 +145,8 @@
                 <ListBox Background="{Binding ElementName=mw, Path=Background}" Grid.Row="1" SelectionMode="Single"
                          HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                          ItemsSource="{Binding Path=Statuses}" IsSynchronizedWithCurrentItem="True"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" x:Name="tweetList"
+                         ScrollViewer.HorizontalScrollBarVisibility="{Binding ShowHorizonScrollBar, Converter={StaticResource scrollBarVisibilityConverter}, Mode=OneWay}"
+                         x:Name="tweetList"
                          KeyDown="TimeLine_KeyDown" ContextMenuOpening="TimeLine_ContextMenuOpening">
                     <ListBox.ContextMenu>
                         <ContextMenu>
@@ -170,7 +172,7 @@
                                                    NameForeground="{Binding ElementName=mw, Path=NameForeground}" LinkForeground="{Binding ElementName=mw, Path=LinkForeground}"
                                                    Foreground="{Binding ElementName=mw, Path=PostForeground}" Background="{Binding ElementName=mw, Path=PostBackground}"
                                                    IconSize="{Binding ElementName=mw, Path=IconSize}" Margin="0 1 0 1"
-                                                   ViewMode="{Binding ElementName=statusViewStyle, Path=SelectedItem}" />
+                                                   ViewMode="{Binding ElementName=tweetList, Path=DataContext.StatusViewMode, Mode=OneWay}" />
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>

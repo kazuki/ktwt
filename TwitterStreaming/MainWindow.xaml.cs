@@ -1435,6 +1435,26 @@ namespace TwitterStreaming
 			}
 		}
 
+		bool _showHorizonScrollBar = false;
+		public bool ShowHorizonScrollBar {
+			get { return _showHorizonScrollBar; }
+			set {
+				if (_showHorizonScrollBar == value)
+					return;
+				_showHorizonScrollBar = value;
+				InvokePropertyChanged ("ShowHorizonScrollBar");
+			}
+		}
+
+		StatusViewMode _viewMode = StatusViewMode.Normal;
+		public StatusViewMode StatusViewMode {
+			get { return _viewMode; }
+			set {
+				_viewMode = value;
+				InvokePropertyChanged ("StatusViewMode");
+			}
+		}
+
 		public override void NoticeNewPost (TimelineBase source)
 		{
 			if (Owner != null)
@@ -1581,18 +1601,13 @@ namespace TwitterStreaming
 	{
 		public object Convert (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{
-			ScrollBarVisibility v;
-			if (value is string)
-				v = (ScrollBarVisibility)Enum.Parse (typeof (ScrollBarVisibility), (string)value);
-			else
-				v = (ScrollBarVisibility)value;
-			return v == ScrollBarVisibility.Disabled ? false : true;
+			bool visible = (bool)value;
+			return visible ? ScrollBarVisibility.Auto : ScrollBarVisibility.Disabled;
 		}
 
 		public object ConvertBack (object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{
-			bool visible = (bool)value;
-			return visible ? ScrollBarVisibility.Auto : ScrollBarVisibility.Disabled;
+			throw new NotSupportedException ();
 		}
 	}
 
