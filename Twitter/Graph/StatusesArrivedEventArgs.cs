@@ -17,12 +17,19 @@
 
 using System;
 
-namespace ktwt.Twitter
+namespace ktwt.Twitter.Graph
 {
-	public interface IStatusSource : IDisposable
+	public class StatusesArrivedEventArgs : EventArgs
 	{
-		event EventHandler<StatusesArrivedEventArgs> StatusesArrived;
+		public StatusesArrivedEventArgs (Status status) : this (new Status[] {status})
+		{
+		}
 
-		string Name { get; }
+		public StatusesArrivedEventArgs (Status[] statuses)
+		{
+			Statuses = statuses;
+		}
+
+		public Status[] Statuses { get; private set; }
 	}
 }
