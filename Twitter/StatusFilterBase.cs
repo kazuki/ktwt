@@ -66,6 +66,10 @@ namespace ktwt.Twitter
 		#region Public Members
 		public IStatusSource[] StatusSources { get; private set; }
 
+		public object Config { get; set; }
+
+		public abstract string Name { get; }
+
 		public void Dispose ()
 		{
 			IStatusSource[] sources = StatusSources;

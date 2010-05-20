@@ -22,5 +22,7 @@ namespace ktwt.Twitter
 	public interface IStatusSource : IDisposable
 	{
 		event EventHandler<StatusesArrivedEventArgs> StatusesArrived;
+
+		string Name { get; }
 	}
 }
