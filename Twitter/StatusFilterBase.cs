@@ -22,21 +22,9 @@ namespace ktwt.Twitter
 {
 	public abstract class StatusFilterBase : IStatusSource
 	{
+		IStatusSource[] _sources = new IStatusSource[0];
+		object _configRaw = null;
 		public event EventHandler<StatusesArrivedEventArgs> StatusesArrived;
-
-		public StatusFilterBase (IStatusSource source) : this (new IStatusSource[]{source})
-		{
-		}
-
-		public StatusFilterBase (IStatusSource[] sources)
-		{
-			if (sources == null) throw new ArgumentNullException ();
-			if (sources.Length == 0) throw new ArgumentException ();
-
-			StatusSources = sources;
-			for (int i = 0; i < sources.Length; i ++)
-				sources[i].StatusesArrived += Source_StatusesArrived;
-		}
 
 		#region Filter
 		void Source_StatusesArrived (object sender, StatusesArrivedEventArgs e)
@@ -61,19 +49,37 @@ namespace ktwt.Twitter
 		}
 
 		protected abstract Status FilterProcess (Status status);
+		protected virtual void UpdateConfiguration (object newConfig)
+		{
+		}
 		#endregion
 
 		#region Public Members
-		public IStatusSource[] StatusSources { get; private set; }
+		public IStatusSource[] StatusSources {
+			get { return _sources; }
+		}
 
-		public object Config { get; set; }
+		public void AddStatusSource (IStatusSource source)
+		{
+			source.StatusesArrived += Source_StatusesArrived;
+			Array.Resize<IStatusSource> (ref _sources, _sources.Length + 1);
+			_sources[_sources.Length - 1] = source;
+		}
+
+		public object Configuration {
+			get { return _configRaw; }
+			set {
+				UpdateConfiguration (value);
+				_configRaw = value;
+			}
+		}
 
 		public abstract string Name { get; }
 
 		public void Dispose ()
 		{
-			IStatusSource[] sources = StatusSources;
-			StatusSources = null;
+			IStatusSource[] sources = _sources;
+			_sources = null;
 			if (sources != null) {
 				for (int i = 0; i < sources.Length; i++)
 					sources[i].StatusesArrived -= Source_StatusesArrived;
