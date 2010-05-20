@@ -23,7 +23,7 @@ using System.Text;
 
 namespace ktwt.OAuth
 {
-	public class OAuthClient : OAuthBase, ISimpleWebClient
+	public class OAuthClient : OAuthBase, ktwt.Net.ISimpleWebClient
 	{
 		string _consumerKey, _consumerSecret, _requestToken, _requestTokenSecret;
 		Uri _requestTokenUri, _accessTokenUri, _authorizeUri, _xauthUri;

@@ -16,26 +16,11 @@
  */
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace ktwt.Json
+namespace ktwt.Twitter
 {
-	public class JsonObject : JsonValue
+	public interface IStatusSource : IDisposable
 	{
-		Dictionary<string, JsonValue> _dic;
-
-		public JsonObject (Dictionary<string, JsonValue> dic)
-		{
-			_dic = dic;
-		}
-
-		public override JsonValueType ValueType {
-			get { return JsonValueType.Object; }
-		}
-
-		public Dictionary<string, JsonValue> Value {
-			get { return _dic; }
-		}
+		event EventHandler<StatusesArrivedEventArgs> StatusesArrived;
 	}
 }

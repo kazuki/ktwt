@@ -15,27 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ktwt.Json
 {
-	public class JsonBoolean : JsonValue
+	public class JsonArray : JsonValue
 	{
-		bool _value;
+		List<JsonValue> _array;
 
-		public JsonBoolean (bool value)
+		public JsonArray (List<JsonValue> array)
 		{
-			_value = value;
+			_array = array;
 		}
 
 		public override JsonValueType ValueType {
-			get { return JsonValueType.Boolean; }
+			get { return JsonValueType.Array; }
 		}
 
-		public bool Value {
-			get { return _value; }
+		public JsonValue this [int index] {
+			get { return _array[index]; }
+		}
+
+		public int Length {
+			get { return _array.Count; }
+		}
+
+		public List<JsonValue> Value {
+			get { return _array; }
 		}
 	}
 }

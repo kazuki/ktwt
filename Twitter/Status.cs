@@ -76,8 +76,6 @@ namespace ktwt.Twitter
 		[JsonObjectMapping ("retweeted_status", JsonValueType.Object)]
 		public Status RetweetedStatus { get; set; }
 
-		public object AccountInfo { get; set; }
-
 		public event PropertyChangedEventHandler PropertyChanged;
 	}
 }

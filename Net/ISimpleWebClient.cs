@@ -18,7 +18,7 @@
 using System;
 using System.Net;
 
-namespace ktwt
+namespace ktwt.Net
 {
 	public interface ISimpleWebClient
 	{

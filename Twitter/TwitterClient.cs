@@ -22,6 +22,7 @@ using System.IO;
 using System.Net;
 using System.Text;
 using ktwt.Json;
+using ktwt.Net;
 using ktwt.OAuth;
 
 namespace ktwt.Twitter
@@ -144,7 +145,7 @@ namespace ktwt.Twitter
 		Status[] GetStatus (Uri url, bool isDmMode)
 		{
 			string json = DownloadString (url, HTTP_GET, null);
-			JsonArray array = (JsonArray)new JsonValueReader (json).Read ();
+			JsonArray array = (JsonArray)JsonValueReader.Read (json);
 			Status[] statuses = new Status[array.Length];
 			for (int i = 0; i < array.Length; i++) {
 				JsonObject obj = (JsonObject)array[i];
@@ -168,7 +169,7 @@ namespace ktwt.Twitter
 		public Status Show (ulong id)
 		{
 			string json = DownloadString (new Uri (string.Format (StatusesShowURL, id)), HTTP_GET, null);
-			return JsonDeserializer.Deserialize<Status> ((JsonObject)new JsonValueReader (json).Read ());
+			return JsonDeserializer.Deserialize<Status> (json);
 		}
 
 		public Status Update (string status, ulong? in_reply_to_status_id, string geo_lat, string geo_long)
@@ -180,19 +181,19 @@ namespace ktwt.Twitter
 			if (geo_lat != null && geo_lat.Length > 0) query += "&lat=" + geo_lat;
 			if (geo_long != null && geo_long.Length > 0) query += "&long=" + geo_long;
 			string json = DownloadString (new Uri (StatusesUpdateURL + query), HTTP_POST, null);
-			return JsonDeserializer.Deserialize<Status> ((JsonObject)new JsonValueReader (json).Read ());
+			return JsonDeserializer.Deserialize<Status> (json);
 		}
 
 		public Status Destroy (ulong id)
 		{
 			string json = DownloadString (new Uri (string.Format (StatusesDestroyURL, id)), HTTP_POST, null);
-			return JsonDeserializer.Deserialize<Status> ((JsonObject)new JsonValueReader (json).Read ());
+			return JsonDeserializer.Deserialize<Status> (json);
 		}
 
 		public Status Retweet (ulong id)
 		{
 			string json = DownloadString (new Uri (string.Format (StatusesRetweetURL, id)), HTTP_POST, null);
-			return JsonDeserializer.Deserialize<Status> ((JsonObject)new JsonValueReader (json).Read ());
+			return JsonDeserializer.Deserialize<Status> (json);
 		}
 		#endregion
 
@@ -208,7 +209,7 @@ namespace ktwt.Twitter
 			else throw new ArgumentException ();
 
 			string json = DownloadString (new Uri (UsersShowURL + query), HTTP_GET, null);
-			return JsonDeserializer.Deserialize<User> ((JsonObject)new JsonValueReader (json).Read ());
+			return JsonDeserializer.Deserialize<User> (json);
 		}
 
 		public User[] GetFriends (ulong? user_id, string screen_name)
@@ -359,7 +360,7 @@ namespace ktwt.Twitter
 			if (show_user.HasValue && show_user.Value) query += "&show_user=" + show_user.Value.ToString ();
 
 			string json = DownloadStringWithoutAuthentication (new Uri (SearchURL + query), HTTP_GET, null);
-			JsonObject rootObj = (JsonObject)new JsonValueReader (json).Read ();
+			JsonObject rootObj = (JsonObject)JsonValueReader.Read (json);
 			JsonArray array = (JsonArray)rootObj.Value["results"];
 			Status[] statuses = new Status[array.Length];
 			for (int i = 0; i < array.Length; i++) {
@@ -406,7 +407,7 @@ namespace ktwt.Twitter
 				query = "?user_id=" + user_id.Value.ToString ();
 			query += "&text=" + OAuthBase.UrlEncode (text);
 			string json = DownloadString (new Uri (DirectMessageNewURL + query), HTTP_POST, null);
-			JsonObject obj = (JsonObject)new JsonValueReader (json).Read ();
+			JsonObject obj = (JsonObject)JsonValueReader.Read (json);
 			Status status = JsonDeserializer.Deserialize<Status> (obj);
 			SetDirectMessageInfo (status, obj);
 			return status;
@@ -425,7 +426,7 @@ namespace ktwt.Twitter
 				if (!force && _friendIDs != null)
 					return;
 				string json = DownloadString (FriendIDsURL, HTTP_GET, null);
-				JsonArray array = (JsonArray)new JsonValueReader (json).Read ();
+				JsonArray array = (JsonArray)JsonValueReader.Read (json);
 				ulong[] friends = new ulong[array.Length];
 				for (int i = 0; i < array.Length; i ++)
 					friends[i] = (ulong)(array[i] as JsonNumber).Value;
@@ -460,7 +461,7 @@ namespace ktwt.Twitter
 		public User VerifyCredentials ()
 		{
 			string json = DownloadString (AccountVerifyCredentialsURL, HTTP_GET, null);
-			return JsonDeserializer.Deserialize<User> ((JsonObject)new JsonValueReader (json).Read ());
+			return JsonDeserializer.Deserialize<User> (json);
 		}
 		#endregion
 
@@ -473,7 +474,7 @@ namespace ktwt.Twitter
 			if (page.HasValue) url += "?page=" + page.Value.ToString ();
 
 			string json = DownloadString (new Uri (url), HTTP_GET, null);
-			JsonArray array = (JsonArray)new JsonValueReader (json).Read ();
+			JsonArray array = (JsonArray)JsonValueReader.Read (json);
 			Status[] status = new Status[array.Length];
 			for (int i = 0; i < array.Length; i ++)
 				status[i] = JsonDeserializer.Deserialize<Status> ((JsonObject)array[i]);
@@ -483,7 +484,7 @@ namespace ktwt.Twitter
 		Status FavoritesExec (string url, ulong id)
 		{
 			string json = DownloadString (new Uri (string.Format (url, id)), HTTP_POST, null);
-			return JsonDeserializer.Deserialize<Status> ((JsonObject)new JsonValueReader (json).Read ());
+			return JsonDeserializer.Deserialize<Status> (json);
 		}
 
 		public Status FavoritesCreate (ulong id)
@@ -668,7 +669,7 @@ namespace ktwt.Twitter
 			List<T> list = new List<T> ();
 			while (true) {
 				string json = DownloadString (new Uri (url + query), HTTP_GET, null);
-				JsonObject obj = (JsonObject)new JsonValueReader (json).Read ();
+				JsonObject obj = (JsonObject)JsonValueReader.Read (json);
 				JsonArray array = (JsonArray)obj.Value[array_key];
 				for (int i = 0; i < array.Length; i++)
 					list.Add (JsonDeserializer.Deserialize<T> ((JsonObject)array[i]));

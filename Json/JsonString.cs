@@ -15,16 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace ktwt.Json
 {
-	public class JsonNull : JsonValue
+	public class JsonString : JsonValue
 	{
+		string _value;
+
+		public JsonString (string value)
+		{
+			_value = value;
+		}
+
 		public override JsonValueType ValueType {
-			get { return JsonValueType.Null; }
+			get { return JsonValueType.String; }
+		}
+
+		public string Value {
+			get { return _value; }
 		}
 	}
 }

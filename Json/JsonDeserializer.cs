@@ -30,6 +30,11 @@ namespace ktwt.Json
 		public const string DateTimeFormat = "ddd MMM dd HH:mm:ss zzzz yyyy";
 		public static IFormatProvider InvariantCulture = CultureInfo.InvariantCulture;
 
+		public static T Deserialize<T> (string text) where T : class, new ()
+		{
+			return Deserialize<T> ((JsonObject)JsonValueReader.Read (text));
+		}
+
 		public static T Deserialize<T> (JsonObject obj) where T : class, new ()
 		{
 			return (T)Deserialize (obj, typeof (T));

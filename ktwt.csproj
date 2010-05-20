@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{084D967D-10F5-4A86-A5B6-F5572D69409C}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ktwt</RootNamespace>
+    <AssemblyName>ktwt</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <WarningLevel>4</WarningLevel>
+    <StartupObject>
+    </StartupObject>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Json\JsonArray.cs" />
+    <Compile Include="Json\JsonBoolean.cs" />
+    <Compile Include="Json\JsonDeserializer.cs" />
+    <Compile Include="Json\JsonNull.cs" />
+    <Compile Include="Json\JsonNumber.cs" />
+    <Compile Include="Json\JsonObject.cs" />
+    <Compile Include="Json\JsonObjectMappingAttribute.cs" />
+    <Compile Include="Json\JsonString.cs" />
+    <Compile Include="Json\JsonTextWriter.cs" />
+    <Compile Include="Json\JsonValue.cs" />
+    <Compile Include="Json\JsonValueReader.cs" />
+    <Compile Include="Json\JsonValueType.cs" />
+    <Compile Include="Json\LitJSON\JsonException.cs" />
+    <Compile Include="Json\LitJSON\JsonReader.cs" />
+    <Compile Include="Json\LitJSON\Lexer.cs" />
+    <Compile Include="Json\LitJSON\ParserToken.cs" />
+    <Compile Include="Net\ISimpleWebClient.cs" />
+    <Compile Include="OAuth\OAuthBase.cs" />
+    <Compile Include="OAuth\OAuthClient.cs" />
+    <Compile Include="OAuth\OAuthCredentialCache.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="OAuth\OAuthPasswordCache.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="ConsumerKeyStore.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Twitter\IStatusSource.cs" />
+    <Compile Include="Twitter\IStreamingState.cs" />
+    <Compile Include="Twitter\ListInfo.cs" />
+    <Compile Include="Twitter\ListMode.cs" />
+    <Compile Include="Twitter\RestUsage.cs" />
+    <Compile Include="Twitter\Status.cs" />
+    <Compile Include="Twitter\StatusesArrivedEventArgs.cs" />
+    <Compile Include="Twitter\StatusFilterBase.cs" />
+    <Compile Include="Twitter\TwitterClient.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Twitter\User.cs" />
+    <AppDesigner Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Json\LitJSON\AUTHORS.txt" />
+    <Resource Include="Json\LitJSON\ChangeLog.txt" />
+    <Resource Include="Json\LitJSON\COPYING.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

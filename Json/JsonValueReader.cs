@@ -40,6 +40,21 @@ namespace ktwt.Json
 			_reader = reader;
 		}
 
+		public static JsonValue Read (string text)
+		{
+			return Read (new JsonReader (text));
+		}
+
+		public static JsonValue Read (TextReader reader)
+		{
+			return Read (new JsonReader (reader));
+		}
+
+		public static JsonValue Read (JsonReader reader)
+		{
+			return new JsonValueReader (reader).Read ();
+		}
+
 		public JsonValue Read ()
 		{
 			JsonValue cur = null;

@@ -16,26 +16,20 @@
  */
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace ktwt.Json
+namespace ktwt.Twitter
 {
-	public class JsonNumber : JsonValue
+	public class StatusesArrivedEventArgs : EventArgs
 	{
-		double _value;
-
-		public JsonNumber (double value)
+		public StatusesArrivedEventArgs (Status status) : this (new Status[] {status})
 		{
-			_value = value;
 		}
 
-		public override JsonValueType ValueType {
-			get { return JsonValueType.Number; }
+		public StatusesArrivedEventArgs (Status[] statuses)
+		{
+			Statuses = statuses;
 		}
 
-		public double Value {
-			get { return _value; }
-		}
+		public Status[] Statuses { get; private set; }
 	}
 }

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitterStreaming", "TwitterStreaming\TwitterStreaming.csproj", "{084D967D-10F5-4A86-A5B6-F5572D69409C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ktwt", "ktwt.csproj", "{084D967D-10F5-4A86-A5B6-F5572D69409C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
