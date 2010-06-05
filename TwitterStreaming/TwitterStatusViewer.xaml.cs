@@ -1,6 +1,10 @@
 ﻿/*
  * Copyright (C) 2010 Kazuki Oikawa
  * 
+ * Authors:
+ *    Kazuki Oikawa
+ *    @TKdo_ob
+ * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -16,6 +20,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -24,6 +29,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using ktwt.Twitter;
 
 namespace TwitterStreaming
@@ -43,6 +49,11 @@ namespace TwitterStreaming
 			@"(?<url>https?://[a-zA-Z0-9!#$%&'()=\-~^@`;\+:\*,\./\\?_]+)|" +
 			@"(?<username>(?<=^|[^a-zA-Z0-9_])@[a-zA-Z0-9_]+)|" +
 			@"(?<hashtag>(?<=^|[^a-zA-Z0-9\&\/])#[a-zA-Z0-9_]+)", RegexOptions.Compiled);
+		static readonly IInlineImageUrlHandler[] InlineImageSites = new IInlineImageUrlHandler[] {
+			new SimpleReplaceImageUrl ("http://twitpic.com/", "http://twitpic.com/show/thumb/", string.Empty),
+			new SimpleReplaceImageUrl ("http://movapic.com/pic/", "http://image.movapic.com/pic/m_", ".jpeg"),
+			new TweetPhotoHandler ()
+		};
 
 		public ToggleButton CreateFavoriteButton (Status s)
 		{
@@ -96,18 +107,83 @@ namespace TwitterStreaming
 		{
 			Match m = TwitterStatusViewer.TweetRegex.Match (text);
 			int last = 0;
+			List<Hyperlink> images = null;
 			while (m.Success) {
 				inlines.Add (text.Substring (last, m.Index - last));
 				if (m.Success) {
 					Hyperlink link = CreateHyperlink (m.Value, m.Value, TwitterStatusViewer.LinkForegroundProperty, this.FontWeight, Hyperlink_Click);
 					inlines.Add (link);
+
+					foreach (IInlineImageUrlHandler handler in InlineImageSites) {
+						string picurl = handler.Process (m.Value);
+						if (picurl == null)
+							continue;
+						Hyperlink imgLink = new Hyperlink {Tag = m.Value};
+						imgLink.Click += Hyperlink_Click;
+						imgLink.Inlines.Add (new Image {
+							Source = new BitmapImage (new Uri (picurl)),
+							Stretch = Stretch.Uniform,
+							MaxWidth = 50,
+							MaxHeight = 50
+						});
+						if (images == null) images = new List<Hyperlink> ();
+						images.Add (imgLink);
+						break;
+					}
 				}
 
 				last = m.Index + m.Length;
 				m = m.NextMatch ();
 			}
 			inlines.Add (text.Substring (last));
+
+			if (images != null) {
+				inlines.Add (Environment.NewLine);
+				for (int i = 0; i < images.Count; i ++)
+					inlines.Add (images[i]);
+			}
 		}
+
+		#region Inline Image Site Preferences
+		interface IInlineImageUrlHandler
+		{
+			string Process (string url);
+		}
+		sealed class SimpleReplaceImageUrl : IInlineImageUrlHandler
+		{
+			string _prefix, _new_prefix, _suffix;
+
+			public SimpleReplaceImageUrl (string old_prefix, string new_prefix, string append_suffix)
+			{
+				_prefix = old_prefix;
+				_new_prefix = new_prefix;
+				_suffix = append_suffix;
+			}
+
+			public string Process (string url)
+			{
+				if (!url.StartsWith (_prefix))
+					return null;
+				return url.Replace (_prefix, _new_prefix) + _suffix;
+			}
+		}
+		sealed class TweetPhotoHandler : IInlineImageUrlHandler
+		{
+			const string _prefix = "http://tweetphoto.com/";
+			static Regex _regex = new Regex (_prefix + @"(?<id>\d+)", RegexOptions.Compiled);
+
+			public string Process (string url)
+			{
+				if (!url.StartsWith (_prefix))
+					return null;
+				Match m = _regex.Match (url);
+				ulong id;
+				if (!m.Success || !m.Groups["id"].Success || !ulong.TryParse (m.Groups["id"].Value, out id))
+					return null;
+				return "http://cdn.cloudfiles.mosso.com/c54112/x2_" + id.ToString ("x");
+			}
+		}
+		#endregion
 		#endregion
 
 		#region Event Handlers
