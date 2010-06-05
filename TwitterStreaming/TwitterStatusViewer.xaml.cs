@@ -303,6 +303,8 @@ namespace TwitterStreaming
 			Status s = Owner.DataContext as Status;
 			if (s == null)
 				return;
+			if (s.RetweetedStatus != null)
+				s = s.RetweetedStatus;
 			Source = IconCache.GetImage (s.User.ID, s.User.ProfileImageUrl);
 		}
 	}
