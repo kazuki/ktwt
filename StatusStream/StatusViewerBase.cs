@@ -18,7 +18,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace ktwt.Twitter.Graph
+namespace ktwt.StatusStream
 {
 	public abstract class StatusViewerBase : IStatusViewer
 	{

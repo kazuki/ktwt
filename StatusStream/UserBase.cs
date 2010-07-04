@@ -15,21 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-
-namespace ktwt.Twitter.Graph
+namespace ktwt.StatusStream
 {
-	public class StatusesArrivedEventArgs : EventArgs
+	public abstract class UserBase
 	{
-		public StatusesArrivedEventArgs (Status status) : this (new Status[] {status})
-		{
-		}
-
-		public StatusesArrivedEventArgs (Status[] statuses)
-		{
-			Statuses = statuses;
-		}
-
-		public Status[] Statuses { get; private set; }
+		public string Name { get; set; }
 	}
 }

@@ -17,7 +17,7 @@
 
 using System;
 
-namespace ktwt.Twitter.Graph
+namespace ktwt.StatusStream
 {
 	public abstract class StatusFilterBase : StatusViewerBase, IStatusSource
 	{
@@ -45,7 +45,7 @@ namespace ktwt.Twitter.Graph
 			}
 		}
 
-		protected abstract int FilterProcess (IStatusStream source, Status s);
+		protected abstract int FilterProcess (IStatusStream source, StatusBase s);
 
 		class InternalStatusSource : IStatusStream
 		{
@@ -56,12 +56,12 @@ namespace ktwt.Twitter.Graph
 				Name = name;
 			}
 
-			public void Raise (Status s)
+			public void Raise (StatusBase s)
 			{
-				Raise (new Status[] {s});
+				Raise (new StatusBase[] {s});
 			}
 
-			public void Raise (Status[] s)
+			public void Raise (StatusBase[] s)
 			{
 				if (StatusesArrived == null)
 					return;

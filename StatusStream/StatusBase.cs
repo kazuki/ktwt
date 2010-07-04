@@ -17,10 +17,12 @@
 
 using System;
 
-namespace ktwt.Twitter.Graph
+namespace ktwt.StatusStream
 {
-	public interface IStatusStream : INamedElement
+	public abstract class StatusBase
 	{
-		event EventHandler<StatusesArrivedEventArgs> StatusesArrived;
+		public UserBase User { get; set; }
+		public DateTime CreatedAt { get; set; }
+		public string Text { get; set; }
 	}
 }

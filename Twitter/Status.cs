@@ -18,10 +18,11 @@
 using System;
 using System.ComponentModel;
 using ktwt.Json;
+using ktwt.StatusStream;
 
 namespace ktwt.Twitter
 {
-	public class Status : INotifyPropertyChanged
+	public class Status : StatusBase, INotifyPropertyChanged
 	{
 		string _text = string.Empty;
 
@@ -30,15 +31,16 @@ namespace ktwt.Twitter
 		}
 
 		[JsonObjectMapping ("created_at", JsonValueType.String)]
-		public DateTime CreatedAt { get; set; }
+		DateTime CreatedAt_Internal {
+			set { CreatedAt = value; }
+		}
 
 		[JsonObjectMapping ("id", JsonValueType.Number)]
 		public ulong ID { get; set; }
 
 		[JsonObjectMapping ("text", JsonValueType.String)]
-		public string Text {
-			get { return _text; }
-			set { _text = value.Replace ("&lt;", "<").Replace ("&gt;", ">").Replace ("&quot;", "\"").Replace ("&amp;", "&"); }
+		string Text_Internal {
+			set { Text = value.Replace ("&lt;", "<").Replace ("&gt;", ">").Replace ("&quot;", "\"").Replace ("&amp;", "&"); }
 		}
 
 		[JsonObjectMapping ("source", JsonValueType.String)]
@@ -71,7 +73,9 @@ namespace ktwt.Twitter
 		}
 
 		[JsonObjectMapping ("user", JsonValueType.Object)]
-		public User User { get; set; }
+		User User_Internal {
+			set { User = value; }
+		}
 
 		[JsonObjectMapping ("retweeted_status", JsonValueType.Object)]
 		public Status RetweetedStatus { get; set; }

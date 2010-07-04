@@ -101,7 +101,7 @@ namespace ktwt.Json
 
 			public CacheEntry (Type t)
 			{
-				PropertyInfo[] properties = t.GetProperties ();
+				PropertyInfo[] properties = t.GetProperties (BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.SetField | BindingFlags.SetProperty);
 
 				List<PropertyInfo> list1 = new List<PropertyInfo> (properties.Length);
 				List<JsonObjectMappingAttribute> list2 = new List<JsonObjectMappingAttribute> (properties.Length);

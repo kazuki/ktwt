@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace ktwt.Twitter.Graph
+using System;
+
+namespace ktwt.StatusStream
 {
-	public interface IStatusViewer : INamedElement
+	public interface IStatusSource : INamedElement
 	{
-		void AddInputStream (IStatusStream strm);
-		void RemoveInputStream (IStatusStream strm);
-		IStatusStream[] InputStreams { get; }
+		IStatusStream[] OutputStreams { get; }
 	}
 }

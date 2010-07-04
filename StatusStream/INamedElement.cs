@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace ktwt.Twitter.Graph
+namespace ktwt.StatusStream
 {
 	public interface INamedElement
 	{
