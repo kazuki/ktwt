@@ -17,7 +17,7 @@
 
 namespace ktwt
 {
-	static class ConsumerKeyStore
+	static class AppKeyStore
 	{
 		public const string Key = "";
 		public const string Secret = "";
