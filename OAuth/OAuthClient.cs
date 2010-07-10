@@ -42,8 +42,12 @@ namespace ktwt.OAuth
 
 		public void UpdateRequestToken ()
 		{
-			WebClient client = new WebClient ();
-			Dictionary<string, string> res = ParseSimple (client.DownloadString (_requestTokenUri));
+			Dictionary<string, string> res;
+			using (HttpWebResponse response = GetResponse (_requestTokenUri, HTTP_GET, null, null, null, null, null)) {
+				using (StreamReader reader = new StreamReader (response.GetResponseStream (), Encoding.ASCII)) {
+					res = ParseSimple (reader.ReadToEnd ());
+				}
+			}
 			if (!res.ContainsKey (OAuthTokenKey) || !res.ContainsKey (OAuthTokenSecretKey))
 				throw new Exception ();
 			_requestToken = res[OAuthTokenKey];
