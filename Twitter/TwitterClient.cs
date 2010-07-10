@@ -499,25 +499,9 @@ namespace ktwt.Twitter
 		#endregion
 
 		#region Streaming API
-		public IStreamingState StartStreaming (Uri uri, string method, string postData)
+		public IStreamingState StartStreaming (Uri uri, string method)
 		{
-			return StartStreaming (uri, method, postData, _client.Credentials);
-		}
-
-		public IStreamingState StartStreaming (Uri uri, string method, string postData, ICredentials credentials)
-		{
-			HttpWebRequest req = (HttpWebRequest)HttpWebRequest.Create (uri);
-			req.Credentials = credentials;
-			req.Method = method;
-			if (method == HTTP_POST && postData != null && postData.Length > 0) {
-				byte[] rawData = Encoding.ASCII.GetBytes (postData);
-				req.ContentLength = rawData.Length;
-				Stream strm = req.GetRequestStream ();
-				strm.Write (rawData, 0, rawData.Length);
-				req.ContentType = UrlEncodedMime;
-			}
-
-			HttpWebResponse res = (HttpWebResponse)req.GetResponse ();
+			HttpWebResponse res = _client.GetResponse (uri, method, null);
 			return new StreamingState (res);
 		}
 

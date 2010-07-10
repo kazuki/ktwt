@@ -126,6 +126,11 @@ namespace ktwt.OAuth
 			}
 		}
 
+		public HttpWebResponse GetResponse (Uri uri, string method, byte[] postBody)
+		{
+			return GetResponse (uri, method, _credential.AccessToken, _credential.AccessSecret, null, null, postBody);
+		}
+
 		public ICredentials Credentials {
 			get { return _credential; }
 			set {

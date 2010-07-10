@@ -25,6 +25,8 @@ namespace ktwt.Net
 		string DownloadString (Uri uri, string method, byte[] postBody);
 		string DownloadString (Uri uri, string method, byte[] postBody, out WebHeaderCollection headers);
 
+		HttpWebResponse GetResponse (Uri uri, string method, byte[] postBody);
+
 		ICredentials Credentials { get; }
 	}
 }
