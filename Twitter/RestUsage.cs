@@ -28,6 +28,24 @@ namespace ktwt.Twitter
 		{
 		}
 
+		RestType _restType = RestType.Home;
+		public RestType Type {
+			get { return _restType; }
+			set {
+				_restType = value;
+				InvokePropertyChanged ("Type");
+			}
+		}
+
+		object _config = null;
+		public object Config {
+			get { return _config; }
+			set {
+				_config = value;
+				InvokePropertyChanged ("Config");
+			}
+		}
+
 		TimeSpan _interval = TimeSpan.MaxValue;
 		public TimeSpan Interval {
 			get { return _interval; }
@@ -37,7 +55,7 @@ namespace ktwt.Twitter
 			}
 		}
 
-		bool _enabled = true;
+		bool _enabled = false;
 		public bool IsEnabled {
 			get { return _enabled; }
 			set {
@@ -61,6 +79,15 @@ namespace ktwt.Twitter
 			set {
 				_count = value;
 				InvokePropertyChanged ("Count");
+			}
+		}
+
+		ulong? _since = null;
+		public ulong? Since {
+			get { return _since; }
+			set {
+				_since = value;
+				InvokePropertyChanged ("Since");
 			}
 		}
 
@@ -91,11 +118,6 @@ namespace ktwt.Twitter
 			try {
 				PropertyChanged (this, new PropertyChangedEventArgs (name));
 			} catch {}
-		}
-
-		public RestUsage CopyConfig ()
-		{
-			return new RestUsage { Interval = Interval, Count = Count };
 		}
 	}
 }
