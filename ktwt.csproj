@@ -90,6 +90,8 @@
     <Compile Include="StatusStream\StatusFilterBase.cs" />
     <Compile Include="StatusStream\StatusViewerBase.cs" />
     <Compile Include="StatusStream\UserBase.cs" />
+    <Compile Include="Threading\IntervalTimer.cs" />
+    <Compile Include="Threading\IntervalTimerDelegate.cs" />
     <Compile Include="Twitter\IStreamingState.cs" />
     <Compile Include="Twitter\ListInfo.cs" />
     <Compile Include="Twitter\ListMode.cs" />
