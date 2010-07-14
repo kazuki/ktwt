@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Threading;
 using ktwt.OAuth;
 using ktwt.StatusStream;
+using ktwt.Threading;
 
 namespace ktwt.Twitter
 {
@@ -30,11 +31,13 @@ namespace ktwt.Twitter
 		List<RestStream> _restStreams = new List<RestStream>();
 		RestStream[] _restStreamArray = new RestStream[0];
 
-		public TwitterAccountNode ()
+		public TwitterAccountNode (IntervalTimer timer)
 		{
 			_oauthClient = new OAuthClient (AppKeyStore.Key, AppKeyStore.Secret,
 				TwitterClient.RequestTokenURL, TwitterClient.AccessTokenURL, TwitterClient.AuthorizeURL, TwitterClient.XAuthURL);
 			_client = new TwitterClient (_oauthClient);
+
+			timer.AddHandler (Run, TimeSpan.FromSeconds (1));
 		}
 
 		public IStatusStream[] OutputStreams {
@@ -99,7 +102,7 @@ namespace ktwt.Twitter
 			set { _oauthClient.Credentials = value; }
 		}
 
-		public void Run ()
+		void Run ()
 		{
 			RestStream[] streams = _restStreamArray;
 			for (int i = 0; i < streams.Length; i ++) {
