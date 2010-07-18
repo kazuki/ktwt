@@ -23,11 +23,15 @@ namespace ktwt.StatusStream
 	{
 		protected IStatusStream[] _outputStreams = new IStatusStream[0];
 
+		protected StatusFilterBase (string name) : base (name)
+		{
+		}
+
 		public IStatusStream[] OutputStreams {
 			get { return _outputStreams; }
 		}
 
-		protected void InitOutputStreams (string[] names)
+		public void InitOutputStreams (string[] names)
 		{
 			IStatusStream[] outputStreams = new IStatusStream[names.Length];
 			for (int i = 0; i < outputStreams.Length; i ++)
@@ -39,15 +43,18 @@ namespace ktwt.StatusStream
 		{
 			IStatusStream strm = sender as IStatusStream;
 			for (int i = 0; i < e.Statuses.Length; i ++) {
-				int ret = FilterProcess (strm, e.Statuses[i]);
-				if (ret < 0 || ret >= OutputStreams.Length) continue;
-				(OutputStreams[i] as InternalStatusSource).Raise (e.Statuses[i]);
+				FilterProcess (strm, e.Statuses[i]);
 			}
 		}
 
-		protected abstract int FilterProcess (IStatusStream source, StatusBase s);
+		public void Output (IStatusStream output, StatusBase s)
+		{
+			(output as InternalStatusSource).Raise (s);
+		}
 
-		class InternalStatusSource : IStatusStream
+		protected abstract void FilterProcess (IStatusStream source, StatusBase s);
+
+		protected class InternalStatusSource : IStatusStream
 		{
 			public event EventHandler<StatusesArrivedEventArgs> StatusesArrived;
 

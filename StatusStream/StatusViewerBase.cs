@@ -24,6 +24,11 @@ namespace ktwt.StatusStream
 	{
 		protected IStatusStream[] _inputStreams = new IStatusStream[0];
 
+		protected StatusViewerBase (string name)
+		{
+			Name = name;
+		}
+
 		public void AddInputStream (IStatusSource source)
 		{
 			foreach (IStatusStream strm in source.OutputStreams)

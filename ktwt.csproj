@@ -81,6 +81,15 @@
     <Compile Include="Program.cs" />
     <Compile Include="AppKeyStore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StatusStream\Filters\ActionResult.cs" />
+    <Compile Include="StatusStream\Filters\ComplexCondition.cs" />
+    <Compile Include="StatusStream\Filters\ComplexLogicType.cs" />
+    <Compile Include="StatusStream\Filters\ConditionFilter.cs" />
+    <Compile Include="StatusStream\Filters\ConditionFilterEntry.cs" />
+    <Compile Include="StatusStream\Filters\CopyAction.cs" />
+    <Compile Include="StatusStream\Filters\IAction.cs" />
+    <Compile Include="StatusStream\Filters\ICondition.cs" />
+    <Compile Include="StatusStream\Filters\MoveAction.cs" />
     <Compile Include="StatusStream\INamedElement.cs" />
     <Compile Include="StatusStream\IStatusSource.cs" />
     <Compile Include="StatusStream\IStatusStream.cs" />
