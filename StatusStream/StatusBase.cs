@@ -24,5 +24,12 @@ namespace ktwt.StatusStream
 		public UserBase User { get; set; }
 		public DateTime CreatedAt { get; set; }
 		public string Text { get; set; }
+		public IStatusStream SourceStream { get; protected set; }
+
+		public static void SetSourceStream (StatusBase[] statuses, IStatusStream source)
+		{
+			for (int i = 0; i < statuses.Length; i ++)
+				statuses[i].SourceStream = source;
+		}
 	}
 }

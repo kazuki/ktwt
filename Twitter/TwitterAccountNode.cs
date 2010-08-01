@@ -165,6 +165,7 @@ namespace ktwt.Twitter
 					if (status == null || status.Length == 0)
 						return;
 
+					StatusBase.SetSourceStream (status, this);
 					Usage.Since = TwitterClient.GetMaxStatusID (Usage.Since, status);
 					if (StatusesArrived != null)
 						StatusesArrived (this, new StatusesArrivedEventArgs (status));
