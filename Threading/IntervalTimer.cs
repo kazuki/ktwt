@@ -133,9 +133,15 @@ namespace ktwt.Threading
 		public void Dispose()
 		{
 			_disposed = true;
+			_done.Set ();
 			_done.Close ();
-			for (int i = 0; i < _executeThreads.Length; i ++)
-				_executeThreads[i].Join ();
+			for (int i = 0; i < _executeThreads.Length; i ++) {
+				if (!_executeThreads[i].Join (TimeSpan.Zero)) {
+					try {
+						_executeThreads[i].Abort ();
+					} catch {}
+				}
+			}
 			_schedulingThread.Join ();
 		}
 
