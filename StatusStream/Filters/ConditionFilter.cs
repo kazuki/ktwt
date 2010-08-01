@@ -35,8 +35,14 @@ namespace ktwt.StatusStream.Filters
 				if (!f.Condition.Evaluate (source, s))
 					continue;
 				for (int j = 0; j < f.Actions.Length; j ++) {
-					if (f.Actions[j].Execute (source, s) == ActionResult.Stop)
+					ActionResult result = f.Actions[j].Execute (source, s);
+					if (result == ActionResult.ContinueAction)
+						continue;
+					if (result == ActionResult.GotoNextFilter)
+						break;
+					if (result == ActionResult.ExitFilter)
 						return;
+					return; // Unknown Result
 				}
 			}
 		}

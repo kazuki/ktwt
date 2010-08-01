@@ -27,7 +27,7 @@ namespace ktwt.StatusStream.Filters
 		public override ActionResult Execute (IStatusStream source, StatusBase s)
 		{
 			base.Execute (source, s);
-			return ActionResult.Continue;
+			return ActionResult.ContinueAction;
 		}
 	}
 }

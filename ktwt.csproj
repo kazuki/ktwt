@@ -87,9 +87,11 @@
     <Compile Include="StatusStream\Filters\ConditionFilter.cs" />
     <Compile Include="StatusStream\Filters\ConditionFilterEntry.cs" />
     <Compile Include="StatusStream\Filters\CopyAction.cs" />
+    <Compile Include="StatusStream\Filters\DeleteAction.cs" />
     <Compile Include="StatusStream\Filters\IAction.cs" />
     <Compile Include="StatusStream\Filters\ICondition.cs" />
     <Compile Include="StatusStream\Filters\MoveAction.cs" />
+    <Compile Include="StatusStream\Filters\NextFilterAction.cs" />
     <Compile Include="StatusStream\INamedElement.cs" />
     <Compile Include="StatusStream\IStatusSource.cs" />
     <Compile Include="StatusStream\IStatusStream.cs" />

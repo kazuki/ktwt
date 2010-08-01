@@ -17,15 +17,11 @@
 
 namespace ktwt.StatusStream.Filters
 {
-	public enum ActionResult
+	public class DeleteAction : IAction
 	{
-		/// <summary>後続のActionを実行</summary>
-		ContinueAction,
-
-		/// <summary>後続のActionが合っても次のフィルタに移動</summary>
-		GotoNextFilter,
-
-		/// <summary>後続のActionやフィルタが合っても全フィルタ処理を終了する</summary>
-		ExitFilter
+		public ActionResult Execute (IStatusStream source, StatusBase s)
+		{
+			return ActionResult.ExitFilter;
+		}
 	}
 }

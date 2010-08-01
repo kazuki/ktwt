@@ -31,7 +31,7 @@ namespace ktwt.StatusStream.Filters
 		public virtual ActionResult Execute (IStatusStream source, StatusBase s)
 		{
 			Owner.Output (Output, s);
-			return ActionResult.Stop;
+			return ActionResult.ExitFilter;
 		}
 	}
 }
