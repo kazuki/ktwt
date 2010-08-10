@@ -15,10 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System.Text;
+
 namespace ktwt.Json
 {
 	public abstract class JsonValue
 	{
 		public abstract JsonValueType ValueType { get; }
+
+		public abstract void ToJsonString (StringBuilder buffer);
+		public string ToJsonString ()
+		{
+			StringBuilder buffer = new StringBuilder ();
+			ToJsonString (buffer);
+			return buffer.ToString ();
+		}
 	}
 }

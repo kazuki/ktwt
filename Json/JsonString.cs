@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System.Text;
+
 namespace ktwt.Json
 {
 	public class JsonString : JsonValue
@@ -26,12 +28,26 @@ namespace ktwt.Json
 			_value = value;
 		}
 
+		public override void ToJsonString (StringBuilder buffer)
+		{
+			buffer.Append ('\"');
+			buffer.Append (Encode (_value));
+			buffer.Append ('\"');
+		}
+
 		public override JsonValueType ValueType {
 			get { return JsonValueType.String; }
 		}
 
 		public string Value {
 			get { return _value; }
+		}
+
+		public static string Encode (string text)
+		{
+			return text.Replace (@"\", @"\\").Replace ("\"", "\\\"")
+				.Replace ("\t", "\\t").Replace ("\b", "\\b").Replace ("\f", "\\f")
+				.Replace ("\n", "\\n").Replace ("\r", "\\r");
 		}
 	}
 }
