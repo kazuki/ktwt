@@ -682,25 +682,29 @@ namespace TwitterStreaming
 			Status status = null;
 
 			if (txt.Length > TwitterClient.MaxStatusLength) {
-				txt = UrlRegex.Replace (txt, delegate (Match m) {
-					string url = UrlShortener.Shortener (UrlShortenerServices.toly, m.Value).ToString ();
+				try {
+					txt = UrlRegex.Replace (txt, delegate (Match m) {
+						string url = UrlShortener.Shortener (UrlShortenerServices.toly, m.Value).ToString ();
+						Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
+							postTextBox.Text = postTextBox.Text.Replace (m.Value, url);
+						}));
+						return url;
+					});
 					Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
-						postTextBox.Text = postTextBox.Text.Replace (m.Value, url);
+						postTextBox.Text = txt;
 					}));
-					return url;
-				});
-				Dispatcher.BeginInvoke (new EmptyDelegate (delegate () {
-					postTextBox.Text = txt;
-				}));
+				} catch {}
 			}
 
-			try {
-				if (dmTo == null) {
-					status = account.TwitterClient.Update (txt, (_replyInfo == null ? (ulong?)null : _replyInfo.ID), null, null);
-				} else {
-					status = account.TwitterClient.SendDirectMessage (null, dmTo.ID, txt);
-				}
-			} catch {}
+			if (txt.Length <= TwitterClient.MaxStatusLength) {
+				try {
+					if (dmTo == null) {
+						status = account.TwitterClient.Update (txt, (_replyInfo == null ? (ulong?)null : _replyInfo.ID), null, null);
+					} else {
+						status = account.TwitterClient.SendDirectMessage (null, dmTo.ID, txt);
+					}
+				} catch {}
+			}
 			Dispatcher.Invoke (new EmptyDelegate (delegate () {
 				postTextBox.IsReadOnly = false;
 				postTextBox.Foreground.Opacity = 1.0;
