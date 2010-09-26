@@ -104,7 +104,8 @@ namespace ktwt.Threading
 				SchedulingInfo info = null;
 				lock (_queue) {
 					if (_queue.Count == 0) {
-						_done.Reset ();
+						if (!_done.SafeWaitHandle.IsClosed)
+							_done.Reset ();
 						continue;
 					}
 					info = _queue.Dequeue ();
