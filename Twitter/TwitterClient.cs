@@ -78,15 +78,6 @@ namespace ktwt.Twitter
 		int _apiLimitMax = -1, _apiLimitRemaining = -1;
 		DateTime _apiLimitResetTime = DateTime.MaxValue;
 
-		object _friendsLock = new object (), _followersLock = new object (), _friendsIDLock = new object ();
-		User[] _friends = null, _followers = null;
-		ulong[] _friendIDs = null;
-		HashSet<ulong> _friendSet = null;
-
-		ListInfo[] _selfAndFollowingList = null;
-
-		public event EventHandler ApiLimitChanged;
-
 		public TwitterClient (ISimpleWebClient baseClient)
 		{
 			_client = baseClient;
@@ -96,6 +87,8 @@ namespace ktwt.Twitter
 		public int ApiLimitMax {
 			get { return _apiLimitMax; }
 			private set {
+				if (_apiLimitMax == value)
+					return;
 				_apiLimitMax = value;
 				InvokePropertyChanged ("ApiLimitMax");
 			}
@@ -104,6 +97,8 @@ namespace ktwt.Twitter
 		public int ApiLimitRemaining {
 			get { return _apiLimitRemaining; }
 			private set {
+				if (_apiLimitRemaining == value)
+					return;
 				_apiLimitRemaining = value;
 				InvokePropertyChanged ("ApiLimitRemaining");
 			}
@@ -231,58 +226,6 @@ namespace ktwt.Twitter
 				query_base = "?screen_name=" + OAuthBase.UrlEncode (screen_name);
 			return GetAllPages<User> (url, query_base, "users", true);
 		}
-
-		public void UpdateFriends ()
-		{
-			UpdateFriends (true);
-		}
-
-		void UpdateFriends (bool force)
-		{
-			lock (_friendsLock)
-			lock (_friendsIDLock) {
-				if (!force && _friends != null)
-					return;
-				User[] friends = GetFriends (null, null);
-				ulong[] ids = new ulong[friends.Length];
-				for (int i = 0; i < ids.Length; i ++)
-					ids[i] = friends[i].ID;
-				_friends = friends;
-				SetFriendIDs (ids);
-			}
-			InvokePropertyChanged ("Friends");
-		}
-
-		public User[] Friends {
-			get {
-				if (_friends == null)
-					UpdateFriends (false);
-				return _friends;
-			}
-		}
-
-		public void UpdateFollowers ()
-		{
-			UpdateFollowers (true);
-		}
-
-		void UpdateFollowers (bool force)
-		{
-			lock (_followersLock) {
-				if (!force && _followers != null)
-					return;
-				_followers = GetFollowers (null, null);
-			}
-			InvokePropertyChanged ("Followers");
-		}
-
-		public User[] Followers {
-			get {
-				if (_followers == null)
-					UpdateFollowers (false);
-				return _followers;
-			}
-		}
 		#endregion
 
 		#region List Methods
@@ -325,22 +268,6 @@ namespace ktwt.Twitter
 		public User[] GetListMembers (string screen_name_or_id, ulong list_id)
 		{
 			return GetAllPages<User> (string.Format (ListGetMembersURL, screen_name_or_id, list_id), null, "users", false);
-		}
-
-		public ListInfo[] SelfAndFollowingList {
-			get {
-				if (_selfAndFollowingList == null)
-					UpdateSelfAndFollowingList ();
-				return _selfAndFollowingList;
-			}
-		}
-
-		public void UpdateSelfAndFollowingList ()
-		{
-			List<ListInfo> list = new List<ListInfo> ();
-			list.AddRange (GetList (SelfScreenName));
-			list.AddRange (GetListSubscriptions (SelfScreenName));
-			_selfAndFollowingList = list.ToArray ();
 		}
 		#endregion
 
@@ -415,45 +342,14 @@ namespace ktwt.Twitter
 		#endregion
 
 		#region Social Graph Methods
-		public void UpdateFriendIDs ()
+		public ulong[] GetFriendIDs ()
 		{
-			UpdateFriendIDs (true);
-		}
-
-		void UpdateFriendIDs (bool force)
-		{
-			lock (_friendsIDLock) {
-				if (!force && _friendIDs != null)
-					return;
-				string json = DownloadString (FriendIDsURL, HTTP_GET, null);
-				JsonArray array = (JsonArray)JsonValueReader.Read (json);
-				ulong[] friends = new ulong[array.Length];
-				for (int i = 0; i < array.Length; i ++)
-					friends[i] = (ulong)(array[i] as JsonNumber).Value;
-				SetFriendIDs (friends);
-			}
-		}
-
-		public ulong[] FriendIDs {
-			get {
-				if (_friendIDs == null)
-					UpdateFriendIDs (false);
-				return _friendIDs;
-			}
-		}
-
-		public HashSet<ulong> FriendSet {
-			get {
-				if (_friendSet == null)
-					UpdateFriendIDs (false);
-				return _friendSet;
-			}
-		}
-
-		void SetFriendIDs (ulong[] ids)
-		{
-			_friendIDs = ids;
-			_friendSet = new HashSet<ulong> (ids);
+			string json = DownloadString (FriendIDsURL, HTTP_GET, null);
+			JsonArray array = (JsonArray)JsonValueReader.Read (json);
+			ulong[] friends = new ulong[array.Length];
+			for (int i = 0; i < array.Length; i ++)
+				friends[i] = (ulong)(array[i] as JsonNumber).Value;
+			return friends;
 		}
 		#endregion
 
@@ -604,12 +500,6 @@ namespace ktwt.Twitter
 				if (value != null && long.TryParse (value, out temp)) ApiLimitRemaining = (int)temp;
 				value = headers[X_RateLimit_Reset];
 				if (value != null && long.TryParse (value, out temp)) ApiLimitResetTime = UnixTimeStart + TimeSpan.FromSeconds (temp);
-			}
-
-			if (ApiLimitChanged != null) {
-				try {
-					ApiLimitChanged.BeginInvoke (this, EventArgs.Empty, null, null);
-				} catch {}
 			}
 
 			return text;
