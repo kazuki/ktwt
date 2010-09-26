@@ -67,6 +67,8 @@ namespace ktwt.Twitter
 		static readonly Uri StreamingRetweetURL = new Uri ("http://stream.twitter.com/1/statuses/retweet.json");
 		static readonly Uri StreamingSampleURL = new Uri ("http://stream.twitter.com/1/statuses/sample.json");
 
+		static readonly Uri UserStreamingURL = new Uri ("https://betastream.twitter.com/2b/user.json");
+
 		const string X_RateLimit_Limit = "X-RateLimit-Limit";
 		const string X_RateLimit_Remaining = "X-RateLimit-Remaining";
 		const string X_RateLimit_Reset = "X-RateLimit-Reset";
@@ -446,6 +448,11 @@ namespace ktwt.Twitter
 			return StartStreaming (StreamingSampleURL, HTTP_GET, null);
 		}
 
+		public IStreamingState StartUserStreaming ()
+		{
+			return StartStreaming (UserStreamingURL, HTTP_GET, null);
+		}
+
 		IStreamingState StartStreaming (Uri uri, string method, string postData)
 		{
 			if (postData != null && postData.Length == 0) postData = null;
@@ -528,6 +535,8 @@ namespace ktwt.Twitter
 					return (_client.Credentials as NetworkCredential).UserName;
 				if (_client.Credentials is OAuthPasswordCache)
 					return (_client.Credentials as OAuthPasswordCache).UserName;
+				if (_client.Credentials is TwitterOAuthCredentialCache)
+					return (_client.Credentials as TwitterOAuthCredentialCache).ScreenName;
 				throw new NotSupportedException ();
 			}
 		}

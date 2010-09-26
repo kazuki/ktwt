@@ -79,10 +79,16 @@ namespace ktwt.Twitter
 			return strm;
 		}
 
-		void AddStream (IStatusStream strm)
+		public IStatusStream AddUserStream ()
+		{
+			return AddStream (new StreamingStream (this, StreamingStream.StreamingType.User));
+		}
+
+		IStatusStream AddStream (IStatusStream strm)
 		{
 			_streams.Add (strm);
 			_streamArray = _streams.ToArray ();
+			return strm;
 		}
 
 		public void RemoveStream (IStatusStream strm)
@@ -231,6 +237,12 @@ namespace ktwt.Twitter
 				Start (owner);
 			}
 
+			public StreamingStream (TwitterAccountNode owner, StreamingType type)
+			{
+				_type = type;
+				Start (owner);
+			}
+
 			void Start (TwitterAccountNode owner)
 			{
 				Owner = owner;
@@ -259,6 +271,11 @@ namespace ktwt.Twitter
 							case StreamingType.Filter:
 								_state = Owner.TwitterClient.StartFilterStreaming ((ulong[])_streamingArgs[0], (string[])_streamingArgs[1]);
 								break;
+							case StreamingType.User:
+								_state = Owner.TwitterClient.StartUserStreaming ();
+								break;
+							default:
+								throw new ArgumentException ();
 						}
 						wait = waitMin;
 					} catch {
@@ -295,7 +312,7 @@ namespace ktwt.Twitter
 						if (line.Length == 0 || StatusesArrived == null) continue;
 						JsonValueReader jsonReader = new JsonValueReader (line);
 						JsonObject jsonRootObj = (JsonObject)jsonReader.Read ();
-						if (jsonRootObj.Value.ContainsKey ("delete") || jsonRootObj.Value.ContainsKey ("limit"))
+						if (jsonRootObj.Value.ContainsKey ("delete") || jsonRootObj.Value.ContainsKey ("limit") || jsonRootObj.Value.ContainsKey ("friends"))
 							continue;
 						try {
 							Status s = JsonDeserializer.Deserialize<Status> (jsonRootObj);
@@ -354,10 +371,11 @@ namespace ktwt.Twitter
 				} catch {}
 			}
 
-			enum StreamingType
+			public enum StreamingType
 			{
 				Filter,
 				Sample,
+				User,
 			}
 		}
 	}
