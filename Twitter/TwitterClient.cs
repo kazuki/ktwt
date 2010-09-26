@@ -30,13 +30,11 @@ namespace ktwt.Twitter
 	public class TwitterClient : INotifyPropertyChanged
 	{
 		public const int MaxStatusLength = 140;
-		public const int OAuthApiLimitMax = 350;
-		public const int BasicApiLimitMax = 150;
 
-		public static Uri RequestTokenURL = new Uri ("https://twitter.com/oauth/request_token");
-		public static Uri AccessTokenURL = new Uri ("https://twitter.com/oauth/access_token");
-		public static Uri AuthorizeURL = new Uri ("https://twitter.com/oauth/authorize");
-		public static Uri XAuthURL = new Uri ("https://api.twitter.com/oauth/access_token");
+		public static readonly Uri RequestTokenURL = new Uri ("https://twitter.com/oauth/request_token");
+		public static readonly Uri AccessTokenURL = new Uri ("https://twitter.com/oauth/access_token");
+		public static readonly Uri AuthorizeURL = new Uri ("https://twitter.com/oauth/authorize");
+		public static readonly Uri XAuthURL = new Uri ("https://api.twitter.com/oauth/access_token");
 
 		const string StatusesHomeTimelineURL = "https://api.twitter.com/1/statuses/home_timeline.json";
 		const string StatusesMentionsURL = "https://twitter.com/statuses/mentions.json";
@@ -62,6 +60,12 @@ namespace ktwt.Twitter
 		const string FavoritesUserURL = "https://api.twitter.com/1/favorites/{0}.json";
 		const string FavoritesCreateURL = "https://api.twitter.com/1/favorites/create/{0}.json";
 		const string FavoritesDestroyURL = "https://api.twitter.com/1/favorites/destroy/{0}.json";
+
+		static readonly Uri StreamingFilterURL = new Uri ("http://stream.twitter.com/1/statuses/filter.json");
+		static readonly Uri StreamingFirehoseURL = new Uri ("http://stream.twitter.com/1/statuses/firehose.json");
+		static readonly Uri StreamingLinksURL = new Uri ("http://stream.twitter.com/1/statuses/links.json");
+		static readonly Uri StreamingRetweetURL = new Uri ("http://stream.twitter.com/1/statuses/retweet.json");
+		static readonly Uri StreamingSampleURL = new Uri ("http://stream.twitter.com/1/statuses/sample.json");
 
 		const string X_RateLimit_Limit = "X-RateLimit-Limit";
 		const string X_RateLimit_Remaining = "X-RateLimit-Remaining";
@@ -395,9 +399,57 @@ namespace ktwt.Twitter
 		#endregion
 
 		#region Streaming API
-		public IStreamingState StartStreaming (Uri uri, string method)
+		public IStreamingState StartFilterStreaming (ulong[] follow, string[] track)
 		{
-			HttpWebResponse res = _client.GetResponse (uri, method, null);
+			StringBuilder sb = new StringBuilder ();
+			if (follow != null && follow.Length > 0) {
+				sb.Append ("follow=");
+				sb.Append (follow[0]);
+				for (int i = 1; i < follow.Length; i ++) {
+					sb.Append (',');
+					sb.Append (follow[i]);
+				}
+			}
+			if (track != null && track.Length > 0) {
+				if (sb.Length > 0) sb.Append ('&');
+				sb.Append ("track=");
+				sb.Append (Uri.EscapeDataString (track[0]));
+				for (int i = 1; i < track.Length; i ++) {
+					sb.Append (',');
+					sb.Append (Uri.EscapeDataString (track[i]));
+				}
+			}
+
+			// Twitter bug...?
+			//return StartStreaming (StreamingFilterURL, HTTP_POST, sb.ToString ());
+
+			return StartStreaming (new Uri (StreamingFilterURL.ToString () + "?" + sb.ToString ()), HTTP_GET, null);
+		}
+
+		public IStreamingState StartFirehoseStreaming ()
+		{
+			return StartStreaming (StreamingFirehoseURL, HTTP_GET, null);
+		}
+
+		public IStreamingState StartLinkStreaming ()
+		{
+			return StartStreaming (StreamingLinksURL, HTTP_GET, null);
+		}
+
+		public IStreamingState StartRetweetStreaming ()
+		{
+			return StartStreaming (StreamingRetweetURL, HTTP_GET, null);
+		}
+
+		public IStreamingState StartSampleStreaming ()
+		{
+			return StartStreaming (StreamingSampleURL, HTTP_GET, null);
+		}
+
+		IStreamingState StartStreaming (Uri uri, string method, string postData)
+		{
+			if (postData != null && postData.Length == 0) postData = null;
+			HttpWebResponse res = _client.GetResponse (uri, method, (postData == null ? null : Encoding.ASCII.GetBytes (postData)));
 			return new StreamingState (res);
 		}
 
@@ -494,13 +546,11 @@ namespace ktwt.Twitter
 
 			long temp;
 			string value = headers[X_RateLimit_Limit];
-			if (value != null && long.TryParse (value, out temp) && temp != BasicApiLimitMax) {
-				ApiLimitMax = (int)temp;
-				value = headers[X_RateLimit_Remaining];
-				if (value != null && long.TryParse (value, out temp)) ApiLimitRemaining = (int)temp;
-				value = headers[X_RateLimit_Reset];
-				if (value != null && long.TryParse (value, out temp)) ApiLimitResetTime = UnixTimeStart + TimeSpan.FromSeconds (temp);
-			}
+			if (value != null && long.TryParse (value, out temp)) ApiLimitMax = (int)temp;
+			value = headers[X_RateLimit_Remaining];
+			if (value != null && long.TryParse (value, out temp)) ApiLimitRemaining = (int)temp;
+			value = headers[X_RateLimit_Reset];
+			if (value != null && long.TryParse (value, out temp)) ApiLimitResetTime = UnixTimeStart + TimeSpan.FromSeconds (temp);
 
 			return text;
 		}
