@@ -299,7 +299,7 @@ namespace ktwt.Twitter
 			for (int i = 0; i < array.Length; i++) {
 				JsonObject o = (JsonObject)array[i];
 				statuses[i] = new Status {
-					ID = (ulong)(o.Value["id"] as JsonNumber).Value,
+					NumericID = (ulong)(o.Value["id"] as JsonNumber).Value,
 					Text = (o.Value["text"] as JsonString).Value,
 					CreatedAt = DateTime.ParseExact ((o.Value["created_at"] as JsonString).Value, "ddd, dd MMM yyyy HH:mm:ss zzzz", JsonDeserializer.InvariantCulture),
 					User = new User {
@@ -525,7 +525,7 @@ namespace ktwt.Twitter
 		public static ulong GetMaxStatusID (ulong current, Status[] status)
 		{
 			for (int i = 0; i < status.Length; i ++)
-				current = Math.Max (current, status[i].ID);
+				current = Math.Max (current, status[i].NumericID);
 			return current;
 		}
 

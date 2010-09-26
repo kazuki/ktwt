@@ -24,8 +24,6 @@ namespace ktwt.Twitter
 {
 	public class Status : StatusBase, INotifyPropertyChanged
 	{
-		string _text = string.Empty;
-
 		public Status ()
 		{
 		}
@@ -35,8 +33,21 @@ namespace ktwt.Twitter
 			set { CreatedAt = value; }
 		}
 
+		ulong _id;
+		public ulong NumericID {
+			get { return _id; }
+			set {
+				if (_id == value)
+					return;
+				_id = value;
+				ID = "tweet-" + _id.ToString ();
+			}
+		}
+
 		[JsonObjectMapping ("id", JsonValueType.Number)]
-		public ulong ID { get; set; }
+		ulong ID_Internal {
+			set { NumericID = value; }
+		}
 
 		[JsonObjectMapping ("text", JsonValueType.String)]
 		string Text_Internal {

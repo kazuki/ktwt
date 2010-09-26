@@ -21,6 +21,7 @@ namespace ktwt.StatusStream
 {
 	public abstract class StatusBase
 	{
+		public string ID { get; set; }
 		public UserBase User { get; set; }
 		public DateTime CreatedAt { get; set; }
 		public string Text { get; set; }
