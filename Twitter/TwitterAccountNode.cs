@@ -17,19 +17,21 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
+using ktwt.Json;
 using ktwt.OAuth;
 using ktwt.StatusStream;
 using ktwt.Threading;
 
 namespace ktwt.Twitter
 {
-	public class TwitterAccountNode : IStatusSource
+	public class TwitterAccountNode : IStatusSource, IDisposable
 	{
 		OAuthClient _oauthClient;
 		TwitterClient _client;
-		List<RestStream> _restStreams = new List<RestStream>();
-		RestStream[] _restStreamArray = new RestStream[0];
+		List<IStatusStream> _streams = new List<IStatusStream>();
+		IStatusStream[] _streamArray = new IStatusStream[0];
 
 		public TwitterAccountNode (IntervalTimer timer)
 		{
@@ -40,35 +42,57 @@ namespace ktwt.Twitter
 			timer.AddHandler (Run, TimeSpan.FromSeconds (1));
 		}
 
+		public TwitterClient TwitterClient {
+			get { return _client; }
+		}
+
 		public IStatusStream[] OutputStreams {
-			get { return _restStreamArray; }
+			get { return _streamArray; }
 		}
 
 		public IStatusStream AddRestStream (RestUsage restUsage)
 		{
-			lock (_restStreams) {
+			lock (_streams) {
 				// 複数のHome/Mentions/DMsストリームの存在は許可しない。
 				// すでにストリームがある場合は既存のストリームを返す
 				if (restUsage.Type == RestType.Home || restUsage.Type == RestType.Mentions || restUsage.Type == RestType.DirectMessages) {
-					for (int i = 0; i < _restStreams.Count; i ++) {
-						if (_restStreams[i].Usage.Type == restUsage.Type)
-							return _restStreams[i];
+					for (int i = 0; i < _streams.Count; i ++) {
+						RestStream restStrm = _streams[i] as RestStream;
+						if (restStrm != null && restStrm.Usage.Type == restUsage.Type)
+							return restStrm;
 					}
 				}
 
 				RestStream strm = new RestStream (this, restUsage);
-				_restStreams.Add (strm);
-				_restStreamArray = _restStreams.ToArray ();
+				_streams.Add (strm);
+				_streamArray = _streams.ToArray ();
 				return strm;
 			}
 		}
 
-		public void RemoveRestStream (IStatusStream strm)
+		public IStatusStream AddFilterStream (ulong[] follow, string[] track)
 		{
-			lock (_restStreams) {
-				_restStreams.Remove (strm as RestStream);
-				_restStreamArray = _restStreams.ToArray ();
+			if (follow == null && track == null)
+				throw new ArgumentNullException ();
+			StreamingStream strm = new StreamingStream (this, follow, track);
+			AddStream (strm);
+			return strm;
+		}
+
+		void AddStream (IStatusStream strm)
+		{
+			_streams.Add (strm);
+			_streamArray = _streams.ToArray ();
+		}
+
+		public void RemoveStream (IStatusStream strm)
+		{
+			lock (_streams) {
+				_streams.Remove (strm);
+				_streamArray = _streams.ToArray ();
 			}
+			if (strm is IDisposable)
+				(strm as IDisposable).Dispose ();
 		}
 
 		public string Name {
@@ -104,12 +128,27 @@ namespace ktwt.Twitter
 
 		void Run ()
 		{
-			RestStream[] streams = _restStreamArray;
+			IStatusStream[] streams = _streamArray;
 			for (int i = 0; i < streams.Length; i ++) {
-				if (!streams[i].Usage.IsEnabled || streams[i].Usage.IsRunning || streams[i].Usage.NextExecTime > DateTime.Now)
+				RestStream restStrm = streams[i] as RestStream;
+				if (restStrm == null) continue;
+				if (!restStrm.Usage.IsEnabled || restStrm.Usage.IsRunning || restStrm.Usage.NextExecTime > DateTime.Now)
 					continue;
-				streams[i].Usage.LastExecTime = DateTime.Now;
-				ThreadPool.QueueUserWorkItem (streams[i].Run);
+				restStrm.Usage.LastExecTime = DateTime.Now;
+				ThreadPool.QueueUserWorkItem (restStrm.Run);
+			}
+		}
+
+		public void Dispose ()
+		{
+			IStatusStream[] streams = _streamArray;
+			lock (_streams) {
+				_streams.Clear ();
+				_streamArray = new IStatusStream[0];
+			}
+			for (int i = 0; i < streams.Length; i ++) {
+				if (streams[i] is IDisposable)
+					(streams[i] as IDisposable).Dispose ();
 			}
 		}
 
@@ -173,6 +212,152 @@ namespace ktwt.Twitter
 				} finally {
 					Usage.IsRunning = false;
 				}
+			}
+		}
+
+		private class StreamingStream : IStatusStream, IDisposable
+		{
+			public event EventHandler<StatusesArrivedEventArgs> StatusesArrived;
+			IStreamingState _state;
+			StreamingType _type;
+			object[] _streamingArgs;
+			Thread _thrd;
+			bool _active = true;
+
+			public StreamingStream (TwitterAccountNode owner, ulong[] follow, string[] track)
+			{
+				_type = StreamingType.Filter;
+				_streamingArgs = new object[] {follow, track};
+				Start (owner);
+			}
+
+			void Start (TwitterAccountNode owner)
+			{
+				Owner = owner;
+				_thrd = new Thread (StreamingThread);
+				_thrd.Start ();
+			}
+
+			void StreamingThread ()
+			{
+				TimeSpan wait = TimeSpan.Zero;
+				TimeSpan waitMin = TimeSpan.FromSeconds (1);
+				TimeSpan waitMax = TimeSpan.FromSeconds (64);
+				TimeSpan sleepUnit = TimeSpan.FromSeconds (0.1);
+
+				while (_active) {
+					DateTime waitStartTime = DateTime.Now;
+					while (_active && DateTime.Now < waitStartTime + wait)
+						Thread.Sleep (sleepUnit);
+					if (!_active)
+						break;
+					if (wait.Ticks == 0)
+						wait = waitMin;
+
+					try {
+						switch (_type) {
+							case StreamingType.Filter:
+								_state = Owner.TwitterClient.StartFilterStreaming ((ulong[])_streamingArgs[0], (string[])_streamingArgs[1]);
+								break;
+						}
+						wait = waitMin;
+					} catch {
+						wait += wait;
+						continue;
+					}
+
+					try {
+						StreamingThread (_state.Stream);
+					} catch {
+						wait += wait;
+						continue;
+					} finally {
+						try {
+							if (_state != null)
+								_state.Dispose ();
+						} catch {}
+						_state = null;
+					}
+				}
+			}
+
+			void StreamingThread (Stream strm)
+			{
+				byte[] buffer = null;
+				string line;
+				int filled = 0;
+				TimeSpan timeout = TimeSpan.FromSeconds (32);
+
+				while (_active) {
+					try {
+						line = ReadLineWithTimeout (strm, ref buffer, ref filled, timeout);
+						if (line == null) break;
+						if (line.Length == 0 || StatusesArrived == null) continue;
+						JsonValueReader jsonReader = new JsonValueReader (line);
+						JsonObject jsonRootObj = (JsonObject)jsonReader.Read ();
+						if (jsonRootObj.Value.ContainsKey ("delete") || jsonRootObj.Value.ContainsKey ("limit"))
+							continue;
+						try {
+							Status s = JsonDeserializer.Deserialize<Status> (jsonRootObj);
+							StatusesArrived (this, new StatusesArrivedEventArgs (s));
+						} catch {}
+					} catch {
+						break;
+					}
+				}
+			}
+
+			static string ReadLineWithTimeout (Stream strm, ref byte[] buffer, ref int filled, TimeSpan timeout)
+			{
+				if (buffer == null) buffer = new byte[8192];
+				while (true) {
+					for (int i = 0; i < filled; i++) {
+						if (buffer[i] == '\r' || buffer[i] == '\n') {
+							string ret = System.Text.Encoding.UTF8.GetString (buffer, 0, i);
+							if (i + 1 < filled) {
+								Array.Copy (buffer, i + 1, buffer, 0, filled - i - 1);
+								filled -= i + 1;
+							} else {
+								filled = 0;
+							}
+							return ret.Trim ('\n', '\r', '\0');
+						}
+					}
+
+					IAsyncResult ar = strm.BeginRead (buffer, filled, buffer.Length - filled, null, null);
+					if (!ar.AsyncWaitHandle.WaitOne (timeout))
+						throw new TimeoutException ();
+					int read_size = strm.EndRead (ar);
+					if (read_size <= 0)
+						throw new IOException ();
+					filled += read_size;
+					if (buffer.Length == filled)
+						Array.Resize<byte> (ref buffer, buffer.Length * 2);
+				}
+			}
+
+			public TwitterAccountNode Owner { get; private set; }
+
+			public string Name {
+				get { return Owner.Name + "'s Streaming"; }
+			}
+
+			public void Dispose ()
+			{
+				if (!_active)
+					return;
+				_active = false;
+				if (_state != null)
+					_state.Dispose ();
+				try {
+					_thrd.Abort ();
+				} catch {}
+			}
+
+			enum StreamingType
+			{
+				Filter,
+				Sample,
 			}
 		}
 	}
