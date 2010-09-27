@@ -42,6 +42,10 @@ namespace ktwt.Twitter
 			timer.AddHandler (Run, TimeSpan.FromSeconds (1));
 		}
 
+		public OAuthClient OAuthClient {
+			get { return _oauthClient; }
+		}
+
 		public TwitterClient TwitterClient {
 			get { return _client; }
 		}
@@ -82,6 +86,11 @@ namespace ktwt.Twitter
 		public IStatusStream AddUserStream ()
 		{
 			return AddStream (new StreamingStream (this, StreamingStream.StreamingType.User));
+		}
+
+		public IStatusStream AddSampleStream ()
+		{
+			return AddStream (new StreamingStream (this, StreamingStream.StreamingType.Sample));
 		}
 
 		IStatusStream AddStream (IStatusStream strm)
@@ -270,6 +279,9 @@ namespace ktwt.Twitter
 						switch (_type) {
 							case StreamingType.Filter:
 								_state = Owner.TwitterClient.StartFilterStreaming ((ulong[])_streamingArgs[0], (string[])_streamingArgs[1]);
+								break;
+							case StreamingType.Sample:
+								_state = Owner.TwitterClient.StartSampleStreaming ();
 								break;
 							case StreamingType.User:
 								_state = Owner.TwitterClient.StartUserStreaming ();
