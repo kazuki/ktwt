@@ -1,8 +1,23 @@
 ﻿<Window x:Class="ktwt.ui.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:k="clr-namespace:ktwt.ui"
         Title="MainWindow" Height="300" Width="300">
-    <Grid>
-        
-    </Grid>
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition />
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition />
+      <ColumnDefinition Width="Auto" />
+    </Grid.ColumnDefinitions>
+    <k:StatusViewer Grid.Column="0" Grid.Row="0" x:Name="viewer" />
+    <ScrollBar Grid.Column="1" Grid.Row="0"
+               SmallChange="1.0"
+               LargeChange="20.0"
+               ViewportSize="{Binding ElementName=viewer, Path=AverageViewPortSize, Mode=OneWay}"
+               Value="{Binding ElementName=viewer, Path=VerticalScrollBarValue}"
+               Minimum="{Binding ElementName=viewer, Path=VerticalScrollBarMin}"
+               Maximum="{Binding ElementName=viewer, Path=VerticalScrollBarMax}" />
+  </Grid>
 </Window>

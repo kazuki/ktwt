@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -102,6 +102,7 @@
     <Compile Include="StatusStream\UserBase.cs" />
     <Compile Include="Threading\IntervalTimer.cs" />
     <Compile Include="Threading\IntervalTimerDelegate.cs" />
+    <Compile Include="Twitter.UI\TweetRenderer.cs" />
     <Compile Include="Twitter\IStreamingState.cs" />
     <Compile Include="Twitter\ListInfo.cs" />
     <Compile Include="Twitter\ListMode.cs" />
@@ -115,9 +116,15 @@
     <Compile Include="Twitter\TwitterOAuthCredentialCache.cs" />
     <Compile Include="Twitter\User.cs" />
     <AppDesigner Include="Properties\" />
+    <Compile Include="UI\BasicTextParagraphProperties.cs" />
+    <Compile Include="UI\BasicTextRunProperties.cs" />
+    <Compile Include="UI\IDecoratedStatus.cs" />
+    <Compile Include="UI\IStatusRenderer.cs" />
     <Compile Include="UI\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UI\StatusRenderers.cs" />
+    <Compile Include="UI\StatusViewer.cs" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Json\LitJSON\AUTHORS.txt" />
