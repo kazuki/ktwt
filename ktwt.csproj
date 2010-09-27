@@ -119,7 +119,9 @@
     <Compile Include="UI\BasicTextParagraphProperties.cs" />
     <Compile Include="UI\BasicTextRunProperties.cs" />
     <Compile Include="UI\IDecoratedStatus.cs" />
+    <Compile Include="UI\ImageCache.cs" />
     <Compile Include="UI\IStatusRenderer.cs" />
+    <Compile Include="UI\IStatusRendererOwner.cs" />
     <Compile Include="UI\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>

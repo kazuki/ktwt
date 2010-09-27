@@ -27,19 +27,21 @@ using ktwt.StatusStream;
 
 namespace ktwt.ui
 {
-	class StatusViewer : UIElement, IStatusViewer
+	class StatusViewer : UIElement, IStatusViewer, IStatusRendererOwner
 	{
 		List<IStatusStream> _streams = new List<IStatusStream> ();
 		List<IDecoratedStatus> _statuses = new List<IDecoratedStatus> ();
 		HashSet<string> _statusIDs = new HashSet<string> ();
 		HashSet<string> _viewStatuses = new HashSet<string> ();
-		TextFormatter _formatter = TextFormatter.Create();
 		long _lastUpdate = -1, _lastRender = -1;
 		double _totalHeight = 0.0, _totalHeightCount = 0.0;
 		const double MaxRenderingRate = 10;
 
 		public StatusViewer ()
 		{
+			this.TextFormatter = TextFormatter.Create (TextFormattingMode.Ideal);
+			this.ImageCache = new ImageCache ("image_cache");
+
 			Focusable = true;
 			ThreadSafeInvalidateVisualDelegateInstance = new EmptyDelegate (ThreadSafeInvalidateVisual);
 			DispatcherTimer timer = new DispatcherTimer (TimeSpan.FromSeconds (1.0 / MaxRenderingRate), DispatcherPriority.Render, FireRenderTimer, Dispatcher);
@@ -137,7 +139,7 @@ namespace ktwt.ui
 				if (_statuses.Count > 0) {
 					for (int i = VerticalScrollBarValue; i <= 0; i ++) {
 						IStatusRenderer renderer =  _statuses[-i].Renderer;
-						double h = renderer.Render (_formatter, drawingContext, _statuses[-i], y, size.Width);
+						double h = renderer.Render (this, drawingContext, _statuses[-i], y, size.Width);
 						_viewStatuses.Add (_statuses[-i].Status.ID);
 						y += h;
 						_totalHeight += h;
@@ -182,6 +184,9 @@ namespace ktwt.ui
 		{
 			((UIElement)d).InvalidateVisual ();
 		}
+
+		public TextFormatter TextFormatter { get; private set; }
+		public ImageCache ImageCache { get; private set; }
 		#endregion
 
 		#region IStatusViewer

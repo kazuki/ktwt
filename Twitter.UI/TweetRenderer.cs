@@ -23,6 +23,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Media.TextFormatting;
 using ktwt.StatusStream;
 using ktwt.ui;
@@ -41,13 +42,22 @@ namespace ktwt.Twitter.ui
 			@"(?<" + TweetRegetUrlGroupName+ @">https?://[a-zA-Z0-9!#$%&'()=\-~^@`;\+:\*,\./\\?_]+)|" +
 			@"(?<" + TweetRegetUserNameGroupName + @">(?<=^|[^a-zA-Z0-9_])@[a-zA-Z0-9_]+)|" +
 			@"(?<" + TweetRegetHashTagGroupName + @">(?<=^|[^a-zA-Z0-9\&\/])#[a-zA-Z0-9_]+)", RegexOptions.Compiled);
+		const string IN_REPLY_TO = " in reply to ";
+		const string RETWEETED_BY = " retweeted by  ";
+		const string FROM = " from ";
 
 		TweetRenderer ()
 		{
 			FontFamily ff = SystemFonts.MessageFontFamily;
 			Typeface tf = new Typeface (ff, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+			Typeface btf = new Typeface (ff, FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
 			double fontSize = 10.5;
 			CultureInfo ci = CultureInfo.CurrentUICulture;
+
+			HeaderDefaultTextRunProperties = new BasicTextRunProperties (tf, null, Brushes.DarkBlue, fontSize, fontSize, null, null, ci);
+			HeaderNameTextRunProperties = new BasicTextRunProperties (btf, null, Brushes.DarkBlue, fontSize, fontSize, TextDecorations.Underline, null, ci);
+			HeaderParagraphProperties = new BasicTextParagraphProperties (HeaderDefaultTextRunProperties,
+				false, FlowDirection.LeftToRight, 0.0, 0.0, TextAlignment.Left, null, TextWrapping.NoWrap);
 
 			DefaultTextRunProperties = new BasicTextRunProperties (tf, null, Brushes.Black, fontSize, fontSize, null, null, ci);
 			UrlTextRunProperties = new BasicTextRunProperties (tf, null, Brushes.Blue, fontSize, fontSize, TextDecorations.Underline, null, ci);
@@ -60,7 +70,12 @@ namespace ktwt.Twitter.ui
 
 		public IDecoratedStatus Decorate (StatusBase status)
 		{
-			string text = status.Text;
+			Status s = (Status)status;
+			Status s0 = s;
+			if (s.RetweetedStatus != null)
+				s = s.RetweetedStatus;
+			User u = (User)s.User;
+			string text = s.Text;
 			Match m = TweetRegex.Match (text);
 			int last = 0;
 			List<DecoratedText> inlines = new List<DecoratedText> ();
@@ -68,28 +83,53 @@ namespace ktwt.Twitter.ui
 				if (m.Index > last)
 					inlines.Add (new DecoratedText (DefaultTextRunProperties, text, last, m.Index - last, false));
 				if (m.Success) {
-					TextRunProperties prop = null;
-					if (m.Groups[TweetRegetUrlGroupName].Success) {
-						prop = UrlTextRunProperties;
-					} else if (m.Groups[TweetRegetUserNameGroupName].Success) {
-						prop = UserNameTextRunProperties;;
-					} else if (m.Groups[TweetRegetHashTagGroupName].Success) {
-						prop = HashTagRunProperties;
-					}
-					if (prop == null)
-						prop = DefaultTextRunProperties;
-					
+					TextRunProperties prop = 
+						m.Groups[TweetRegetUrlGroupName].Success ? UrlTextRunProperties
+						: m.Groups[TweetRegetUserNameGroupName].Success ? UserNameTextRunProperties
+						: m.Groups[TweetRegetHashTagGroupName].Success ? HashTagRunProperties : DefaultTextRunProperties;
 					Capture c = m.Captures[0];
 					inlines.Add (new DecoratedText (prop, text, c.Index, c.Length, false));
 				}
-
 				last = m.Index + m.Length;
 				m = m.NextMatch ();
 			}
 			if (last < text.Length)
 				inlines.Add (new DecoratedText (DefaultTextRunProperties, text, last, false));
-			return new FormattedText (status, ParagraphProperties, inlines.ToArray ());
+			DecoratedText[] texts = inlines.ToArray ();
+			inlines.Clear ();
+
+			inlines.Add (new DecoratedText (HeaderNameTextRunProperties, u.ScreenName + " [" + u.Name + "]", false));
+			if (s.InReplyToScreenName != null && s.InReplyToScreenName.Length > 0) {
+				inlines.Add (new DecoratedText (HeaderDefaultTextRunProperties, IN_REPLY_TO, false));
+				inlines.Add (new DecoratedText (HeaderNameTextRunProperties, "@" + s.InReplyToScreenName, false));
+			}
+			if (s != s0) {
+				inlines.Add (new DecoratedText (HeaderDefaultTextRunProperties, RETWEETED_BY, false));
+				inlines.Add (new DecoratedText (HeaderNameTextRunProperties, "@" + ((User)s0.User).ScreenName, false));
+			}
+			if (s.Source != null && s.Source.Length > 0) {
+				int p1 = s.Source.IndexOf ('>');
+				int p2 = s.Source.IndexOf ('<', Math.Max (0, p1));
+				/*int p3 = s.Source.IndexOf ('\"');
+				int p4 = s.Source.IndexOf ('\"', Math.Max (0, p3 + 1));
+				inlines.Add (new DecoratedText (HeaderDefaultTextRunProperties, FROM, false));
+				if (p3 >= 0 && p4 > 0) {
+					string url = s.Source.Substring (p3 + 1, p4 - p3 - 1);
+				}*/
+				inlines.Add (new DecoratedText (HeaderDefaultTextRunProperties, FROM, false));
+				if (p1 >= 0 && p2 > 0)
+					inlines.Add (new DecoratedText (HeaderNameTextRunProperties, s.Source, p1 + 1, p2 - p1 - 1, false));
+				else
+					inlines.Add (new DecoratedText (HeaderNameTextRunProperties, s.Source, false));
+			}
+			inlines.Add (new DecoratedText (HeaderDefaultTextRunProperties, " (" + s.CreatedAt.ToString ("MM/dd HH:mm:ss") + ")", false));
+
+			return new FormattedText (status, HeaderParagraphProperties, ParagraphProperties, inlines.ToArray (), texts, text.Length);
 		}
+
+		public TextRunProperties HeaderDefaultTextRunProperties { get; set; }
+		public TextRunProperties HeaderNameTextRunProperties { get; set; }
+		public TextParagraphProperties HeaderParagraphProperties { get; set; }
 
 		public TextRunProperties DefaultTextRunProperties { get; set; }
 		public TextRunProperties UrlTextRunProperties { get; set; }
@@ -97,7 +137,7 @@ namespace ktwt.Twitter.ui
 		public TextRunProperties HashTagRunProperties { get; set; }
 		public TextParagraphProperties ParagraphProperties { get; set; }
 
-		public double Render (TextFormatter formatter, DrawingContext drawingContext, IDecoratedStatus item, double offset_y, double width)
+		public double Render (IStatusRendererOwner owner, DrawingContext drawingContext, IDecoratedStatus item, double offset_y, double width)
 		{
 			FormattedText text = (FormattedText)item;
 			Status s = (Status)item.Status;
@@ -106,27 +146,42 @@ namespace ktwt.Twitter.ui
 			double padding_left = 5;
 			double padding_top = 2;
 			double padding_right = 5;
-			double x = padding_left;
-			double y = offset_y + padding_top;
+			double x, y = offset_y + padding_top;
+			double text_width;
 			int pos = 0;
-			CustomTextSource source = new CustomTextSource (text);
+			CustomTextSource headerSource = new CustomTextSource (text.Headers);
+			CustomTextSource bodySource = new CustomTextSource (text.Texts);
 
 			// draw profile image
+			int iconWidth = 32, iconHeight = 32;
+			x = padding_left;
+			BitmapImage img = owner.ImageCache.LoadCache (u.ProfileImageUrl);
+			if (img != null) {
+				try {
+					drawingContext.DrawImage (img, new Rect (x, y, iconWidth, iconHeight));
+				} catch {}
+			}
 
-			// draw header (todo)
+			// draw header
+			x = padding_left * 2 + iconWidth;
+			text_width = width - x;
+			using (TextLine line = owner.TextFormatter.FormatLine (headerSource, pos, text_width, text.HeaderParagraphProperties, null)) {
+				line.Draw (drawingContext, new Point (x, y), InvertAxes.None);
+				y += line.Height;
+			}
 
 			// draw text
-			x = padding_left;
-			double text_width = width - x - padding_right;
-			while (pos < item.Status.Text.Length) {
-				using (TextLine line = formatter.FormatLine (source, pos, text_width, text.ParagraphProperties, null)) {
+			x = padding_left * 2 + iconWidth;
+			text_width = width - x - padding_right;
+			while (pos < text.TextLength) {
+				using (TextLine line = owner.TextFormatter.FormatLine (bodySource, pos, text_width, text.ParagraphProperties, null)) {
 					line.Draw (drawingContext, new Point (x, y), InvertAxes.None);
 					pos += line.Length;
 					y += line.Height;
 				}
 			}
 
-			return y - offset_y;
+			return Math.Max (y - offset_y, iconHeight);
 		}
 
 		#region Internal Classes
@@ -164,22 +219,33 @@ namespace ktwt.Twitter.ui
 		}
 		class FormattedText : IDecoratedStatus
 		{
-			public FormattedText (StatusBase status, TextParagraphProperties prop, DecoratedText[] texts)
+			public FormattedText (StatusBase status, TextParagraphProperties header_prop, TextParagraphProperties prop, DecoratedText[] headers, DecoratedText[] texts, int text_length)
 			{
 				Status = status;
+				HeaderParagraphProperties = header_prop;
 				ParagraphProperties = prop;
+				Headers = headers;
 				Texts = texts;
+				TextLength = text_length;
 			}
 
+			public TextParagraphProperties HeaderParagraphProperties { get; set; }
 			public TextParagraphProperties ParagraphProperties { get; set; }
+			public DecoratedText[] Headers { get; private set; }
 			public DecoratedText[] Texts { get; private set; }
+			public int TextLength { get; private set; }
+
+			public static string ToString (DecoratedText[] texts)
+			{
+				StringBuilder sb = new StringBuilder ();
+				for (int i = 0; i < texts.Length; i ++)
+					sb.Append (texts[i].ToString ());
+				return sb.ToString ();
+			}
 
 			public override string ToString ()
 			{
-				StringBuilder sb = new StringBuilder ();
-				for (int i = 0; i < Texts.Length; i ++)
-					sb.Append (Texts[i].ToString ());
-				return sb.ToString ();
+				return ToString (Texts);
 			}
 
 			public StatusBase Status { get; private set; }
@@ -189,18 +255,18 @@ namespace ktwt.Twitter.ui
 		}
 		class CustomTextSource : TextSource
 		{
-			FormattedText _text;
+			DecoratedText[] _texts;
 			string _rawText = null;
 
-			public CustomTextSource (FormattedText text)
+			public CustomTextSource (DecoratedText[] texts)
 			{
-				_text = text;
+				_texts = texts;
 			}
 
 			public override TextSpan<CultureSpecificCharacterBufferRange> GetPrecedingText (int textSourceCharacterIndexLimit)
 			{
 				if (_rawText == null)
-					_rawText = _text.ToString ();
+					_rawText = FormattedText.ToString (_texts);
 				CharacterBufferRange cbr = new CharacterBufferRange (_rawText, 0, textSourceCharacterIndexLimit);
 				return new TextSpan<CultureSpecificCharacterBufferRange> (
 					textSourceCharacterIndexLimit,
@@ -215,19 +281,19 @@ namespace ktwt.Twitter.ui
 			public override TextRun GetTextRun (int textSourceCharacterIndex)
 			{
 				int pos = 0;
-				for (int i = 0; i <= _text.Texts.Length; i ++) {
-					if (i < _text.Texts.Length && pos == textSourceCharacterIndex) {
-						DecoratedText t = _text.Texts[i];
+				for (int i = 0; i <= _texts.Length; i ++) {
+					if (i < _texts.Length && pos == textSourceCharacterIndex) {
+						DecoratedText t = _texts[i];
 						return new TextCharacters (t.Text, t.Offset, t.Length, t.Properties);
 					} else if (pos > textSourceCharacterIndex) {
-						DecoratedText t = _text.Texts[i - 1];
+						DecoratedText t = _texts[i - 1];
 						string text = t.ToString ();
 						int offset = textSourceCharacterIndex - (pos - text.Length);
 						TextCharacters c = new TextCharacters (text, offset, text.Length - offset, t.Properties);
 						return c;
 					}
-					if (i < _text.Texts.Length)
-						pos += _text.Texts[i].Length;
+					if (i < _texts.Length)
+						pos += _texts[i].Length;
 				}
 				return new TextEndOfParagraph (1);
 			}

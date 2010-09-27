@@ -15,16 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using ktwt.StatusStream;
-using System.Windows.Media;
 using System.Windows.Media.TextFormatting;
 
 namespace ktwt.ui
 {
-	interface IStatusRenderer
+	interface IStatusRendererOwner
 	{
-		IDecoratedStatus Decorate (StatusBase status);
-
-		double Render (IStatusRendererOwner owner, DrawingContext drawingContext, IDecoratedStatus item, double offset_y, double width);
+		TextFormatter TextFormatter { get; }
+		ImageCache ImageCache { get; }
 	}
 }
