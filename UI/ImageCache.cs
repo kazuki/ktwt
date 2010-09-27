@@ -21,6 +21,7 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace ktwt.ui
@@ -32,7 +33,7 @@ namespace ktwt.ui
 		HashSet<string> _stackUrls = new HashSet<string> ();
 		int _downloading = 0;
 		int _maxDownloading = 8;
-		LRU<string, BitmapImage> _memCache;
+		LRU<string, ImageSource> _memCache;
 
 		public ImageCache (string cache_dir)
 		{
@@ -40,17 +41,17 @@ namespace ktwt.ui
 				Directory.CreateDirectory (cache_dir);
 			_dir = cache_dir;
 
-			LRU<string, BitmapImage>.CreateDelegate create = delegate (string key) {
+			LRU<string, ImageSource>.CreateDelegate create = delegate (string key) {
 				try {
 					return new BitmapImage (new Uri (key));
 				} catch {
 					return null;
 				}
 			};
-			_memCache = new LRU<string,BitmapImage> (create, 2048);
+			_memCache = new LRU<string, ImageSource> (create, 2048);
 		}
 
-		public BitmapImage LoadCache (string url)
+		public ImageSource LoadCache (string url)
 		{
 			string filePath = UrlToCachePath (url);
 			if (File.Exists (filePath))
