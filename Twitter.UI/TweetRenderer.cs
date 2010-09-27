@@ -155,7 +155,13 @@ namespace ktwt.Twitter.ui
 			// draw profile image
 			int iconWidth = 32, iconHeight = 32;
 			x = padding_left;
-			BitmapImage img = owner.ImageCache.LoadCache (u.ProfileImageUrl);
+			ImageSource img = null;
+			if (text.ProfileImage != null)
+				img = text.ProfileImage.Target as ImageSource;
+			if (img == null) {
+				img = owner.ImageCache.LoadCache (u.ProfileImageUrl);
+				text.ProfileImage = new WeakReference (img);
+			}
 			if (img != null) {
 				try {
 					drawingContext.DrawImage (img, new Rect (x, y, iconWidth, iconHeight));
@@ -234,6 +240,7 @@ namespace ktwt.Twitter.ui
 			public DecoratedText[] Headers { get; private set; }
 			public DecoratedText[] Texts { get; private set; }
 			public int TextLength { get; private set; }
+			public WeakReference ProfileImage { get; set; }
 
 			public static string ToString (DecoratedText[] texts)
 			{
