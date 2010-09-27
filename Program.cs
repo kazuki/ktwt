@@ -15,12 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System;
+using System.Windows;
+using ktwt.ui;
+
 namespace ktwt
 {
 	class Program
 	{
+		[STAThread]
 		static void Main (params string[] args)
 		{
+			Application app = new Application ();
+			app.Run (new MainWindow ());
 		}
 	}
 }
