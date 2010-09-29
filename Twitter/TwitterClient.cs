@@ -67,7 +67,7 @@ namespace ktwt.Twitter
 		static readonly Uri StreamingRetweetURL = new Uri ("http://stream.twitter.com/1/statuses/retweet.json");
 		static readonly Uri StreamingSampleURL = new Uri ("http://stream.twitter.com/1/statuses/sample.json");
 
-		static readonly Uri UserStreamingURL = new Uri ("https://betastream.twitter.com/2b/user.json");
+		static readonly Uri UserStreamingURL = new Uri ("https://userstream.twitter.com/2/user.json");
 
 		const string X_RateLimit_Limit = "X-RateLimit-Limit";
 		const string X_RateLimit_Remaining = "X-RateLimit-Remaining";
