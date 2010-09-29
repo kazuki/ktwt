@@ -23,6 +23,7 @@ namespace ktwt.Twitter
 		Mentions,
 		DirectMessages,
 		Search,
-		List
+		List,
+		UserTimeline,
 	}
 }

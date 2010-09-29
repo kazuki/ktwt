@@ -192,6 +192,7 @@ namespace ktwt.Twitter
 						case RestType.DirectMessages: base_name += "'s dm"; break;
 						case RestType.Search: base_name += " search \"hoge\""; break;
 						case RestType.List: base_name += "'s list \"hoge\""; break;
+						case RestType.UserTimeline: base_name += " user TL"; break;
 					}
 					return base_name;
 				}
@@ -214,6 +215,10 @@ namespace ktwt.Twitter
 							break;
 						case RestType.DirectMessages:
 							status = Owner._client.GetDirectMessagesAll (Usage.Since, null, Usage.Count, null);
+							break;
+						case RestType.UserTimeline:
+							RestConfig.UserTimeline utConfig = (Usage.Config as RestConfig.UserTimeline);
+							status = Owner._client.GetUserTimeline (utConfig.UserId, utConfig.ScreenName, Usage.Since, null, Usage.Count, null);
 							break;
 					}
 					if (status == null || status.Length == 0)

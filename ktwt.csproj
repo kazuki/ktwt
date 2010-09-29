@@ -106,6 +106,7 @@
     <Compile Include="Twitter\IStreamingState.cs" />
     <Compile Include="Twitter\ListInfo.cs" />
     <Compile Include="Twitter\ListMode.cs" />
+    <Compile Include="Twitter\RestConfig.cs" />
     <Compile Include="Twitter\RestType.cs" />
     <Compile Include="Twitter\RestUsage.cs" />
     <Compile Include="Twitter\Status.cs" />

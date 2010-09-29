@@ -42,6 +42,7 @@ namespace ktwt.Twitter
 		const string StatusesUpdateURL = "https://twitter.com/statuses/update.json";
 		const string StatusesDestroyURL = "https://api.twitter.com/1/statuses/destroy/{0}.json";
 		const string StatusesRetweetURL = "https://api.twitter.com/1/statuses/retweet/{0}.json";
+		const string StatusesUserTimelineURL = "https://api.twitter.com/1/statuses/user_timeline.json";
 		const string SearchURL = "http://search.twitter.com/search.json";
 		const string DirectMessagesURL = "http://api.twitter.com/1/direct_messages.json";
 		const string DirectMessagesSentURL = "http://api.twitter.com/1/direct_messages/sent.json";
@@ -132,7 +133,14 @@ namespace ktwt.Twitter
 			return GetStatus (StatusesMentionsURL, false, false, since_id, max_id, count, page);
 		}
 
-		public Status[] GetStatus (string baseUrl, bool isDmMode, bool isListMode, ulong? since_id, ulong? max_id, int? count, int? page)
+		public Status[] GetUserTimeline (ulong? user_id, string screen_name, ulong? since_id, ulong? max_id, int? count, int? page)
+		{
+			if (!user_id.HasValue && (screen_name == null || screen_name.Length == 0))
+				throw new ArgumentNullException ();
+			return GetStatus (StatusesUserTimelineURL, user_id, screen_name, since_id, max_id, count, page, false);
+		}
+
+		Status[] GetStatus (string baseUrl, bool isDmMode, bool isListMode, ulong? since_id, ulong? max_id, int? count, int? page)
 		{
 			string query = "";
 			if (since_id.HasValue) query += "&since_id=" + since_id.Value.ToString ();
@@ -143,9 +151,21 @@ namespace ktwt.Twitter
 			return GetStatus (new Uri (baseUrl + query), isDmMode);
 		}
 
-		Status[] GetStatus (Uri url, bool isDmMode)
+		Status[] GetStatus (string baseUrl, ulong? user_id, string screen_name, ulong? since_id, ulong? max_id, int? count, int? page, bool withAuth)
 		{
-			string json = DownloadString (url, HTTP_GET, null);
+			string query = "";
+			if (user_id.HasValue) query += "&user_id=" + user_id.Value.ToString ();
+			if (screen_name != null && screen_name.Length > 0) query += "&screen_name=" + screen_name;
+			if (since_id.HasValue) query += "&since_id=" + since_id.Value.ToString ();
+			if (max_id.HasValue) query += "&max_id=" + max_id.Value.ToString ();
+			if (page.HasValue) query += "&page=" + page.Value.ToString ();
+			if (query.Length > 0) query = "?" + query.Substring (1);
+			return GetStatus (new Uri (baseUrl + query), false, false);
+		}
+
+		Status[] GetStatus (Uri url, bool isDmMode, bool withAuth = true)
+		{
+			string json = (withAuth ? DownloadString (url, HTTP_GET, null) : DownloadStringWithoutAuthentication (url, HTTP_GET, null));
 			JsonArray array = (JsonArray)JsonValueReader.Read (json);
 			Status[] statuses = new Status[array.Length];
 			for (int i = 0; i < array.Length; i++) {
