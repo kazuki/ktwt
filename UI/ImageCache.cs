@@ -17,10 +17,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -43,7 +46,14 @@ namespace ktwt.ui
 
 			LRU<string, ImageSource>.CreateDelegate create = delegate (string key) {
 				try {
-					return new BitmapImage (new Uri (key));
+					Uri uri = new Uri (key);
+					try {
+						return new BitmapImage (uri);
+					} catch {
+						using (Bitmap bmp = new Bitmap (uri.LocalPath)) {
+							return Imaging.CreateBitmapSourceFromHBitmap (bmp.GetHbitmap(), IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromWidthAndHeight (bmp.Width, bmp.Height));
+						}
+					}
 				} catch {
 					return null;
 				}
