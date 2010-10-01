@@ -321,7 +321,7 @@ namespace ktwt.Twitter
 				statuses[i] = new Status {
 					NumericID = (ulong)(o.Value["id"] as JsonNumber).Value,
 					Text = (o.Value["text"] as JsonString).Value,
-					CreatedAt = DateTime.ParseExact ((o.Value["created_at"] as JsonString).Value, "ddd, dd MMM yyyy HH:mm:ss zzzz", JsonDeserializer.InvariantCulture),
+					CreatedAt = DateTime.ParseExact ((o.Value["created_at"] as JsonString).Value, "ddd, dd MMM yyyy HH:mm:ss zzzz", SerializationCache.InvariantCulture),
 					User = new User {
 						ScreenName = (o.Value["from_user"] as JsonString).Value,
 						Name = (o.Value["from_user"] as JsonString).Value,

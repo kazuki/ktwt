@@ -25,11 +25,6 @@ namespace ktwt.Json
 {
 	public static class JsonDeserializer
 	{
-		static readonly Type MappingAttributeType = typeof (JsonObjectMappingAttribute);
-		static Dictionary<Type, CacheEntry> _reflectionCache = new Dictionary<Type, CacheEntry> ();
-		public const string DateTimeFormat = "ddd MMM dd HH:mm:ss zzzz yyyy";
-		public static IFormatProvider InvariantCulture = CultureInfo.InvariantCulture;
-
 		public static T Deserialize<T> (string text) where T : class, new ()
 		{
 			return Deserialize<T> ((JsonObject)JsonValueReader.Read (text));
@@ -42,89 +37,61 @@ namespace ktwt.Json
 
 		static object Deserialize (JsonObject obj, Type t)
 		{
-			CacheEntry c;
-			lock (_reflectionCache) {
-				if (!_reflectionCache.TryGetValue (t, out c)) {
-					c = new CacheEntry (t);
-					_reflectionCache.Add (t, c);
-				}
-			}
-
+			SerializationCache c = SerializationCache.Get (t);
 			object r = FormatterServices.GetUninitializedObject (t);
 			for (int i = 0; i < c.Attributes.Length; i ++) {
 				JsonValue v;
 				JsonObjectMappingAttribute att = c.Attributes[i];
 				PropertyInfo prop = c.Properties[i];
 				if (!obj.Value.TryGetValue (att.Key, out v) || v.ValueType != att.ValueType) continue;
-				switch (att.ValueType) {
-					case JsonValueType.Number:
-						double d = (v as JsonNumber).Value;
-						if (prop.PropertyType == typeof (ulong))
-							prop.SetValue (r, (ulong)d, null);
-						else if (prop.PropertyType == typeof (long))
-							prop.SetValue (r, (long)d, null);
-						else if (prop.PropertyType == typeof (uint))
-							prop.SetValue (r, (uint)d, null);
-						else if (prop.PropertyType == typeof (int))
-							prop.SetValue (r, (int)d, null);
-						else if (prop.PropertyType == typeof (double))
-							prop.SetValue (r, (double)d, null);
-						else if (prop.PropertyType == typeof (float))
-							prop.SetValue (r, (float)d, null);
-						break;
-					case JsonValueType.String:
-						if (prop.PropertyType == typeof (DateTime))
-							prop.SetValue (r, DateTime.ParseExact ((v as JsonString).Value, DateTimeFormat, InvariantCulture), null);
-						else if (prop.PropertyType.IsEnum)
-							prop.SetValue (r, Enum.Parse (prop.PropertyType, (v as JsonString).Value, true), null);
-						else
-							prop.SetValue (r, (v as JsonString).Value, null);
-						break;
-					case JsonValueType.Boolean:
-						prop.SetValue (r, (v as JsonBoolean).Value, null);
-						break;
-					case JsonValueType.Object:
-						prop.SetValue (r, Deserialize (v as JsonObject, prop.PropertyType), null);
-						break;
-					default:
-						throw new NotSupportedException ();
-				}
+				prop.SetValue (r, Deserialize (v, prop.PropertyType), null);
 			}
-
 			return r;
 		}
 
-		class CacheEntry
+		static object Deserialize (JsonValue v, Type t)
 		{
-			PropertyInfo[] _properties;
-			JsonObjectMappingAttribute[] _attributes;
-
-			public CacheEntry (Type t)
-			{
-				PropertyInfo[] properties = t.GetProperties (BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.SetField | BindingFlags.SetProperty);
-
-				List<PropertyInfo> list1 = new List<PropertyInfo> (properties.Length);
-				List<JsonObjectMappingAttribute> list2 = new List<JsonObjectMappingAttribute> (properties.Length);
-
-				for (int i = 0; i < properties.Length; i ++) {
-					object[] atts = properties[i].GetCustomAttributes (MappingAttributeType, true);
-					if (atts.Length != 1) continue;
-
-					list1.Add (properties[i]);
-					list2.Add ((JsonObjectMappingAttribute)atts[0]);
-				}
-
-				_properties = list1.ToArray ();
-				_attributes = list2.ToArray ();
+			switch (v.ValueType) {
+				case JsonValueType.Number:
+					double d = (v as JsonNumber).Value;
+					if (t == typeof (ulong))
+						return (ulong)d;
+					else if (t == typeof (long))
+						return (long)d;
+					else if (t == typeof (uint))
+						return (uint)d;
+					else if (t == typeof (int))
+						return (int)d;
+					else if (t == typeof (double))
+						return (double)d;
+					else if (t == typeof (float))
+						return (float)d;
+					break;
+				case JsonValueType.String:
+					if (t == typeof (DateTime))
+						return DateTime.ParseExact ((v as JsonString).Value, SerializationCache.JsonDateTimeFormat, SerializationCache.InvariantCulture);
+					else if (t.IsEnum)
+						return Enum.Parse (t, (v as JsonString).Value, true);
+					else
+						return (v as JsonString).Value;
+				case JsonValueType.Boolean:
+					return (v as JsonBoolean).Value;
+				case JsonValueType.Object:
+					return Deserialize (v as JsonObject, t);
+				case JsonValueType.Array:
+					return Deserialize (v as JsonArray, t);
 			}
+			throw new NotSupportedException ();
+		}
 
-			public PropertyInfo[] Properties {
-				get { return _properties; }
+		static Array Deserialize (JsonArray jary, Type t)
+		{
+			t = t.GetElementType ();
+			Array array = Array.CreateInstance (t, jary.Length);
+			for (int i = 0; i < array.Length; i ++) {
+				array.SetValue (Deserialize (jary[i], t), i);
 			}
-
-			public JsonObjectMappingAttribute[] Attributes {
-				get { return _attributes; }
-			}
+			return array;
 		}
 	}
 }

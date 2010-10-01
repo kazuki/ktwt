@@ -61,6 +61,7 @@
     <Compile Include="Json\JsonNumber.cs" />
     <Compile Include="Json\JsonObject.cs" />
     <Compile Include="Json\JsonObjectMappingAttribute.cs" />
+    <Compile Include="Json\JsonSerializer.cs" />
     <Compile Include="Json\JsonString.cs" />
     <Compile Include="Json\JsonTextWriter.cs" />
     <Compile Include="Json\JsonValue.cs" />
@@ -70,6 +71,7 @@
     <Compile Include="Json\LitJSON\JsonReader.cs" />
     <Compile Include="Json\LitJSON\Lexer.cs" />
     <Compile Include="Json\LitJSON\ParserToken.cs" />
+    <Compile Include="Json\SerializationCache.cs" />
     <Compile Include="Net\ISimpleWebClient.cs" />
     <Compile Include="OAuth\OAuthBase.cs" />
     <Compile Include="OAuth\OAuthClient.cs" />
