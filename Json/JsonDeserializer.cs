@@ -25,12 +25,17 @@ namespace ktwt.Json
 {
 	public static class JsonDeserializer
 	{
-		public static T Deserialize<T> (string text) where T : class, new ()
+		public static T Deserialize<T> (string text)
 		{
-			return Deserialize<T> ((JsonObject)JsonValueReader.Read (text));
+			JsonValue v = JsonValueReader.Read (text);
+			if (v is JsonObject)
+				return Deserialize<T> ((JsonObject)v);
+			else if (v is JsonArray)
+				return (T)(object)Deserialize (v as JsonArray, typeof (T));
+			throw new FormatException ();
 		}
 
-		public static T Deserialize<T> (JsonObject obj) where T : class, new ()
+		public static T Deserialize<T> (JsonObject obj)
 		{
 			return (T)Deserialize (obj, typeof (T));
 		}

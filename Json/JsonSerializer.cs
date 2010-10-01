@@ -39,7 +39,10 @@ namespace ktwt.Json
 				return;
 
 			using (JsonTextWriter jtw = new JsonTextWriter (writer)) {
-				Serialize (jtw, obj);
+				if (obj is Array)
+					Serialize (jtw, (Array)obj);
+				else
+					Serialize (jtw, obj);
 			}
 		}
 
