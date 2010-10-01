@@ -66,6 +66,14 @@ namespace ktwt.Json
 						return (double)d;
 					else if (t == typeof (float))
 						return (float)d;
+					else if (t == typeof (ushort))
+						return (ushort)d;
+					else if (t == typeof (short))
+						return (short)d;
+					else if (t == typeof (byte))
+						return (byte)d;
+					else if (t == typeof (sbyte))
+						return (sbyte)d;
 					break;
 				case JsonValueType.String:
 					if (t == typeof (DateTime))

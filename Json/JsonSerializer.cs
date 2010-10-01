@@ -103,12 +103,27 @@ namespace ktwt.Json
 					writer.WriteNull ();
 					break;
 				case JsonValueType.Number:
-					if ((obj is byte) || (obj is ushort) || (obj is uint) || (obj is ulong))
+					Type t = obj.GetType ();
+					if (t == typeof (ulong))
 						writer.WriteNumber ((ulong)obj);
-					else if ((obj is sbyte) || (obj is short) || (obj is int) || (obj is long))
+					else if (t == typeof (long))
 						writer.WriteNumber ((long)obj);
-					else if ((obj is float) || (obj is double))
+					else if (t == typeof (uint))
+						writer.WriteNumber ((ulong)(uint)obj);
+					else if (t == typeof (int))
+						writer.WriteNumber ((long)(int)obj);
+					else if (t == typeof (double))
 						writer.WriteNumber ((double)obj);
+					else if (t == typeof (float))
+						writer.WriteNumber ((double)(float)obj);
+					else if (t == typeof (ushort))
+						writer.WriteNumber ((ulong)(ushort)obj);
+					else if (t == typeof (short))
+						writer.WriteNumber ((long)(short)obj);
+					else if (t == typeof (byte))
+						writer.WriteNumber ((ulong)(byte)obj);
+					else if (t == typeof (sbyte))
+						writer.WriteNumber ((long)(sbyte)obj);
 					else
 						throw new ArgumentException ();
 					break;
