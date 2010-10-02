@@ -35,7 +35,7 @@ namespace ktwt.ui
 		HashSet<string> _viewStatuses = new HashSet<string> ();
 		long _lastUpdate = -1, _lastRender = -1;
 		double _totalHeight = 0.0, _totalHeightCount = 0.0;
-		const double MaxRenderingRate = 10;
+		const double MaxRenderingRate = 60;
 
 		public StatusViewer ()
 		{
@@ -184,7 +184,7 @@ namespace ktwt.ui
 
 		static void PropertyChanged (DependencyObject d, DependencyPropertyChangedEventArgs e)
 		{
-			((UIElement)d).InvalidateVisual ();
+			(d as StatusViewer).EnqueueInvalidateVisual ();
 		}
 
 		public TextFormatter TextFormatter { get; private set; }
