@@ -80,6 +80,8 @@ namespace ktwt.ui
 			lock (_statuses) {
 				for (int i = 0; i < items.Length; i ++) {
 					IDecoratedStatus s = items[i];
+					if (s == null)
+						continue;
 					int pos = _statuses.Count - 1;
 					for (; pos >= 0; pos --) {
 						if (_statuses[pos].Status.CreatedAt <= s.Status.CreatedAt)
