@@ -23,27 +23,33 @@ using ktwt.Twitter;
 
 namespace ktwt.ui
 {
-	public partial class MainWindow : Window
+	partial class MainWindow : Window
 	{
 		IntervalTimer _timer;
-		TwitterAccountNode _node;
+		TwitterAccountNode[] _nodes;
+		Configurations _config;
 
-		public MainWindow ()
+		public MainWindow (Configurations config)
 		{
 			InitializeComponent ();
 
+			_config = config;
 			_timer = new IntervalTimer (TimeSpan.FromSeconds (0.5), Environment.ProcessorCount);
-			_node = new TwitterAccountNode (_timer);
-			_node.OAuthClient.PasswordAuth ("username", "password");
-			//viewer.AddInputStream (_node.AddUserStream ());
-			//viewer.AddInputStream (_node.AddRestStream (new RestUsage {Type=RestType.Home, Count=300, Interval=TimeSpan.FromSeconds (60), IsEnabled=true}));
-			viewer.AddInputStream (_node.AddSampleStream ());
+			_nodes = new TwitterAccountNode[_config.TwitterAccounts.Length];
+			for (int i = 0; i < _config.TwitterAccounts.Length; i ++) {
+				_nodes[i] = new TwitterAccountNode (_timer);
+				_nodes[i].Credential = _config.TwitterAccounts[i];
+
+				viewer.AddInputStream (_nodes[i].AddUserStream ());
+				viewer.AddInputStream (_nodes[i].AddRestStream (new RestUsage {Type=RestType.Home, Count=300, Interval=TimeSpan.FromSeconds (60), IsEnabled=true}));
+			}
 		}
 
 		protected override void OnClosed (EventArgs e)
 		{
 			_timer.Dispose ();
-			_node.Dispose ();
+			for (int i = 0; i < _nodes.Length; i ++)
+				_nodes[i].Dispose ();
 			base.OnClosed (e);
 		}
 	}

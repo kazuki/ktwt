@@ -122,6 +122,7 @@
     <AppDesigner Include="Properties\" />
     <Compile Include="UI\BasicTextParagraphProperties.cs" />
     <Compile Include="UI\BasicTextRunProperties.cs" />
+    <Compile Include="UI\Configurations.cs" />
     <Compile Include="UI\IDecoratedStatus.cs" />
     <Compile Include="UI\ImageCache.cs" />
     <Compile Include="UI\IStatusRenderer.cs" />

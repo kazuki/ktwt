@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.IO;
 using System.Windows;
 using ktwt.ui;
 
@@ -26,8 +27,9 @@ namespace ktwt
 		[STAThread]
 		static void Main (params string[] args)
 		{
+			Configurations config = Configurations.Load (Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.ApplicationData), "ktwt2.config.json"));
 			Application app = new Application ();
-			app.Run (new MainWindow ());
+			app.Run (new MainWindow (config));
 		}
 	}
 }

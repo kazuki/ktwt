@@ -28,8 +28,8 @@ namespace ktwt.OAuth
 			AccessSecret = accessSecret;
 		}
 
-		public string AccessToken { get; private set; }
-		public string AccessSecret { get; private set; }
+		public string AccessToken { get; protected set; }
+		public string AccessSecret { get; protected set; }
 
 		public virtual NetworkCredential GetCredential (Uri uri, string authType)
 		{

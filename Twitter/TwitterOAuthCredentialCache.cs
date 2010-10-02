@@ -16,6 +16,7 @@
  */
 
 using ktwt.OAuth;
+using ktwt.Json;
 
 namespace ktwt.Twitter
 {
@@ -33,7 +34,22 @@ namespace ktwt.Twitter
 			ScreenName = screenName;
 		}
 
+		[JsonObjectMapping ("user_id", JsonValueType.Number)]
 		public ulong UserID { get; set; }
+
+		[JsonObjectMapping ("screen_name", JsonValueType.String)]
 		public string ScreenName { get; set; }
+
+		[JsonObjectMapping ("token", JsonValueType.String)]
+		string AccessToken_Internal {
+			get { return AccessToken; }
+			set { AccessToken = value; }
+		}
+
+		[JsonObjectMapping ("secret", JsonValueType.String)]
+		string AccessSecret_Internal {
+			get { return AccessSecret; }
+			set { AccessSecret = value; }
+		}
 	}
 }
