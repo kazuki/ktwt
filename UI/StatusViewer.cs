@@ -39,8 +39,8 @@ namespace ktwt.ui
 
 		public StatusViewer ()
 		{
-			this.TextFormatter = TextFormatter.Create (TextFormattingMode.Ideal);
-			this.ImageCache = new ImageCache ("image_cache");
+			this.TextFormatter = TextFormatter.Create ();
+			this.ImageCache = new ImageCache ("image_cache", new Size (24.0, 24.0));
 
 			Focusable = true;
 			ThreadSafeInvalidateVisualDelegateInstance = new EmptyDelegate (ThreadSafeInvalidateVisual);

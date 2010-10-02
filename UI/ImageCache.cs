@@ -37,23 +37,31 @@ namespace ktwt.ui
 		int _downloading = 0;
 		int _maxDownloading = 8;
 		LRU<string, ImageSource> _memCache;
+		System.Windows.Size _size;
 
-		public ImageCache (string cache_dir)
+		public ImageCache (string cache_dir, System.Windows.Size size)
 		{
-			if (!Directory.Exists (cache_dir))
-				Directory.CreateDirectory (cache_dir);
+			try {
+				if (!Directory.Exists (cache_dir))
+					Directory.CreateDirectory (cache_dir);
+			} catch {}
 			_dir = cache_dir;
+			_size = size;
 
 			LRU<string, ImageSource>.CreateDelegate create = delegate (string key) {
 				try {
 					Uri uri = new Uri (key);
+					BitmapSource bi = null;
 					try {
-						return new BitmapImage (uri);
+						bi = new BitmapImage (uri);
 					} catch {
 						using (Bitmap bmp = new Bitmap (uri.LocalPath)) {
-							return Imaging.CreateBitmapSourceFromHBitmap (bmp.GetHbitmap(), IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromWidthAndHeight (bmp.Width, bmp.Height));
+							bi = Imaging.CreateBitmapSourceFromHBitmap (bmp.GetHbitmap(), IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromWidthAndHeight (bmp.Width, bmp.Height));
 						}
 					}
+					if (bi == null)
+						return null;
+					return new CachedBitmap (new TransformedBitmap (bi, new ScaleTransform (_size.Width / bi.Width, _size.Height / bi.Height)), BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
 				} catch {
 					return null;
 				}
@@ -68,6 +76,14 @@ namespace ktwt.ui
 				return _memCache.Get ("file://" + Path.GetFullPath (filePath));
 			AddDownloadQueue (url);
 			return null;
+		}
+
+		public System.Windows.Size ImageSize {
+			get { return _size; }
+			set {
+				_size = value;
+				_memCache.Clear ();
+			}
 		}
 
 		string UrlToKey (string url)

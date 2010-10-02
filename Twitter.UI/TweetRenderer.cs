@@ -153,23 +153,28 @@ namespace ktwt.Twitter.ui
 			CustomTextSource bodySource = new CustomTextSource (text.Texts);
 
 			// draw profile image
-			int iconWidth = 32, iconHeight = 32;
+			Size iconSize = owner.ImageCache.ImageSize;
 			x = padding_left;
 			ImageSource img = null;
-			if (text.ProfileImage != null)
+			if (text.ProfileImage != null) {
 				img = text.ProfileImage.Target as ImageSource;
+				if (img != null && (img.Width != iconSize.Width || img.Height != iconSize.Height)) {
+					text.ProfileImage = null;
+					img = null;
+				}
+			}
 			if (img == null) {
 				img = owner.ImageCache.LoadCache (u.ProfileImageUrl);
 				text.ProfileImage = new WeakReference (img);
 			}
 			if (img != null) {
 				try {
-					drawingContext.DrawImage (img, new Rect (x, y, iconWidth, iconHeight));
+					drawingContext.DrawImage (img, new Rect (x, y, iconSize.Width, iconSize.Height));
 				} catch {}
 			}
 
 			// draw header
-			x = padding_left * 2 + iconWidth;
+			x = padding_left * 2 + iconSize.Width;
 			text_width = width - x;
 			using (TextLine line = owner.TextFormatter.FormatLine (headerSource, pos, text_width, text.HeaderParagraphProperties, null)) {
 				line.Draw (drawingContext, new Point (x, y), InvertAxes.None);
@@ -177,7 +182,7 @@ namespace ktwt.Twitter.ui
 			}
 
 			// draw text
-			x = padding_left * 2 + iconWidth;
+			x = padding_left * 2 + iconSize.Width;
 			text_width = width - x - padding_right;
 			while (pos < text.TextLength) {
 				using (TextLine line = owner.TextFormatter.FormatLine (bodySource, pos, text_width, text.ParagraphProperties, null)) {
@@ -187,7 +192,7 @@ namespace ktwt.Twitter.ui
 				}
 			}
 
-			return Math.Max (y - offset_y, iconHeight);
+			return Math.Max (y - offset_y, iconSize.Height);
 		}
 
 		#region Internal Classes
