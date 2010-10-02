@@ -130,6 +130,7 @@
     <Compile Include="UI\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UI\ScrollStatusViewer.cs" />
     <Compile Include="UI\StatusRenderers.cs" />
     <Compile Include="UI\StatusViewer.cs" />
   </ItemGroup>

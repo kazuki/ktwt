@@ -9,15 +9,7 @@
     </Grid.RowDefinitions>
     <Grid.ColumnDefinitions>
       <ColumnDefinition />
-      <ColumnDefinition Width="Auto" />
     </Grid.ColumnDefinitions>
-    <k:StatusViewer Grid.Column="0" Grid.Row="0" x:Name="viewer" />
-    <ScrollBar Grid.Column="1" Grid.Row="0"
-               SmallChange="1.0"
-               LargeChange="20.0"
-               ViewportSize="{Binding ElementName=viewer, Path=AverageViewPortSize, Mode=OneWay}"
-               Value="{Binding ElementName=viewer, Path=VerticalScrollBarValue}"
-               Minimum="{Binding ElementName=viewer, Path=VerticalScrollBarMin}"
-               Maximum="{Binding ElementName=viewer, Path=VerticalScrollBarMax}" />
+    <k:ScrollStatusViewer x:Name="viewer" />
   </Grid>
 </Window>
