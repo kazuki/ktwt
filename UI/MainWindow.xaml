@@ -3,13 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:k="clr-namespace:ktwt.ui" UseLayoutRounding="True"
         Title="MainWindow" Height="300" Width="300">
-  <Grid>
+  <Grid x:Name="mainGrid">
     <Grid.RowDefinitions>
       <RowDefinition />
     </Grid.RowDefinitions>
     <Grid.ColumnDefinitions>
       <ColumnDefinition />
     </Grid.ColumnDefinitions>
-    <k:ScrollStatusViewer x:Name="viewer" />
   </Grid>
 </Window>
