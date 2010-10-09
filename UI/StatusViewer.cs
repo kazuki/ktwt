@@ -134,7 +134,7 @@ namespace ktwt.ui
 			Console.WriteLine ("Rendering {0} {1}", DateTime.Now, DateTime.Now.Ticks);
 #endif
 			// mouse wheel handling
-			drawingContext.DrawRectangle (Brushes.White, null, new Rect (0, 0, size.Width, size.Height));
+			drawingContext.DrawRectangle (Background, null, new Rect (0, 0, size.Width, size.Height));
 
 			lock (_statuses) {
 				_viewStatuses.Clear ();
@@ -189,6 +189,13 @@ namespace ktwt.ui
 
 		public TextFormatter TextFormatter { get; private set; }
 		public ImageCache ImageCache { get; private set; }
+
+		public static readonly DependencyProperty BackgroundProperty =
+			DependencyProperty.Register ("Background", typeof (Brush), typeof (StatusViewer), new FrameworkPropertyMetadata (SystemColors.WindowBrush, FrameworkPropertyMetadataOptions.AffectsRender, PropertyChanged));
+		public Brush Background {
+			get { return (Brush)GetValue (BackgroundProperty); }
+			set { SetValue (BackgroundProperty, value); }
+		}
 		#endregion
 
 		#region IStatusViewer

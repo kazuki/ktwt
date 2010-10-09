@@ -19,6 +19,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Media;
 using ktwt.StatusStream;
 
 namespace ktwt.ui
@@ -34,6 +35,7 @@ namespace ktwt.ui
 			StatusViewer = new StatusViewer ();
 			StatusViewer.SetValue (Grid.ColumnProperty, 0);
 			StatusViewer.SetValue (Grid.RowProperty, 0);
+			BindingOperations.SetBinding (this, BackgroundProperty, new Binding {Source = StatusViewer, Path = new PropertyPath (StatusViewer.BackgroundProperty)});
 
 			VerticalScrollBar = new ScrollBar {Orientation = Orientation.Vertical, SmallChange = 1.0, LargeChange = 20.0};
 			BindingOperations.SetBinding (VerticalScrollBar, ScrollBar.ViewportSizeProperty, new Binding {Source = StatusViewer, Path = new PropertyPath (StatusViewer.AverageViewPortSizeProperty), Mode = BindingMode.OneWay});
