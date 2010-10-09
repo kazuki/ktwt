@@ -54,5 +54,79 @@ namespace ktwt.ui
 
 		[JsonObjectMapping ("twitter_accounts", JsonValueType.Array)]
 		public TwitterOAuthCredentialCache[] TwitterAccounts { get; set; }
+
+		[JsonObjectMapping ("pane", JsonValueType.Object)]
+		public PaneConfig PaneInfo { get; set; }
+
+		#region Internal Classes
+		/// <summary>
+		/// Type毎の必須フィールド
+		/// 0 = Viewer, 1 = Splitter, 2 = Tab
+		/// # = Splitterの子供
+		/// </summary>
+		public class PaneConfig
+		{
+			[JsonObjectMapping ("type", JsonValueType.String)]
+			public PaneType Type { get; set; }
+
+			/// <summary>
+			/// Required by "0"
+			/// </summary>
+			[JsonObjectMapping ("id", JsonValueType.String)]
+			public string Id { get; set; }
+
+			/// <summary>
+			/// Required by "0,2"
+			/// </summary>
+			[JsonObjectMapping ("caption", JsonValueType.String)]
+			public string Caption { get; set; }
+
+			/// <summary>
+			/// Required by "1"
+			/// </summary>
+			[JsonObjectMapping ("splitter", JsonValueType.Object)]
+			public SplitterPaneInfo SplitterConfig { get; set; }
+
+			/// <summary>
+			/// Required by "#"
+			/// </summary>
+			[JsonObjectMapping ("layout_splitter", JsonValueType.Object)]
+			public SplitterLayoutInfo SplitterLayoutConfig { get; set; }
+
+			[JsonObjectMapping ("children", JsonValueType.Array)]
+			public PaneConfig[] Children { get; set; }
+		}
+
+		public class SplitterPaneInfo
+		{
+			[JsonObjectMapping ("rows", JsonValueType.Number)]
+			public int Rows { get; set; }
+
+			[JsonObjectMapping ("columns", JsonValueType.Number)]
+			public int Columns { get; set; }
+		}
+
+		public class SplitterLayoutInfo
+		{
+			[JsonObjectMapping ("row", JsonValueType.Number)]
+			public int Row { get; set; }
+
+			[JsonObjectMapping ("row_span", JsonValueType.Number)]
+			public int RowSpan { get; set; }
+
+			[JsonObjectMapping ("column", JsonValueType.Number)]
+			public int Column { get; set; }
+
+			[JsonObjectMapping ("column_span", JsonValueType.Number)]
+			public int ColumnSpan { get; set; }
+		}
+
+		public enum PaneType
+		{
+			Viewer,
+			Splitter,
+			Tab
+		}
+		#endregion
 	}
 }
