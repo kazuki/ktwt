@@ -134,7 +134,7 @@ namespace ktwt.Json
 					Serialize (writer, obj);
 					break;
 				case JsonValueType.String:
-					writer.WriteString ((string)obj);
+					writer.WriteString (obj.ToString ());
 					break;
 				default:
 					throw new ArgumentException ();
