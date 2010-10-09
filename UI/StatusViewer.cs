@@ -133,6 +133,8 @@ namespace ktwt.ui
 #if DEBUG
 			Console.WriteLine ("Rendering {0} {1}", DateTime.Now, DateTime.Now.Ticks);
 #endif
+			drawingContext.PushClip (new RectangleGeometry (new Rect (0, 0, size.Width, size.Height)));
+
 			// mouse wheel handling
 			drawingContext.DrawRectangle (Background, null, new Rect (0, 0, size.Width, size.Height));
 
@@ -151,6 +153,8 @@ namespace ktwt.ui
 					}
 				}
 			}
+
+			drawingContext.Pop ();
 		}
 
 		#region Properties
