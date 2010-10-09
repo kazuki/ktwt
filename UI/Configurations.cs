@@ -32,7 +32,9 @@ namespace ktwt.ui
 			try {
 				if (File.Exists (path)) {
 					using (StreamReader reader = new StreamReader (path)) {
-						return JsonDeserializer.Deserialize<Configurations> (reader.ReadToEnd ());
+						Configurations config = JsonDeserializer.Deserialize<Configurations> (reader.ReadToEnd ());
+						config.ConfigurationFilePath = path;
+						return config;
 					}
 				}
 			} catch {}
