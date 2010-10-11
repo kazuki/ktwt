@@ -1,8 +1,9 @@
 ﻿<Window x:Class="ktwt.ui.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:k="clr-namespace:ktwt.ui" UseLayoutRounding="True"
-        Title="MainWindow" Height="300" Width="300">
+        xmlns:k="clr-namespace:ktwt.ui"
+        Title="ktwt 0.1a0"
+        UseLayoutRounding="True" Height="400" Width="600">
   <Grid x:Name="mainGrid">
     <Grid.RowDefinitions>
       <RowDefinition />

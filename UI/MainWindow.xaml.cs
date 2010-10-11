@@ -35,6 +35,13 @@ namespace ktwt.ui
 		public MainWindow (Configurations config)
 		{
 			InitializeComponent ();
+			if (config.Window != null) {
+				Left = (config.Window.X >= 0 ? config.Window.X : Left);
+				Top = (config.Window.Y >= 0 ? config.Window.Y : Top);
+				Width = (config.Window.Width >= 0 ? config.Window.Width : Width);
+				Height = (config.Window.Height >= 0 ? config.Window.Height : Height);
+				WindowState = config.Window.State;
+			}
 
 			OptionWindow optWin = new OptionWindow (config);
 			config = optWin.Config;
@@ -151,10 +158,28 @@ namespace ktwt.ui
 
 		protected override void OnClosed (EventArgs e)
 		{
+			if (_timer == null)
+				return;
+
 			_timer.Dispose ();
 			for (int i = 0; i < _nodes.Length; i ++)
 				_nodes[i].Dispose ();
 			base.OnClosed (e);
+
+			if (WindowState == WindowState.Normal) {
+				_config.Window = new Configurations.WindowInfo {
+					X = (int)Left, Y = (int)Top, Width = (int)Width, Height = (int)Height, State = System.Windows.WindowState.Normal
+				};
+			} else if (WindowState == WindowState.Maximized) {
+				if (_config.Window == null) {
+					_config.Window = new Configurations.WindowInfo {
+						State = WindowState.Maximized
+					};
+				} else {
+					_config.Window.State = WindowState.Maximized;
+				}
+			}
+			_config.Save ();
 		}
 	}
 }

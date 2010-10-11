@@ -22,6 +22,7 @@ using System.Text;
 using System.IO;
 using ktwt.Json;
 using ktwt.Twitter;
+using System.Windows;
 
 namespace ktwt.ui
 {
@@ -71,6 +72,9 @@ namespace ktwt.ui
 
 		[JsonObjectMapping ("pane", JsonValueType.Object)]
 		public PaneConfig PaneInfo { get; set; }
+
+		[JsonObjectMapping ("window", JsonValueType.Object)]
+		public WindowInfo Window { get; set; }
 
 		#region Internal Classes
 		/// <summary>
@@ -140,6 +144,24 @@ namespace ktwt.ui
 			Viewer,
 			Splitter,
 			Tab
+		}
+
+		public class WindowInfo
+		{
+			[JsonObjectMapping ("x", JsonValueType.Number)]
+			public int X { get; set; }
+
+			[JsonObjectMapping ("y", JsonValueType.Number)]
+			public int Y { get; set; }
+
+			[JsonObjectMapping ("w", JsonValueType.Number)]
+			public int Width { get; set; }
+
+			[JsonObjectMapping ("h", JsonValueType.Number)]
+			public int Height { get; set; }
+
+			[JsonObjectMapping ("s", JsonValueType.String)]
+			public WindowState State { get; set; }
 		}
 		#endregion
 	}
