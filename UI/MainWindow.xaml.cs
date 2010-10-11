@@ -36,6 +36,40 @@ namespace ktwt.ui
 		{
 			InitializeComponent ();
 
+			OptionWindow optWin = new OptionWindow (config);
+			config = optWin.Config;
+			if (optWin.ShowDialog () != true || config.TwitterAccounts.Length == 0) {
+				Application.Current.Shutdown ();
+				return;
+			}
+
+			// test pane layouy & stream assign
+			config.PaneInfo = new Configurations.PaneConfig {
+				Type = Configurations.PaneType.Splitter,
+				SplitterConfig = new Configurations.SplitterPaneInfo { Columns = 2, Rows = 2 },
+				Children = new Configurations.PaneConfig[] {
+					new Configurations.PaneConfig {
+						Type = Configurations.PaneType.Viewer,
+						Caption = "home",
+						Id = "home",
+						SplitterLayoutConfig = new Configurations.SplitterLayoutInfo {Column = 0, ColumnSpan = 1, Row = 0, RowSpan = 2}
+					},
+					new Configurations.PaneConfig {
+						Type = Configurations.PaneType.Viewer,
+						Caption = "mentions",
+						Id = "mentions",
+						SplitterLayoutConfig = new Configurations.SplitterLayoutInfo {Column = 1, ColumnSpan = 1, Row = 0, RowSpan = 1}
+					},
+					new Configurations.PaneConfig {
+						Type = Configurations.PaneType.Viewer,
+						Caption = "dm",
+						Id = "dm",
+						SplitterLayoutConfig = new Configurations.SplitterLayoutInfo {Column = 1, ColumnSpan = 1, Row = 1, RowSpan = 1}
+					},
+				}
+			};
+			config.Save ();
+
 			_config = config;
 			_timer = new IntervalTimer (TimeSpan.FromSeconds (0.5), Environment.ProcessorCount);
 			_nodes = new TwitterAccountNode[_config.TwitterAccounts.Length];
@@ -48,6 +82,13 @@ namespace ktwt.ui
 			mainPane.SetValue (Grid.ColumnProperty, 0);
 			mainPane.SetValue (Grid.RowProperty, 0);
 			mainGrid.Children.Add (mainPane);
+
+			for (int i = 0; i < _config.TwitterAccounts.Length; i ++) {
+				_viewers["home"].AddInputStream (_nodes[i].AddUserStream ());
+				_viewers["home"].AddInputStream (_nodes[i].AddRestStream (new RestUsage {Type=RestType.Home, Count=300, Interval=TimeSpan.FromSeconds (60), IsEnabled=true}));
+				_viewers["mentions"].AddInputStream (_nodes[i].AddRestStream (new RestUsage {Type=RestType.Mentions, Count=300, Interval=TimeSpan.FromSeconds (120), IsEnabled=true}));
+				_viewers["dm"].AddInputStream (_nodes[i].AddRestStream (new RestUsage {Type=RestType.DirectMessages, Count=300, Interval=TimeSpan.FromSeconds (600), IsEnabled=true}));
+			}
 		}
 
 		UIElement CreatePane (Configurations.PaneConfig config)

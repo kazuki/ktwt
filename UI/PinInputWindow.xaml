@@ -1,0 +1,28 @@
+﻿<Window x:Class="ktwt.ui.PinInputWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Loaded="Window_Loaded"
+        Title="oAuth Pin" WindowStartupLocation="CenterOwner" UseLayoutRounding="True" ResizeMode="NoResize" ShowInTaskbar="False" WindowStyle="ToolWindow" SizeToContent="WidthAndHeight">
+  <Window.Resources>
+    <Style TargetType="{x:Type Button}">
+      <Setter Property="Padding" Value="6 3" />
+    </Style>
+  </Window.Resources>
+  <Grid Width="Auto" Height="Auto">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="Auto" />
+    </Grid.ColumnDefinitions>
+    
+    <TextBlock Grid.Row="0" Grid.Column="0">ブラウザに表示されているPINコード(数字)を入力してください．</TextBlock>
+    <TextBox Grid.Row="1" Grid.Column="0" x:Name="PinTextBox" TabIndex="0" />
+    <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right">
+      <Button Click="OK_Button_Click" TabIndex="0">OK</Button>
+      <Button Click="Cancel_Button_Click" TabIndex="0">Cancel</Button>
+    </StackPanel>
+  </Grid>
+</Window>

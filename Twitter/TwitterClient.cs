@@ -229,7 +229,7 @@ namespace ktwt.Twitter
 			else if (screen_name != null && screen_name.Length > 0) query = "?screen_name=" + OAuthBase.UrlEncode (screen_name);
 			else throw new ArgumentException ();
 
-			string json = DownloadString (new Uri (UsersShowURL + query), HTTP_GET, null);
+			string json = DownloadStringWithoutAuthentication (new Uri (UsersShowURL + query), HTTP_GET, null);
 			return JsonDeserializer.Deserialize<User> (json);
 		}
 

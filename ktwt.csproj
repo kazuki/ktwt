@@ -130,9 +130,15 @@
     <Compile Include="UI\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UI\OptionWindow.xaml.cs">
+      <DependentUpon>OptionWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UI\ScrollStatusViewer.cs" />
     <Compile Include="UI\StatusRenderers.cs" />
     <Compile Include="UI\StatusViewer.cs" />
+    <Compile Include="UI\PinInputWindow.xaml.cs">
+      <DependentUpon>PinInputWindow.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Json\LitJSON\AUTHORS.txt" />
@@ -141,6 +147,14 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="UI\MainWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UI\OptionWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UI\PinInputWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

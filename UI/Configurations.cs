@@ -41,13 +41,27 @@ namespace ktwt.ui
 			return new Configurations { ConfigurationFilePath = path };
 		}
 
-		Configurations () {}
+		Configurations ()
+		{
+			TwitterAccounts = new TwitterOAuthCredentialCache[0];
+		}
 
 		public void Save ()
 		{
 			using (StreamWriter writer = new StreamWriter (ConfigurationFilePath)) {
 				JsonSerializer.Serialize (writer, this);
 			}
+		}
+
+		public Configurations Clone ()
+		{
+			StringBuilder sb = new StringBuilder ();
+			using (StringWriter writer = new StringWriter (sb)) {
+				JsonSerializer.Serialize (writer, this);
+			}
+			Configurations config = JsonDeserializer.Deserialize<Configurations> (sb.ToString ());
+			config.ConfigurationFilePath = this.ConfigurationFilePath;
+			return config;
 		}
 
 		public string ConfigurationFilePath { get; set; }
