@@ -21,11 +21,20 @@ namespace ktwt.Json
 {
 	public class JsonNumber : JsonValue
 	{
+		JsonNumberType _type;
 		double _value;
+		long _value_i64;
+		ulong _value_ui64;
 
-		public JsonNumber (double value)
+		public JsonNumber (JsonNumberType type, double value, long value_int64, ulong value_uint64)
 		{
+			_type = type;
 			_value = value;
+			if (type == JsonNumberType.Signed) {
+				_value_i64 = value_int64;
+			} else if (type == JsonNumberType.Unsigned) {
+				_value_ui64 = value_uint64;
+			}
 		}
 
 		public override void ToJsonString (StringBuilder buffer)
@@ -37,8 +46,20 @@ namespace ktwt.Json
 			get { return JsonValueType.Number; }
 		}
 
+		public JsonNumberType NumberType {
+			get { return _type; }
+		}
+
 		public double Value {
 			get { return _value; }
+		}
+
+		public long ValueSigned {
+			get { return _value_i64; }
+		}
+
+		public ulong ValueUnsigned {
+			get { return _value_ui64; }
 		}
 	}
 }

@@ -59,6 +59,7 @@
     <Compile Include="Json\JsonDeserializer.cs" />
     <Compile Include="Json\JsonNull.cs" />
     <Compile Include="Json\JsonNumber.cs" />
+    <Compile Include="Json\JsonNumberType.cs" />
     <Compile Include="Json\JsonObject.cs" />
     <Compile Include="Json\JsonObjectMappingAttribute.cs" />
     <Compile Include="Json\JsonSerializer.cs" />

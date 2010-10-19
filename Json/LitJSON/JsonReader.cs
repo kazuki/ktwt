@@ -31,6 +31,12 @@ namespace LitJson
 		Null
 	}
 
+	public enum JsonNumberType
+	{
+		SignedInteger,
+		UnsignedInteger,
+		FloatingPoint
+	}
 
 	public class JsonReader
 	{
@@ -50,6 +56,9 @@ namespace LitJson
 		private bool reader_is_owned;
 		private object token_value;
 		private JsonToken token;
+		private JsonNumberType number_type;
+		private long number_signed;
+		private ulong number_unsigned;
 		#endregion
 
 		#region Public Properties
@@ -75,8 +84,20 @@ namespace LitJson
 			get { return token; }
 		}
 
+		public JsonNumberType NumberType {
+			get { return number_type; }
+		}
+
 		public object Value {
 			get { return token_value; }
+		}
+
+		public long ValueSignedInteger {
+			get { return number_signed; }
+		}
+
+		public ulong ValueUnsignedInteger {
+			get { return number_unsigned; }
 		}
 		#endregion
 
@@ -186,15 +207,33 @@ namespace LitJson
 		#region Private Methods
 		private void ProcessNumber (string number)
 		{
+			token = JsonToken.Number;
+
+			long n_long;
+			if (long.TryParse (number, out n_long)) {
+				number_type = JsonNumberType.SignedInteger;
+				number_signed = n_long;
+				token_value = (double)n_long;
+				return;
+			}
+
+			ulong n_ulong;
+			if (ulong.TryParse (number, out n_ulong)) {
+				number_type = JsonNumberType.UnsignedInteger;
+				number_unsigned = n_ulong;
+				token_value = (double)n_ulong;
+				return;
+			}
+
 			double n_double;
 			if (Double.TryParse (number, out n_double)) {
-				token = JsonToken.Number;
+				number_type = JsonNumberType.FloatingPoint;
 				token_value = n_double;
 				return;
 			}
 
 			// Shouldn't happen, but just in case, return something
-			token = JsonToken.Number;
+			number_type = JsonNumberType.FloatingPoint;
 			token_value = 0.0;
 		}
 
@@ -259,7 +298,6 @@ namespace LitJson
 			return true;
 		}
 		#endregion
-
 
 		public void Close ()
 		{

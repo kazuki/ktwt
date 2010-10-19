@@ -108,7 +108,9 @@ namespace ktwt.Json
 						switch (reader.Token) {
 							case JsonToken.Boolean: value = new JsonBoolean ((bool)reader.Value); break;
 							case JsonToken.Null: value = new JsonNull (); break;
-							case JsonToken.Number: value = new JsonNumber ((double)reader.Value); break;
+							case JsonToken.Number:
+								value = new JsonNumber (Convert (reader.NumberType), (double)reader.Value, reader.ValueSignedInteger, reader.ValueUnsignedInteger);
+								break;
 							case JsonToken.String: value = new JsonString ((string)reader.Value); break;
 							default: throw new JsonException ();
 						}
@@ -129,6 +131,15 @@ namespace ktwt.Json
 			if (cur == null)
 				return null;
 			throw new JsonException ();
+		}
+
+		static JsonNumberType Convert (LitJson.JsonNumberType type)
+		{
+			if (type == LitJson.JsonNumberType.SignedInteger)
+				return JsonNumberType.Signed;
+			if (type == LitJson.JsonNumberType.UnsignedInteger)
+				return JsonNumberType.Unsigned;
+			return JsonNumberType.FloatingPoint;
 		}
 	}
 }

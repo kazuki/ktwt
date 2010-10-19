@@ -58,7 +58,13 @@ namespace ktwt.Json
 		{
 			switch (v.ValueType) {
 				case JsonValueType.Number:
-					double d = (v as JsonNumber).Value;
+					JsonNumber jn = (JsonNumber)v;
+					if (jn.NumberType == JsonNumberType.Signed)
+						return Convert.ChangeType (jn.ValueSigned, t);
+					if (jn.NumberType == JsonNumberType.Unsigned)
+						return Convert.ChangeType (jn.ValueUnsigned, t);
+					return Convert.ChangeType (jn.Value, t);
+					/*double d = (v as JsonNumber).Value;
 					if (t == typeof (ulong))
 						return (ulong)d;
 					else if (t == typeof (long))
@@ -79,7 +85,7 @@ namespace ktwt.Json
 						return (byte)d;
 					else if (t == typeof (sbyte))
 						return (sbyte)d;
-					break;
+					break;*/
 				case JsonValueType.String:
 					if (t == typeof (DateTime))
 						return DateTime.ParseExact ((v as JsonString).Value, SerializationCache.JsonDateTimeFormat, SerializationCache.InvariantCulture);
