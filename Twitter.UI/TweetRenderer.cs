@@ -23,7 +23,6 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Media.TextFormatting;
 using ktwt.StatusStream;
 using ktwt.ui;

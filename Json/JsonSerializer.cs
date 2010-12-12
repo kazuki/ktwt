@@ -16,6 +16,8 @@
  */
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -24,6 +26,8 @@ namespace ktwt.Json
 {
 	public static class JsonSerializer
 	{
+		internal static readonly Type DictionaryType = typeof (Dictionary<,>);
+
 		public static string Serialize (object obj)
 		{
 			StringBuilder sb = new StringBuilder ();
@@ -51,16 +55,33 @@ namespace ktwt.Json
 			writer.WriteStartObject ();
 
 			Type type = obj.GetType ();
-			SerializationCache c = SerializationCache.Get (type);
-			for (int i = 0; i < c.Attributes.Length; i ++) {
-				PropertyInfo p = c.Properties[i];
-				JsonObjectMappingAttribute a = c.Attributes[i];
+			bool handled = false;
+			if (type.IsGenericType) {
+				Type btype = type.GetGenericTypeDefinition ();
+				Type[] gtypes = type.GetGenericArguments ();
+				if (btype == DictionaryType && gtypes[0] == typeof (string)) {
+					IDictionary dic = obj as IDictionary;
+					JsonValueType vtype = GetJsonValueType (gtypes[1]);
+					foreach (object key in dic.Keys) {
+						writer.WriteKey ((string)key);
+						Serialize (writer, vtype, dic[key]);
+					}
+					handled = true;
+				}
+			}
 
-				object v = p.GetValue (obj, null);
-				if (v == null)
-					continue;
-				writer.WriteKey (a.Key);
-				Serialize (writer, a.ValueType, v);
+			if (!handled) {
+				SerializationCache c = SerializationCache.Get (type);
+				for (int i = 0; i < c.Attributes.Length; i ++) {
+					PropertyInfo p = c.Properties[i];
+					JsonObjectMappingAttribute a = c.Attributes[i];
+
+					object v = p.GetValue (obj, null);
+					if (v == null)
+						continue;
+					writer.WriteKey (a.Key);
+					Serialize (writer, a.ValueType, v);
+				}
 			}
 
 			writer.WriteEndObject ();
@@ -139,6 +160,21 @@ namespace ktwt.Json
 				default:
 					throw new ArgumentException ();
 			}
+		}
+
+		internal static JsonValueType GetJsonValueType (Type type)
+		{
+			if (type == typeof (bool))
+				return JsonValueType.Boolean;
+			if (type == typeof (string))
+				return JsonValueType.String;
+			if (type == typeof (ulong) || type == typeof (long) || type == typeof (uint) || type == typeof (int)
+				|| type == typeof (ushort) || type == typeof (short) || type == typeof (byte) || type == typeof (sbyte)
+				|| type == typeof (float) || type == typeof (double))
+				return JsonValueType.Number;
+			if (type.IsArray)
+				return JsonValueType.Array;
+			return JsonValueType.Object;
 		}
 	}
 }

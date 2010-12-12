@@ -16,6 +16,7 @@
  */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
@@ -42,6 +43,17 @@ namespace ktwt.Json
 
 		static object Deserialize (JsonObject obj, Type t)
 		{
+			if (t.IsGenericType) {
+				Type btype = t.GetGenericTypeDefinition ();
+				Type[] gtypes = t.GetGenericArguments ();
+				IDictionary dic = (IDictionary)t.GetConstructor (Type.EmptyTypes).Invoke (null);
+				if (btype == JsonSerializer.DictionaryType && gtypes[0] == typeof (string)) {
+					foreach (KeyValuePair<string, JsonValue> pair in obj.Value)
+						dic.Add (pair.Key, Deserialize (pair.Value, gtypes[1]));
+				}
+				return dic;
+			}
+
 			SerializationCache c = SerializationCache.Get (t);
 			object r = FormatterServices.GetUninitializedObject (t);
 			for (int i = 0; i < c.Attributes.Length; i ++) {

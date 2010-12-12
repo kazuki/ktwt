@@ -15,15 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Net;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Documents;
-using ktwt.OAuth;
-using ktwt.Twitter;
 
 namespace ktwt.ui
 {
@@ -36,84 +31,46 @@ namespace ktwt.ui
 			btnOK.SizeChanged += delegate (object sender, SizeChangedEventArgs e) {
 				OverlapMargin = new Thickness (5, 5, 5, 10.0 + btnOK.ActualHeight);
 			};
+			if (AccountTypes.Count > 0)
+				account_type.SelectedIndex = 0;
 		}
 
 		public Configurations Config { get; set; }
+		public IList<string> AccountTypes { get { return StatusTypes.SourceTypes; } }
 
 		#region Account
 
-		#region Twitter
-
-		private void  TwitterAccount_Add_Click (object sender, RoutedEventArgs e)
+		private void  Account_Add_Click (object sender, RoutedEventArgs e)
 		{
-			OAuthClient client = new OAuthClient (AppKeyStore.Key, AppKeyStore.Secret,
-				TwitterClient.RequestTokenURL, TwitterClient.AccessTokenURL, TwitterClient.AuthorizeURL, TwitterClient.XAuthURL);
-
-			Uri uri;
-			try {
-				uri = client.GetAuthorizeURL ();
-			} catch {
-				MessageBox.Show ("oAuth認証用のトークンをTwitterに要求中にエラーが発生しました．しばらく時間をおいてから再試行してください．", string.Empty, MessageBoxButton.OK, MessageBoxImage.Error);
+			IStatusSourceNodeInfo info = StatusTypes.GetInfo ((string)account_type.SelectedItem);
+			IAccountInfo account = info.CreateAccountWithGUI (this);
+			if (account == null)
 				return;
-			}
 
-			try {
-				Process.Start (uri.ToString ());
-			} catch {
-				MessageBoxResult mbr = MessageBox.Show ("URLをブラウザで開けませんでした．関連付けがなされていない可能性があります．" + Environment.NewLine +
-												 "\"はい\"を押すと認証用URLをクリップボードにコピーしますので，ブラウザにペーストして認証用URLにアクセスしてください", string.Empty, MessageBoxButton.YesNo, MessageBoxImage.Error);
-				if (mbr == MessageBoxResult.Yes) {
-					try {
-						Clipboard.SetText (uri.ToString ());
-					} catch {
-						MessageBox.Show ("クリップボードに保存できませんでした．再試行してください．", string.Empty, MessageBoxButton.OK, MessageBoxImage.Error);
-						return;
-					}
-				}
-			}
-			
-			PinInputWindow win = new PinInputWindow ();
-			win.Owner = this;
-			Dictionary<string, string> contents;
-			WebHeaderCollection headers;
-			while (true) {
-				if (win.ShowDialog () != true)
+			List<IAccountInfo> list = new List<IAccountInfo> ();
+			if (Config.Accounts != null)
+				list.AddRange (Config.Accounts);
+			for (int i = 0; i < list.Count; i ++) {
+				if (account.Equals (list[i])) {
+					MessageBox.Show ("既に登録されているアカウントです", string.Empty, MessageBoxButton.OK, MessageBoxImage.Information);
 					return;
-				try {
-					client.InputPIN (win.PIN, out contents, out headers);
-					break;
-				} catch {
-					MessageBox.Show ("oAuthの認証に失敗しました．PIN番号が正しく入力されているかチェックしてください．", string.Empty, MessageBoxButton.OKCancel, MessageBoxImage.Error);
 				}
 			}
-
-			TwitterOAuthCredentialCache cache = new TwitterOAuthCredentialCache (ulong.Parse (contents["user_id"]), contents["screen_name"], (OAuthCredentialCache)client.Credentials);
-			if (Config.TwitterAccounts != null) {
-				for (int i = 0; i < Config.TwitterAccounts.Length; i ++) {
-					if (Config.TwitterAccounts[i].UserID == cache.UserID) {
-						MessageBox.Show (cache.ScreenName + " は既に登録されているアカウントです．", string.Empty, MessageBoxButton.OK, MessageBoxImage.Information);
-						return;
-					}
-				}
-			}
-			List<TwitterOAuthCredentialCache> list = new List<TwitterOAuthCredentialCache> ();
-			if (Config.TwitterAccounts != null)
-				list.AddRange (Config.TwitterAccounts);
-			list.Add (cache);
-			Config.TwitterAccounts = list.ToArray ();
-			UpdateBindingTarget (this, "Config.TwitterAccounts");
+			list.Add (account);
+			Config.Accounts = list.ToArray ();
+			UpdateBindingTarget (this, "Config.Accounts");
+			Config.Save ();
 		}
 
-		private void  TwitterAccount_Remove_Click (object sender, RoutedEventArgs e)
+		private void Account_Remove_Click (object sender, RoutedEventArgs e)
 		{
 			MessageBox.Show ("Not Implemented");
 		}
 
-		private void  TwitterAccount_ReAuth_Click (object sender, RoutedEventArgs e)
+		private void Account_ReAuth_Click (object sender, RoutedEventArgs e)
 		{
 			MessageBox.Show ("Not Implemented");
 		}
-		#endregion
 
 		#endregion
 

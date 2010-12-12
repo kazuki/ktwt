@@ -27,6 +27,8 @@ namespace ktwt
 		[STAThread]
 		static void Main (params string[] args)
 		{
+			StatusTypes.Add (ktwt.Twitter.ui.TwitterNodeInfo.Instance);
+
 			Configurations config = Configurations.Load (Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.ApplicationData), "ktwt2.config.json"));
 			Application app = new Application ();
 			app.Run (new MainWindow (config));

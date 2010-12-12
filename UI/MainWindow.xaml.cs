@@ -22,6 +22,7 @@ using System.Windows.Controls;
 using System.Windows.Markup;
 using ktwt.Threading;
 using ktwt.Twitter;
+using ktwt.Twitter.ui;
 
 namespace ktwt.ui
 {
@@ -45,7 +46,7 @@ namespace ktwt.ui
 
 			OptionWindow optWin = new OptionWindow (config);
 			config = optWin.Config;
-			if (optWin.ShowDialog () != true || config.TwitterAccounts.Length == 0) {
+			if (optWin.ShowDialog () != true || config.Accounts.Length == 0) {
 				Application.Current.Shutdown ();
 				return;
 			}
@@ -79,23 +80,27 @@ namespace ktwt.ui
 
 			_config = config;
 			_timer = new IntervalTimer (TimeSpan.FromSeconds (0.5), Environment.ProcessorCount);
-			_nodes = new TwitterAccountNode[_config.TwitterAccounts.Length];
-			for (int i = 0; i < _config.TwitterAccounts.Length; i ++) {
-				_nodes[i] = new TwitterAccountNode (_timer);
-				_nodes[i].Credential = _config.TwitterAccounts[i];
-			}
 
 			UIElement mainPane = CreatePane (config.PaneInfo);
 			mainPane.SetValue (Grid.ColumnProperty, 0);
 			mainPane.SetValue (Grid.RowProperty, 0);
 			mainGrid.Children.Add (mainPane);
 
-			for (int i = 0; i < _config.TwitterAccounts.Length; i ++) {
-				_viewers["home"].AddInputStream (_nodes[i].AddUserStream ());
-				_viewers["home"].AddInputStream (_nodes[i].AddRestStream (new RestUsage {Type=RestType.Home, Count=300, Interval=TimeSpan.FromSeconds (60), IsEnabled=true}));
-				_viewers["mentions"].AddInputStream (_nodes[i].AddRestStream (new RestUsage {Type=RestType.Mentions, Count=300, Interval=TimeSpan.FromSeconds (120), IsEnabled=true}));
-				_viewers["dm"].AddInputStream (_nodes[i].AddRestStream (new RestUsage {Type=RestType.DirectMessages, Count=300, Interval=TimeSpan.FromSeconds (600), IsEnabled=true}));
+			List<TwitterAccountNode> nodes = new List<TwitterAccountNode> ();
+			for (int i = 0; i < _config.Accounts.Length; i ++) {
+				if (!(_config.Accounts[i] is TwitterAccountInfo))
+					continue;
+				TwitterAccountNode node = new TwitterAccountNode (_timer);
+				node.Credential = (_config.Accounts[i] as TwitterAccountInfo).Credential;
+				nodes.Add (node);
 			}
+			for (int i = 0; i < nodes.Count; i ++) {
+				_viewers["home"].AddInputStream (nodes[i].AddUserStream ());
+				_viewers["home"].AddInputStream (nodes[i].AddRestStream (new RestUsage {Type=RestType.Home, Count=300, Interval=TimeSpan.FromSeconds (60), IsEnabled=true}));
+				_viewers["mentions"].AddInputStream (nodes[i].AddRestStream (new RestUsage {Type=RestType.Mentions, Count=300, Interval=TimeSpan.FromSeconds (120), IsEnabled=true}));
+				_viewers["dm"].AddInputStream (nodes[i].AddRestStream (new RestUsage {Type=RestType.DirectMessages, Count=300, Interval=TimeSpan.FromSeconds (600), IsEnabled=true}));
+			}
+			_nodes = nodes.ToArray ();
 		}
 
 		UIElement CreatePane (Configurations.PaneConfig config)

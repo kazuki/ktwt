@@ -15,14 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
-using ktwt.Json;
-using ktwt.Twitter;
+using System.Text;
 using System.Windows;
+using ktwt.Json;
 
 namespace ktwt.ui
 {
@@ -44,7 +41,7 @@ namespace ktwt.ui
 
 		Configurations ()
 		{
-			TwitterAccounts = new TwitterOAuthCredentialCache[0];
+			Accounts = new IAccountInfo[0];
 		}
 
 		public void Save ()
@@ -67,8 +64,28 @@ namespace ktwt.ui
 
 		public string ConfigurationFilePath { get; set; }
 
-		[JsonObjectMapping ("twitter_accounts", JsonValueType.Array)]
-		public TwitterOAuthCredentialCache[] TwitterAccounts { get; set; }
+		Dictionary<string, string>[] _accounts_internal;
+		[JsonObjectMapping ("accounts", JsonValueType.Array)]
+		Dictionary<string, string>[] AccountsInternal {
+			get { return _accounts_internal; }
+			set {
+				_accounts_internal = value;
+				_accounts = new IAccountInfo[value.Length];
+				for (int i = 0; i < value.Length; i ++)
+					_accounts[i] = StatusTypes.DeserializeAccountInfo (value[i]);
+			}
+		}
+
+		IAccountInfo[] _accounts;
+		public IAccountInfo[] Accounts {
+			get { return _accounts; }
+			set {
+				_accounts = value;
+				_accounts_internal = new Dictionary<string,string>[value.Length];
+				for (int i = 0; i < value.Length; i ++)
+					_accounts_internal[i] = StatusTypes.SerializeAccountInfo (value[i]);
+			}
+		}
 
 		[JsonObjectMapping ("pane", JsonValueType.Object)]
 		public PaneConfig PaneInfo { get; set; }

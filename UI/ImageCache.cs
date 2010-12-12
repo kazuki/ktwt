@@ -29,7 +29,7 @@ using System.Windows.Media.Imaging;
 
 namespace ktwt.ui
 {
-	class ImageCache
+	public class ImageCache
 	{
 		string _dir;
 		Stack<string> _stack = new Stack<string> ();

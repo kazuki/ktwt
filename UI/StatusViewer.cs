@@ -217,7 +217,7 @@ namespace ktwt.ui
 		{
 			IDecoratedStatus[] items = new IDecoratedStatus[e.Statuses.Length];
 			for (int i = 0; i < e.Statuses.Length; i ++) {
-				IStatusRenderer renderer = StatusRenderers.GetRenderer (e.Statuses[i].GetType ());
+				IStatusRenderer renderer = StatusTypes.GetRenderer (e.Statuses[i].GetType ());
 				items[i] = renderer.Decorate (e.Statuses[i]);
 			}
 			AddStatuses (items);

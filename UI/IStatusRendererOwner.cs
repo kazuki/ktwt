@@ -19,7 +19,7 @@ using System.Windows.Media.TextFormatting;
 
 namespace ktwt.ui
 {
-	interface IStatusRendererOwner
+	public interface IStatusRendererOwner
 	{
 		TextFormatter TextFormatter { get; }
 		ImageCache ImageCache { get; }

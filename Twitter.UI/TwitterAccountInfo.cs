@@ -15,13 +15,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using ktwt.StatusStream;
+using ktwt.ui;
 
-namespace ktwt.ui
+namespace ktwt.Twitter.ui
 {
-	public interface IDecoratedStatus
+	class TwitterAccountInfo : IAccountInfo
 	{
-		StatusBase Status { get; }
-		IStatusRenderer Renderer { get; }
+		public TwitterAccountInfo (TwitterOAuthCredentialCache credential)
+		{
+			Credential = credential;
+			Summary = string.Format ("{0} (id={1})", credential.ScreenName, credential.UserID);
+		}
+
+		public string Summary { get; private set; }
+		public TwitterOAuthCredentialCache Credential { get; private set; }
+
+		public IStatusSourceNodeInfo SourceNodeInfo {
+			get { return TwitterNodeInfo.Instance; }
+		}
+
+		public bool Equals (IAccountInfo other)
+		{
+			TwitterAccountInfo info = other as TwitterAccountInfo;
+			if (info == null)
+				return false;
+			return this.Credential.UserID == info.Credential.UserID;
+		}
 	}
 }

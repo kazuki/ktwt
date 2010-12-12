@@ -15,13 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using ktwt.StatusStream;
+using System;
+using System.Collections.Generic;
+using System.Windows;
 
 namespace ktwt.ui
 {
-	public interface IDecoratedStatus
+	public interface IStatusSourceNodeInfo
 	{
-		StatusBase Status { get; }
+		string SourceType { get; }
+		Type StatusType { get; }
+		Type AccountInfoType { get; }
 		IStatusRenderer Renderer { get; }
+
+		IAccountInfo CreateAccountWithGUI (Window owner);
+
+		Dictionary<string, string> SerializeAccountInfo (IAccountInfo obj);
+		IAccountInfo DeserializeAccountInfo (Dictionary<string, string> dic);
 	}
 }

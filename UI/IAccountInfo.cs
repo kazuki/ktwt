@@ -16,19 +16,12 @@
  */
 
 using System;
-using ktwt.Twitter.ui;
 
 namespace ktwt.ui
 {
-	static class StatusRenderers
+	public interface IAccountInfo: IEquatable<IAccountInfo>
 	{
-		static Type TweetType = typeof (ktwt.Twitter.Status);
-
-		public static IStatusRenderer GetRenderer (Type statusType)
-		{
-			if (statusType == TweetType)
-				return TweetRenderer.Instance;
-			throw new NotSupportedException ();
-		}
+		IStatusSourceNodeInfo SourceNodeInfo { get; }
+		string Summary { get; }
 	}
 }

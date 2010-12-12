@@ -107,6 +107,8 @@
     <Compile Include="Threading\IntervalTimer.cs" />
     <Compile Include="Threading\IntervalTimerDelegate.cs" />
     <Compile Include="Twitter.UI\TweetRenderer.cs" />
+    <Compile Include="Twitter.UI\TwitterAccountInfo.cs" />
+    <Compile Include="Twitter.UI\TwitterNodeInfo.cs" />
     <Compile Include="Twitter\IStreamingState.cs" />
     <Compile Include="Twitter\ListInfo.cs" />
     <Compile Include="Twitter\ListMode.cs" />
@@ -124,10 +126,12 @@
     <Compile Include="UI\BasicTextParagraphProperties.cs" />
     <Compile Include="UI\BasicTextRunProperties.cs" />
     <Compile Include="UI\Configurations.cs" />
+    <Compile Include="UI\IAccountInfo.cs" />
     <Compile Include="UI\IDecoratedStatus.cs" />
     <Compile Include="UI\ImageCache.cs" />
     <Compile Include="UI\IStatusRenderer.cs" />
     <Compile Include="UI\IStatusRendererOwner.cs" />
+    <Compile Include="UI\IStatusSourceNodeInfo.cs" />
     <Compile Include="UI\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
@@ -135,7 +139,7 @@
       <DependentUpon>OptionWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="UI\ScrollStatusViewer.cs" />
-    <Compile Include="UI\StatusRenderers.cs" />
+    <Compile Include="UI\StatusTypes.cs" />
     <Compile Include="UI\StatusViewer.cs" />
     <Compile Include="UI\PinInputWindow.xaml.cs">
       <DependentUpon>PinInputWindow.xaml</DependentUpon>

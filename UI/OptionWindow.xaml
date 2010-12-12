@@ -64,53 +64,47 @@
   </Window.Resources>
   <Grid>
     <Grid.RowDefinitions>
-      <RowDefinition  />
+      <RowDefinition />
     </Grid.RowDefinitions>
     <Grid.ColumnDefinitions>
       <ColumnDefinition />
     </Grid.ColumnDefinitions>
     <TabControl HorizontalAlignment="Stretch"  VerticalAlignment="Stretch" Grid.Row="0" Grid.Column="0" TabStripPlacement="Left" Name="mainCategoryTab" BorderThickness="0" Style="{StaticResource ResourceKey=mainTabStyle}">
       <TabItem Header="Account" Style="{StaticResource ResourceKey=mainTabItemStyle}">
-        <TabControl>
-          <TabItem Header="Twitter">
-            <Grid>
-              <Grid.RowDefinitions>
-                <RowDefinition />
-              </Grid.RowDefinitions>
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-              </Grid.ColumnDefinitions>
-              <ListView ItemsSource="{Binding Path=Config.TwitterAccounts, ElementName=thisWindow, BindingGroupName=mainBindingGroup}" Grid.Row="0" Grid.Column="0">
-                <ListView.ItemTemplate>
-                  <DataTemplate>
-                    <TextBlock>
-                      <TextBlock Text="{Binding Path=ScreenName}" />
-                      <Run> (id=</Run>
-                      <TextBlock Text="{Binding Path=UserID}" />
-                      <Run>)</Run>
-                    </TextBlock>
-                  </DataTemplate>
-                </ListView.ItemTemplate>
-              </ListView>
-              <StackPanel Grid.Column="1" Grid.Row="0">
-                <Button Content="Add" Click="TwitterAccount_Add_Click" />
-                <Button Content="Remove" Click="TwitterAccount_Remove_Click" />
-                <Button Content="Re-Auth" Click="TwitterAccount_ReAuth_Click" />
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <Grid.RowDefinitions>
+            <RowDefinition />
+          </Grid.RowDefinitions>
+          <ListView Grid.Column="0" Grid.Row="0" ItemsSource="{Binding Path=Config.Accounts, ElementName=thisWindow, BindingGroupName=mainBindingGroup}">
+            <ListView.ItemTemplate>
+              <DataTemplate>
+                <TextBlock>
+                  <TextBlock Text="{Binding Path=SourceNodeInfo.SourceType}" />
+                  <Run>: </Run>
+                  <TextBlock Text="{Binding Path=Summary}" />
+                </TextBlock>
+              </DataTemplate>
+            </ListView.ItemTemplate>
+          </ListView>
+          <StackPanel Grid.Column="1" Grid.Row="0">
+            <GroupBox Header="New Account" Margin="0 0 0 10">
+              <StackPanel>
+                <ComboBox ItemsSource="{Binding Path=AccountTypes, ElementName=thisWindow}" x:Name="account_type" />
+                <Button Click="Account_Add_Click" Content="Create" />
               </StackPanel>
-            </Grid>
-          </TabItem>
-          <TabItem Header="Other Status Source">
-            <Grid>
-              <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center">Not Implemented</TextBlock>
-            </Grid>
-          </TabItem>
-        </TabControl>
+            </GroupBox>
+            <Button Click="Account_Remove_Click" Content="Remove" />
+          </StackPanel>
+        </Grid>
       </TabItem>
     </TabControl>
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="5">
-      <Button Margin="0 0 5 0" Name="btnOK" Click="OK_Click">OK</Button>
-      <Button Click="Cancel_Click">Cancel</Button>
+      <Button Padding="10 3" Margin="0 0 5 0" Name="btnOK" Click="OK_Click">OK</Button>
+      <Button Padding="10 3" Click="Cancel_Click">Cancel</Button>
     </StackPanel>
   </Grid>
 </Window>
