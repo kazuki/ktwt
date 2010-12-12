@@ -29,7 +29,6 @@ namespace ktwt.ui
 	partial class MainWindow : Window
 	{
 		IntervalTimer _timer;
-		TwitterAccountNode[] _nodes;
 		Configurations _config;
 		Dictionary<string, ScrollStatusViewer> _viewers = new Dictionary<string,ScrollStatusViewer> ();
 
@@ -86,21 +85,16 @@ namespace ktwt.ui
 			mainPane.SetValue (Grid.RowProperty, 0);
 			mainGrid.Children.Add (mainPane);
 
-			List<TwitterAccountNode> nodes = new List<TwitterAccountNode> ();
+			for (int i = 0; i < _config.Accounts.Length; i ++)
+				_config.Accounts[i].Setup (_timer);
 			for (int i = 0; i < _config.Accounts.Length; i ++) {
-				if (!(_config.Accounts[i] is TwitterAccountInfo))
-					continue;
-				TwitterAccountNode node = new TwitterAccountNode (_timer);
-				node.Credential = (_config.Accounts[i] as TwitterAccountInfo).Credential;
-				nodes.Add (node);
+				TwitterAccountNode twtnode = _config.Accounts[i] as TwitterAccountNode;
+				if (twtnode == null) continue;
+				_viewers["home"].AddInputStream (twtnode.AddUserStream ());
+				_viewers["home"].AddInputStream (twtnode.AddRestStream (new RestUsage {Type=RestType.Home, Count=300, Interval=TimeSpan.FromSeconds (60), IsEnabled=true}));
+				_viewers["mentions"].AddInputStream (twtnode.AddRestStream (new RestUsage {Type=RestType.Mentions, Count=300, Interval=TimeSpan.FromSeconds (120), IsEnabled=true}));
+				_viewers["dm"].AddInputStream (twtnode.AddRestStream (new RestUsage {Type=RestType.DirectMessages, Count=300, Interval=TimeSpan.FromSeconds (600), IsEnabled=true}));
 			}
-			for (int i = 0; i < nodes.Count; i ++) {
-				_viewers["home"].AddInputStream (nodes[i].AddUserStream ());
-				_viewers["home"].AddInputStream (nodes[i].AddRestStream (new RestUsage {Type=RestType.Home, Count=300, Interval=TimeSpan.FromSeconds (60), IsEnabled=true}));
-				_viewers["mentions"].AddInputStream (nodes[i].AddRestStream (new RestUsage {Type=RestType.Mentions, Count=300, Interval=TimeSpan.FromSeconds (120), IsEnabled=true}));
-				_viewers["dm"].AddInputStream (nodes[i].AddRestStream (new RestUsage {Type=RestType.DirectMessages, Count=300, Interval=TimeSpan.FromSeconds (600), IsEnabled=true}));
-			}
-			_nodes = nodes.ToArray ();
 		}
 
 		UIElement CreatePane (Configurations.PaneConfig config)
@@ -167,8 +161,8 @@ namespace ktwt.ui
 				return;
 
 			_timer.Dispose ();
-			for (int i = 0; i < _nodes.Length; i ++)
-				_nodes[i].Dispose ();
+			for (int i = 0; i < _config.Accounts.Length; i ++)
+				_config.Accounts[i].Dispose ();
 			base.OnClosed (e);
 
 			if (WindowState == WindowState.Normal) {

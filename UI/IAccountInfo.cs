@@ -16,12 +16,15 @@
  */
 
 using System;
+using ktwt.StatusStream;
+using ktwt.Threading;
 
 namespace ktwt.ui
 {
-	public interface IAccountInfo: IEquatable<IAccountInfo>
+	public interface IAccountInfo: IStatusSource, IEquatable<IAccountInfo>, IDisposable
 	{
 		IStatusSourceNodeInfo SourceNodeInfo { get; }
 		string Summary { get; }
+		void Setup (IntervalTimer timer);
 	}
 }

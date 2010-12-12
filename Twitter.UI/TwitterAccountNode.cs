@@ -23,23 +23,22 @@ using ktwt.Json;
 using ktwt.OAuth;
 using ktwt.StatusStream;
 using ktwt.Threading;
+using ktwt.ui;
 
-namespace ktwt.Twitter
+namespace ktwt.Twitter.ui
 {
-	public class TwitterAccountNode : IStatusSource, IDisposable
+	public class TwitterAccountNode : IAccountInfo, IStatusSource, IDisposable
 	{
 		OAuthClient _oauthClient;
 		TwitterClient _client;
 		List<IStatusStream> _streams = new List<IStatusStream>();
 		IStatusStream[] _streamArray = new IStatusStream[0];
 
-		public TwitterAccountNode (IntervalTimer timer)
+		public TwitterAccountNode ()
 		{
 			_oauthClient = new OAuthClient (AppKeyStore.Key, AppKeyStore.Secret,
 				TwitterClient.RequestTokenURL, TwitterClient.AccessTokenURL, TwitterClient.AuthorizeURL, TwitterClient.XAuthURL);
 			_client = new TwitterClient (_oauthClient);
-
-			timer.AddHandler (Run, TimeSpan.FromSeconds (1));
 		}
 
 		public OAuthClient OAuthClient {
@@ -138,7 +137,30 @@ namespace ktwt.Twitter
 
 		public TwitterOAuthCredentialCache Credential {
 			get { return (TwitterOAuthCredentialCache)_oauthClient.Credentials; }
-			set { _oauthClient.Credentials = value; }
+			set {
+				_oauthClient.Credentials = value;
+				Summary = string.Format ("{0} (id={1})", value.ScreenName, value.UserID);
+			}
+		}
+
+		public string Summary { get; private set; }
+
+		public IStatusSourceNodeInfo SourceNodeInfo {
+			get { return TwitterNodeInfo.Instance; }
+		}
+
+		public void Setup (IntervalTimer timer)
+		{
+			if (timer != null)
+				timer.AddHandler (Run, TimeSpan.FromSeconds (1));
+		}
+
+		public bool Equals (IAccountInfo other)
+		{
+			TwitterAccountNode info = other as TwitterAccountNode;
+			if (info == null)
+				return false;
+			return this.Credential.UserID == info.Credential.UserID;
 		}
 
 		void Run ()

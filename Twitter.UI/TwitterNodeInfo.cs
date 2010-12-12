@@ -41,7 +41,7 @@ namespace ktwt.Twitter.ui
 		}
 
 		public Type AccountInfoType {
-			get { return typeof (TwitterAccountInfo); }
+			get { return typeof (TwitterAccountNode); }
 		}
 
 		public IStatusRenderer Renderer {
@@ -50,7 +50,7 @@ namespace ktwt.Twitter.ui
 
 		public Dictionary<string, string> SerializeAccountInfo (IAccountInfo obj)
 		{
-			TwitterAccountInfo info = (TwitterAccountInfo)obj;
+			TwitterAccountNode info = (TwitterAccountNode)obj;
 			Dictionary<string, string> dic = new Dictionary<string,string> ();
 			dic.Add ("user_id", info.Credential.UserID.ToString ());
 			dic.Add ("screen_name", info.Credential.ScreenName);
@@ -61,9 +61,11 @@ namespace ktwt.Twitter.ui
 
 		public IAccountInfo DeserializeAccountInfo (Dictionary<string, string> dic)
 		{
-			return new TwitterAccountInfo (new TwitterOAuthCredentialCache (
+			TwitterAccountNode node = new TwitterAccountNode ();
+			node.Credential = new TwitterOAuthCredentialCache (
 				ulong.Parse (dic["user_id"]), dic["screen_name"], dic["token"], dic["secret"]
-			));
+			);
+			return node;
 		}
 
 		public IAccountInfo CreateAccountWithGUI (Window owner)
@@ -110,7 +112,9 @@ namespace ktwt.Twitter.ui
 			}
 
 			TwitterOAuthCredentialCache cache = new TwitterOAuthCredentialCache (ulong.Parse (contents["user_id"]), contents["screen_name"], (OAuthCredentialCache)client.Credentials);
-			return new TwitterAccountInfo (cache);
+			TwitterAccountNode node = new TwitterAccountNode ();
+			node.Credential = cache;
+			return node;
 		}
 	}
 }

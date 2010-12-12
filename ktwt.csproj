@@ -107,7 +107,7 @@
     <Compile Include="Threading\IntervalTimer.cs" />
     <Compile Include="Threading\IntervalTimerDelegate.cs" />
     <Compile Include="Twitter.UI\TweetRenderer.cs" />
-    <Compile Include="Twitter.UI\TwitterAccountInfo.cs" />
+    <Compile Include="Twitter.UI\TwitterAccountNode.cs" />
     <Compile Include="Twitter.UI\TwitterNodeInfo.cs" />
     <Compile Include="Twitter\IStreamingState.cs" />
     <Compile Include="Twitter\ListInfo.cs" />
@@ -116,7 +116,6 @@
     <Compile Include="Twitter\RestType.cs" />
     <Compile Include="Twitter\RestUsage.cs" />
     <Compile Include="Twitter\Status.cs" />
-    <Compile Include="Twitter\TwitterAccountNode.cs" />
     <Compile Include="Twitter\TwitterClient.cs">
       <SubType>Code</SubType>
     </Compile>
