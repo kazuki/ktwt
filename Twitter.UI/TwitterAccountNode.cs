@@ -33,12 +33,19 @@ namespace ktwt.Twitter.ui
 		TwitterClient _client;
 		List<IStatusStream> _streams = new List<IStatusStream>();
 		IStatusStream[] _streamArray = new IStatusStream[0];
+		IntervalTimer _timer = null;
 
 		public TwitterAccountNode ()
 		{
 			_oauthClient = new OAuthClient (AppKeyStore.Key, AppKeyStore.Secret,
 				TwitterClient.RequestTokenURL, TwitterClient.AccessTokenURL, TwitterClient.AuthorizeURL, TwitterClient.XAuthURL);
 			_client = new TwitterClient (_oauthClient);
+			ID = SourceNodeInfo.SourceType + ":" + new Guid ().ToString (); // set dummy id
+
+			AddUserStream ();
+			AddRestStream (new RestUsage {Type=RestType.Home, Count=300, Interval=TimeSpan.FromSeconds (60), IsEnabled=true});
+			AddRestStream (new RestUsage {Type=RestType.Mentions, Count=300, Interval=TimeSpan.FromSeconds (120), IsEnabled=true});
+			AddRestStream (new RestUsage {Type=RestType.DirectMessages, Count=300, Interval=TimeSpan.FromSeconds (600), IsEnabled=true});
 		}
 
 		public OAuthClient OAuthClient {
@@ -139,20 +146,32 @@ namespace ktwt.Twitter.ui
 			get { return (TwitterOAuthCredentialCache)_oauthClient.Credentials; }
 			set {
 				_oauthClient.Credentials = value;
-				Summary = string.Format ("{0} (id={1})", value.ScreenName, value.UserID);
+				Summary = value.ScreenName;
+				ID = SourceNodeInfo.SourceType + ":" + value.UserID.ToString ();
 			}
 		}
 
 		public string Summary { get; private set; }
 
+		public string ID { get; private set; }
+
 		public IStatusSourceNodeInfo SourceNodeInfo {
 			get { return TwitterNodeInfo.Instance; }
 		}
 
-		public void Setup (IntervalTimer timer)
+		public void Start (IntervalTimer timer)
 		{
-			if (timer != null)
-				timer.AddHandler (Run, TimeSpan.FromSeconds (1));
+			if (_timer != null || timer == null)
+				return;
+
+			_timer = timer;
+			timer.AddHandler (Run, TimeSpan.FromSeconds (1));
+			IStatusStream[] streams = _streamArray;
+			for (int i = 0; i < streams.Length; i ++) {
+				StreamingStream ss = streams[i] as StreamingStream;
+				if (ss == null) continue;
+				ss.Start (this);
+			}
 		}
 
 		public bool Equals (IAccountInfo other)
@@ -200,25 +219,21 @@ namespace ktwt.Twitter.ui
 
 				Owner = owner;
 				Usage = usage;
+
+				switch (Usage.Type) {
+					case RestType.Home: Name = "Home"; break;
+					case RestType.Mentions: Name = "Mentions"; break;
+					case RestType.DirectMessages: Name = "DMs"; break;
+					case RestType.Search: Name = "Search \"hoge\""; break;
+					case RestType.List: Name = "List \"hoge\""; break;
+					case RestType.UserTimeline: Name = "User TL"; break;
+				}
 			}
 
 			public TwitterAccountNode Owner { get; private set; }
 			public RestUsage Usage { get; private set; }
 
-			public string Name {
-				get {
-					string base_name = Owner.Name;
-					switch (Usage.Type) {
-						case RestType.Home: base_name += "'s home"; break;
-						case RestType.Mentions: base_name += "'s mentions"; break;
-						case RestType.DirectMessages: base_name += "'s dm"; break;
-						case RestType.Search: base_name += " search \"hoge\""; break;
-						case RestType.List: base_name += "'s list \"hoge\""; break;
-						case RestType.UserTimeline: base_name += " user TL"; break;
-					}
-					return base_name;
-				}
-			}
+			public string Name { get; private set; }
 
 			public void Run (object o)
 			{
@@ -255,6 +270,11 @@ namespace ktwt.Twitter.ui
 					Usage.IsRunning = false;
 				}
 			}
+
+			public void ClearStatusesArrivedHandlers ()
+			{
+				StatusesArrived = null;
+			}
 		}
 
 		private class StreamingStream : IStatusStream, IDisposable
@@ -266,22 +286,30 @@ namespace ktwt.Twitter.ui
 			Thread _thrd;
 			bool _active = true;
 
-			public StreamingStream (TwitterAccountNode owner, ulong[] follow, string[] track)
+			private StreamingStream (TwitterAccountNode owner)
+			{
+				Owner = owner;
+			}
+
+			public StreamingStream (TwitterAccountNode owner, ulong[] follow, string[] track) : this (owner)
 			{
 				_type = StreamingType.Filter;
 				_streamingArgs = new object[] {follow, track};
-				Start (owner);
+				Name = "FilterStream";
 			}
 
-			public StreamingStream (TwitterAccountNode owner, StreamingType type)
+			public StreamingStream (TwitterAccountNode owner, StreamingType type) : this (owner)
 			{
 				_type = type;
-				Start (owner);
+				switch (type) {
+					case StreamingType.User: Name = "UserStream"; break;
+					case StreamingType.Sample: Name = "SampleStream"; break;
+					case StreamingType.Filter: throw new ArgumentException ();
+				}
 			}
 
-			void Start (TwitterAccountNode owner)
+			public void Start (TwitterAccountNode owner)
 			{
-				Owner = owner;
 				_thrd = new Thread (StreamingThread);
 				_thrd.Start ();
 			}
@@ -394,9 +422,7 @@ namespace ktwt.Twitter.ui
 
 			public TwitterAccountNode Owner { get; private set; }
 
-			public string Name {
-				get { return Owner.Name + "'s Streaming"; }
-			}
+			public string Name { get; private set; }
 
 			public void Dispose ()
 			{
@@ -408,6 +434,11 @@ namespace ktwt.Twitter.ui
 				try {
 					_thrd.Abort ();
 				} catch {}
+			}
+
+			public void ClearStatusesArrivedHandlers ()
+			{
+				StatusesArrived = null;
 			}
 
 			public enum StreamingType

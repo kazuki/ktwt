@@ -84,6 +84,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="AppKeyStore.cs" />
+    <Compile Include="StatusStream\ElementType.cs" />
     <Compile Include="StatusStream\Filters\ActionResult.cs" />
     <Compile Include="StatusStream\Filters\ComplexCondition.cs" />
     <Compile Include="StatusStream\Filters\ComplexLogicType.cs" />
@@ -125,6 +126,10 @@
     <Compile Include="UI\BasicTextParagraphProperties.cs" />
     <Compile Include="UI\BasicTextRunProperties.cs" />
     <Compile Include="UI\Configurations.cs" />
+    <Compile Include="UI\FilterGraph.cs" />
+    <Compile Include="UI\FilterGraphEdgeKey.cs" />
+    <Compile Include="UI\FilterGraphNodeKey.cs" />
+    <Compile Include="UI\FilterGraphNodeShape.cs" />
     <Compile Include="UI\IAccountInfo.cs" />
     <Compile Include="UI\IDecoratedStatus.cs" />
     <Compile Include="UI\ImageCache.cs" />

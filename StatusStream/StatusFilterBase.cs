@@ -80,6 +80,11 @@ namespace ktwt.StatusStream
 			public void Dispose ()
 			{
 			}
+
+			public void ClearStatusesArrivedHandlers ()
+			{
+				StatusesArrived = null;
+			}
 		}
 	}
 }

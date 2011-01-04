@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Name="thisWindow"
         xmlns:k="clr-namespace:ktwt.ui"
-        Title="Options" Height="434" Width="625">
+        Title="Options" Height="434" Width="625" UseLayoutRounding="False">
   <Window.BindingGroup>
     <BindingGroup Name="mainBindingGroup" />
   </Window.BindingGroup>
@@ -21,8 +21,8 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <Border BorderBrush="{x:Static SystemColors.WindowFrameBrush}" BorderThickness="0 0 1 0">
-                <TabPanel Grid.Row="0" Grid.Column="0" IsItemsHost="True" />
+              <Border Grid.Row="0" Grid.Column="0" BorderBrush="{x:Static SystemColors.WindowFrameBrush}" BorderThickness="0 0 1 0">
+                <TabPanel IsItemsHost="True" />
               </Border>
               <ContentPresenter ContentSource="SelectedContent" Grid.Row="0" Grid.Column="1" Margin="{Binding ElementName=thisWindow, Path=OverlapMargin}" />
             </Grid>
@@ -98,6 +98,34 @@
               </StackPanel>
             </GroupBox>
             <Button Click="Account_Remove_Click" Content="Remove" />
+          </StackPanel>
+        </Grid>
+      </TabItem>
+      <TabItem Header="Filter Graph" Style="{StaticResource ResourceKey=mainTabItemStyle}">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <Grid.RowDefinitions>
+            <RowDefinition />
+          </Grid.RowDefinitions>
+          <ScrollViewer Grid.Column="0" Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <Canvas x:Name="filterGraphCanvas">
+              <Grid Canvas.Left="0" Canvas.Top="0" x:Name="gridFilterContainer">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" x:Name="filterGraphSourceList" Orientation="Vertical" />
+                <StackPanel Grid.Column="2" x:Name="filterGraphViewerList" Orientation="Vertical" />
+              </Grid>
+            </Canvas>
+          </ScrollViewer>
+          <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Vertical">
+            <Button>Add TextFilter</Button>
+            <Button>Add Viewer</Button>
           </StackPanel>
         </Grid>
       </TabItem>

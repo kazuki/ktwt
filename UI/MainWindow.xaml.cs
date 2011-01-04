@@ -21,6 +21,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Markup;
 using ktwt.Threading;
+using ktwt.StatusStream;
 using ktwt.Twitter;
 using ktwt.Twitter.ui;
 
@@ -30,6 +31,7 @@ namespace ktwt.ui
 	{
 		IntervalTimer _timer;
 		Configurations _config;
+		Dictionary<FilterGraphNodeKey, INamedElement> _nodes = new Dictionary<FilterGraphNodeKey, INamedElement> ();
 		Dictionary<string, ScrollStatusViewer> _viewers = new Dictionary<string,ScrollStatusViewer> ();
 
 		public MainWindow (Configurations config)
@@ -50,32 +52,38 @@ namespace ktwt.ui
 				return;
 			}
 
-			// test pane layouy & stream assign
-			config.PaneInfo = new Configurations.PaneConfig {
-				Type = Configurations.PaneType.Splitter,
-				SplitterConfig = new Configurations.SplitterPaneInfo { Columns = 2, Rows = 2 },
-				Children = new Configurations.PaneConfig[] {
-					new Configurations.PaneConfig {
-						Type = Configurations.PaneType.Viewer,
-						Caption = "home",
-						Id = "home",
-						SplitterLayoutConfig = new Configurations.SplitterLayoutInfo {Column = 0, ColumnSpan = 1, Row = 0, RowSpan = 2}
-					},
-					new Configurations.PaneConfig {
-						Type = Configurations.PaneType.Viewer,
-						Caption = "mentions",
-						Id = "mentions",
-						SplitterLayoutConfig = new Configurations.SplitterLayoutInfo {Column = 1, ColumnSpan = 1, Row = 0, RowSpan = 1}
-					},
-					new Configurations.PaneConfig {
-						Type = Configurations.PaneType.Viewer,
-						Caption = "dm",
-						Id = "dm",
-						SplitterLayoutConfig = new Configurations.SplitterLayoutInfo {Column = 1, ColumnSpan = 1, Row = 1, RowSpan = 1}
-					},
-				}
-			};
-			config.Save ();
+			if (config.Accounts != null) {
+				for (int i = 0; i < config.Accounts.Length; i ++)
+					_nodes.Add (new FilterGraphNodeKey (ElementType.Account, config.Accounts[i].ID), config.Accounts[i]);
+			}
+
+			if (config.PaneInfo == null) {
+				config.PaneInfo = new Configurations.PaneConfig {
+					Type = Configurations.PaneType.Splitter,
+					SplitterConfig = new Configurations.SplitterPaneInfo { Columns = 2, Rows = 2 },
+					Children = new Configurations.PaneConfig[] {
+						new Configurations.PaneConfig {
+							Type = Configurations.PaneType.Viewer,
+							Caption = "home",
+							Id = "home",
+							SplitterLayoutConfig = new Configurations.SplitterLayoutInfo {Column = 0, ColumnSpan = 1, Row = 0, RowSpan = 2}
+						},
+						new Configurations.PaneConfig {
+							Type = Configurations.PaneType.Viewer,
+							Caption = "mentions",
+							Id = "mentions",
+							SplitterLayoutConfig = new Configurations.SplitterLayoutInfo {Column = 1, ColumnSpan = 1, Row = 0, RowSpan = 1}
+						},
+						new Configurations.PaneConfig {
+							Type = Configurations.PaneType.Viewer,
+							Caption = "dm",
+							Id = "dm",
+							SplitterLayoutConfig = new Configurations.SplitterLayoutInfo {Column = 1, ColumnSpan = 1, Row = 1, RowSpan = 1}
+						},
+					}
+				};
+				config.Save ();
+			}
 
 			_config = config;
 			_timer = new IntervalTimer (TimeSpan.FromSeconds (0.5), Environment.ProcessorCount);
@@ -84,17 +92,10 @@ namespace ktwt.ui
 			mainPane.SetValue (Grid.ColumnProperty, 0);
 			mainPane.SetValue (Grid.RowProperty, 0);
 			mainGrid.Children.Add (mainPane);
+			FilterGraph.Construct (config.Edges, _nodes);
 
 			for (int i = 0; i < _config.Accounts.Length; i ++)
-				_config.Accounts[i].Setup (_timer);
-			for (int i = 0; i < _config.Accounts.Length; i ++) {
-				TwitterAccountNode twtnode = _config.Accounts[i] as TwitterAccountNode;
-				if (twtnode == null) continue;
-				_viewers["home"].AddInputStream (twtnode.AddUserStream ());
-				_viewers["home"].AddInputStream (twtnode.AddRestStream (new RestUsage {Type=RestType.Home, Count=300, Interval=TimeSpan.FromSeconds (60), IsEnabled=true}));
-				_viewers["mentions"].AddInputStream (twtnode.AddRestStream (new RestUsage {Type=RestType.Mentions, Count=300, Interval=TimeSpan.FromSeconds (120), IsEnabled=true}));
-				_viewers["dm"].AddInputStream (twtnode.AddRestStream (new RestUsage {Type=RestType.DirectMessages, Count=300, Interval=TimeSpan.FromSeconds (600), IsEnabled=true}));
-			}
+				_config.Accounts[i].Start (_timer);
 		}
 
 		UIElement CreatePane (Configurations.PaneConfig config)
@@ -138,6 +139,7 @@ namespace ktwt.ui
 					Grid.SetColumn (viewer, 0);
 
 					_viewers[config.Id] = viewer;
+					_nodes.Add (new FilterGraphNodeKey (ElementType.Viewer, config.Id), viewer);
 					pane = grid;
 					break;
 				}

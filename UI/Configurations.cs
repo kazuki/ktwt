@@ -42,6 +42,7 @@ namespace ktwt.ui
 		Configurations ()
 		{
 			Accounts = new IAccountInfo[0];
+			Edges = new FilterGraphEdgeKey[0];
 		}
 
 		public void Save ()
@@ -84,6 +85,29 @@ namespace ktwt.ui
 				_accounts_internal = new Dictionary<string,string>[value.Length];
 				for (int i = 0; i < value.Length; i ++)
 					_accounts_internal[i] = StatusTypes.SerializeAccountInfo (value[i]);
+			}
+		}
+
+		Dictionary<string, string>[] _edges_internal;
+		[JsonObjectMapping ("edges", JsonValueType.Array)]
+		Dictionary<string, string>[] EdgesInternal {
+			get { return _edges_internal; }
+			set {
+				_edges_internal = value;
+				_edges = new FilterGraphEdgeKey[value.Length];
+				for (int i = 0; i < value.Length; i ++)
+					_edges[i] = FilterGraphEdgeKey.Deserialize (value[i]);
+			}
+		}
+
+		FilterGraphEdgeKey[] _edges;
+		public FilterGraphEdgeKey[] Edges {
+			get { return _edges; }
+			set {
+				_edges = value;
+				_edges_internal = new Dictionary<string,string>[value.Length];
+				for (int i = 0; i < value.Length; i ++)
+					_edges_internal[i] = FilterGraphEdgeKey.Serialize (value[i]);
 			}
 		}
 
@@ -130,6 +154,23 @@ namespace ktwt.ui
 
 			[JsonObjectMapping ("children", JsonValueType.Array)]
 			public PaneConfig[] Children { get; set; }
+
+			public PaneConfig[] GetViewers ()
+			{
+				List<PaneConfig> list = new List<PaneConfig> ();
+				FindViewers (list);
+				return list.ToArray ();
+			}
+
+			void FindViewers (List<PaneConfig> list)
+			{
+				if (Type == PaneType.Viewer) {
+					list.Add (this);
+					return;
+				}
+				for (int i = 0; i < Children.Length; i ++)
+					Children[i].FindViewers (list);
+			}
 		}
 
 		public class SplitterPaneInfo

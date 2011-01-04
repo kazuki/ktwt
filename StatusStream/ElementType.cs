@@ -15,13 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-
 namespace ktwt.StatusStream
 {
-	public interface IStatusStream : INamedElement
+	public enum ElementType
 	{
-		event EventHandler<StatusesArrivedEventArgs> StatusesArrived;
-		void ClearStatusesArrivedHandlers ();
+		Account,
+		Filter,
+		Viewer
 	}
 }

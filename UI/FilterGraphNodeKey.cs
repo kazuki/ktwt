@@ -17,16 +17,40 @@
 
 using System;
 using ktwt.StatusStream;
-using ktwt.Threading;
 
 namespace ktwt.ui
 {
-	public interface IAccountInfo: IStatusSource, IEquatable<IAccountInfo>, IDisposable
+	public class FilterGraphNodeKey : IEquatable<FilterGraphNodeKey>
 	{
-		IStatusSourceNodeInfo SourceNodeInfo { get; }
-		string ID { get; }
-		string Summary { get; }
+		public FilterGraphNodeKey (string type, string key)
+			: this ((ElementType)Enum.Parse (typeof (ElementType), type), key)
+		{
+		}
 
-		void Start (IntervalTimer timer);
+		public FilterGraphNodeKey (ElementType type, string key)
+		{
+			this.Type = type;
+			this.Key = key;
+		}
+
+		public ElementType Type { get; set; }
+		public string Key { get; set; }
+
+		public override int GetHashCode ()
+		{
+			return this.Type.GetHashCode () ^ this.Key.GetHashCode ();
+		}
+
+		public override bool Equals (object obj)
+		{
+			if (obj is FilterGraphNodeKey)
+				return Equals ((FilterGraphNodeKey)obj);
+			return false;
+		}
+
+		public bool Equals (FilterGraphNodeKey other)
+		{
+			return (this.Type == other.Type) && this.Key.Equals (other.Key);
+		}
 	}
 }
