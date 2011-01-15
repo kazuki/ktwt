@@ -122,7 +122,10 @@
       <DependentUpon>HashTagInputWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="IconCache.cs" />
+    <Compile Include="Json\JsonNumberType.cs" />
+    <Compile Include="Json\JsonSerializer.cs" />
     <Compile Include="Json\JsonTextWriter.cs" />
+    <Compile Include="Json\SerializationCache.cs" />
     <Compile Include="ListStatuses.cs" />
     <Compile Include="StarShape.cs" />
     <Compile Include="StreamingClient.cs" />

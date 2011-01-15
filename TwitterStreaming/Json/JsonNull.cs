@@ -15,14 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace ktwt.Json
 {
 	public class JsonNull : JsonValue
 	{
+		public override void ToJsonString (StringBuilder buffer)
+		{
+			buffer.Append ("null");
+		}
+
 		public override JsonValueType ValueType {
 			get { return JsonValueType.Null; }
 		}

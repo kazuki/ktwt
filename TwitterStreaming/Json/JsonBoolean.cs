@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace ktwt.Json
@@ -28,6 +26,11 @@ namespace ktwt.Json
 		public JsonBoolean (bool value)
 		{
 			_value = value;
+		}
+
+		public override void ToJsonString (StringBuilder buffer)
+		{
+			buffer.Append (_value ? "true" : "false");
 		}
 
 		public override JsonValueType ValueType {

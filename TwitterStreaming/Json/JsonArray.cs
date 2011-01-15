@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
@@ -29,6 +27,17 @@ namespace ktwt.Json
 		public JsonArray (List<JsonValue> array)
 		{
 			_array = array;
+		}
+
+		public override void ToJsonString (StringBuilder buffer)
+		{
+			buffer.Append ('[');
+			for (int i = 0; i < _array.Count; i++) {
+				_array[i].ToJsonString (buffer);
+				if (i != _array.Count - 1)
+					buffer.Append (',');
+			}
+			buffer.Append (']');
 		}
 
 		public override JsonValueType ValueType {

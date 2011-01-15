@@ -148,6 +148,11 @@ namespace ktwt.Json
 			WriteValue (value.ToString ());
 		}
 
+		public void WriteNumber (ulong value)
+		{
+			WriteValue (value.ToString ());
+		}
+
 		public void WriteNumber (double value)
 		{
 			WriteValue (value.ToString ());

@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -30,8 +29,27 @@ namespace ktwt.Json
 			_dic = dic;
 		}
 
+		public override void ToJsonString (StringBuilder buffer)
+		{
+			int i = _dic.Count;
+			buffer.Append ('{');
+			foreach (KeyValuePair<string, JsonValue> pair in _dic) {
+				buffer.Append ('\"');
+				buffer.Append (JsonString.Encode (pair.Key));
+				buffer.Append ("\":");
+				pair.Value.ToJsonString (buffer);
+				if (--i > 0)
+					buffer.Append (',');
+			}
+			buffer.Append ('}');
+		}
+
 		public override JsonValueType ValueType {
 			get { return JsonValueType.Object; }
+		}
+
+		public JsonValue this [string key] {
+			get { return _dic[key]; }
 		}
 
 		public Dictionary<string, JsonValue> Value {
