@@ -53,16 +53,7 @@ namespace ktwt.ui
 			LRU<string, ImageSource>.CreateDelegate create = delegate (string key) {
 				try {
 					Uri uri = new Uri (key);
-					BitmapSource bi = null;
-					try {
-						bi = new BitmapImage (uri);
-					} catch {
-						using (Bitmap bmp = new Bitmap (uri.LocalPath)) {
-							bi = Imaging.CreateBitmapSourceFromHBitmap (bmp.GetHbitmap(), IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromWidthAndHeight (bmp.Width, bmp.Height));
-						}
-					}
-					if (bi == null)
-						return null;
+					BitmapSource bi = CreateBitmapImageIgnoreColorProfile (uri);
 					return new CachedBitmap (new TransformedBitmap (bi, new ScaleTransform (_size.Width / bi.Width, _size.Height / bi.Height)), BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
 				} catch {
 					return null;
@@ -88,6 +79,16 @@ namespace ktwt.ui
 			}
 		}
 
+		public static BitmapImage CreateBitmapImageIgnoreColorProfile (Uri uri)
+		{
+			BitmapImage img = new BitmapImage ();
+			img.BeginInit ();
+			img.UriSource = uri;
+			img.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+			img.EndInit ();
+			return img;
+		}
+
 		string UrlToKey (string url)
 		{
 			string ext = Path.GetExtension (url);
@@ -95,7 +96,7 @@ namespace ktwt.ui
 			url = url.Substring (0, url.Length - ext.Length);
 			byte[] raw = Encoding.ASCII.GetBytes (url);
 			string key = Convert.ToBase64String (raw);
-			return key.Replace ('+', '-').Replace ('/', '#') + ext;
+			return key.Replace ('/', '-') + ext.ToLowerInvariant ();
 		}
 
 		string KeyToCachePath (string key)
