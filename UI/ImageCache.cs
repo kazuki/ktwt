@@ -39,6 +39,8 @@ namespace ktwt.ui
 		LRU<string, ImageSource> _memCache;
 		System.Windows.Size _size;
 
+		public event EventHandler DownloadCompleted;
+
 		public ImageCache (string cache_dir, System.Windows.Size size)
 		{
 			try {
@@ -124,12 +126,15 @@ namespace ktwt.ui
 		{
 			string url = (string)o;
 			byte[] raw = null;
+			bool completed = false;
 			try {
 				using (WebClient client = new WebClient ()) {
 					raw = client.DownloadData (url);
 				}
-				if (raw.Length > 0)
+				if (raw.Length > 0) {
 					File.WriteAllBytes (UrlToCachePath (url), raw);
+					completed = true;
+				}
 			} catch {}
 
 			lock (_stack) {
@@ -141,6 +146,9 @@ namespace ktwt.ui
 					ThreadPool.QueueUserWorkItem (DownloadThread, _stack.Pop ());
 				}
 			}
+
+			if (completed && DownloadCompleted != null)
+				DownloadCompleted (this, EventArgs.Empty);
 		}
 
 		public sealed class LRU<K,T>

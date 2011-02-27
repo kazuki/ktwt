@@ -41,6 +41,9 @@ namespace ktwt.ui
 		{
 			this.TextFormatter = TextFormatter.Create ();
 			this.ImageCache = new ImageCache ("image_cache", new Size (24.0, 24.0));
+			this.ImageCache.DownloadCompleted += delegate (object sender, EventArgs e) {
+				ThreadSafeInvalidateVisual ();
+			};
 
 			Focusable = true;
 			ThreadSafeInvalidateVisualDelegateInstance = new EmptyDelegate (ThreadSafeInvalidateVisual);
